@@ -49,7 +49,7 @@ This is a simple application manager which allows you to install a number of pro
 - RPM Package Manager
 - Seahorse + seahorse-nautilus
 - Snapd
-- Swizzin [^3]
+- Swizzin
 - System Monitor
 - Teamviewer
 - Tree
@@ -277,4 +277,3 @@ This program has numerous variables that the general public shouldn't modify. Th
 ## Footnotes
 [^1]: This program requires Gnome Extension Manager to be installed first.
 [^2]: If installing any of the Gnome extensions, this core must be installed first. Please note that when installing this app, it may take upwards of 5-10 minutes depending on your machine. The rotating cursor means that it is installing.
-[^3]: Coming soon.
