@@ -314,10 +314,19 @@ function Logs_Begin()
         printf "%-30s %-5s\n" "${TIME}      TIME      : ${TIME}" | tee -a "${LOGS_FILE}" >/dev/null
 
         [[ -d $LOGS_DIR ]] || mkdir -p $LOGS_DIR
+        sudo chmod -R 775 $LOGS_DIR
         Pipe=${LOGS_FILE}.pipe
+
+        # get name of display in use
+        local display=":$(ls /tmp/.X11-unix/* | sed 's#/tmp/.X11-unix/X##' | head -n 1)"
+
+        # get user using display
+        local user=$(who | grep '('$display')' | awk '{print $1}' | head -n 1)
 
         if ! [[ -p $Pipe ]]; then
             mkfifo -m 700 $Pipe
+
+            sudo chown -R $user $Pipe
 
             printf "%-30s %-5s\n" "${TIME}      Creating new pipe ${Pipe}" | tee -a "${LOGS_FILE}" >/dev/null
         fi
@@ -371,21 +380,19 @@ Logs_Begin
 #   Cache Sudo Password
 ##--------------------------------------------------------------------------
 
-if [[ "$EUID" = 0 ]]; then
-    echo
-    echo "Signed in as ${USER}"
-    [ $USER ] && echo "  SUDO user: $USER" | tee -a "${LOGS_FILE}" >/dev/null
-    echo
-else
+if [[ $EUID -ne 0 ]]; then
     sudo -k # make sure to ask for password on next sudo
     if sudo true && [ -n "${USER}" ]; then
-        printf "%-30s %-5s\n\n" "${TIME}      SUDO Success: Welcome, ${USER}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "\n%-30s %-5s\n\n" "${TIME}      SUDO [SIGN-IN]: Welcome, ${USER}" | tee -a "${LOGS_FILE}" >/dev/null
     else
-        printf "%-30s %-5s\n\n" "${TIME}      SUDO Failure: Wrong Password x3" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "\n%-30s %-5s\n\n" "${TIME}      SUDO Failure: Wrong Password x3" | tee -a "${LOGS_FILE}" >/dev/null
         exit 1
     fi
+else
+    if [ -n "${USER}" ]; then
+        printf "\n%-30s %-5s\n\n" "${TIME}      SUDO [EXISTING]: $USER" | tee -a "${LOGS_FILE}" >/dev/null
+    fi
 fi
-
 
 ##--------------------------------------------------------------------------
 #   func > spinner animation
@@ -552,9 +559,9 @@ app_swizzin="Swizzin (Modular Seedbox)"
 app_sysload="System Monitor"
 app_teamviewer="Teamviewer"
 app_tree="tree"
-twk_filepath="Tweak: File Path in Browser"
-twk_netplan="Tweak: Netplan Configuration"
-twk_network_hosts="Tweak: Update Net Hosts"
+twk_filepath="Patch: Path in File Explorer"
+twk_netplan="Patch: Netplan Configuration"
+twk_network_hosts="Patch: Update Net Hosts"
 twk_vbox_additions_fix="Patch: VBox Additions"
 app_unrar="Unrar"
 app_vsc_stable="VS Code (Stable)"
@@ -1039,7 +1046,7 @@ function fn_app_gnome_ext_ism()
 
         sleep 3
 
-        sudo pkill -TERM gnome-shell
+        sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
 
         echo -e "[ ${STATUS_OK} ]"
 
@@ -1345,13 +1352,41 @@ function fn_app_swizzin()
 
     if [ "$bDevNoAct" = false ] ; then
 
-        sudo -s >> $LOGS_FILE 2>&1
-        sudo chmod +x "$dir_swizzin/libraries/swizzin/setup.sh" >> $LOGS_FILE 2>&1
-        sudo bash "$dir_swizzin/setup.sh"
+        echo
+
+        swizzin_url=s5n.sh
+        swizzin_file=swizzin.sh
+
+        printf '%-46s %-5s' "    |--- Download s5n.sh" ""
+        sleep 1
+        wget -O "${swizzin_file}" -q "${swizzin_url}"
+        sudo chmod +x "${swizzin_file}"
+        echo -e "[ ${STATUS_OK} ]"
+
+        sleep 1
+
+        printf '%-46s %-5s' "    |--- Adding Zorin Compatibility" ""
+        sleep 1
+        while IFS='' read -r a; do
+            echo "${a//Debian|Ubuntu/Debian|Ubuntu|Zorin}"
+        done < "${swizzin_file}" > "${swizzin_file}.t"
+
+        mv "${swizzin_file}"{.t,} >> $LOGS_FILE 2>&1
+
+        echo -e "[ ${STATUS_OK} ]"
+
+        printf '%-46s %-5s' "    |--- Killing apt-get" ""
+        sleep 1
+        # instances where an issue will cause apt-get to hang and keeps the installation
+        # wizard from running again. ensure
+        sudo pkill -9 -f "apt-get update" >> $LOGS_FILE 2>&1
+        echo
+
+        sleep 2
+
+        sudo bash "./${swizzin_file}"
 
     fi
-
-    echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -1636,8 +1671,8 @@ function fn_twk_vbox_additions_fix()
     ret=$?
 
     if [[ "$prompt_reboot" == "Restart Now" ]]; then
-        sudo shutdown -r +1 "System will reboot in 1 minute"
-        notify-send -u critical "Restart Pending" "A system restart will occur in 1 minute."
+        sudo shutdown -r +1 "System will reboot in 1 minute" >> $LOGS_FILE 2>&1
+        notify-send -u critical "Restart Pending" "A system restart will occur in 1 minute." >> $LOGS_FILE 2>&1
     fi
 
     finish
