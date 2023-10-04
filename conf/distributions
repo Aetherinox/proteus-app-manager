@@ -1,0 +1,8 @@
+Origin: Aetherx
+Label: ZorinOS Repo
+Suite: stable
+Codename: focal
+Architectures: amd64
+Components: main
+Description: ZorinOS x64 github repository
+SignWith: BD3DC629

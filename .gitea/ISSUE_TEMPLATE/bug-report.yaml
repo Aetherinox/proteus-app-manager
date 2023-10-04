@@ -1,0 +1,96 @@
+name: Bug Report
+description: Found something you weren't expecting? Report it here!
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        1. Please speak English.
+        2. Make sure you are using the latest version and
+           take a moment to check that your issue hasn't been reported before.
+        3. It's really important to provide pertinent details and logs,
+           incomplete details will be handled as an invalid report.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Please provide a description of your issue here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-reproduce
+    attributes:
+      label: Steps To Reproduce
+      description: |
+        Describe the steps that need taken by the developer to get the error / issue you're experiencing.
+      value: |
+        - 
+        - 
+        - 
+        - 
+    validations:
+      required: true
+
+  - type: input
+    id: ver-manager
+    attributes:
+      label: ZorinOS Manager Version
+      description: |
+        The version of the ZorinOS Manager you are currently running.
+        The version is located in the title / at the top of the program.
+      placeholder: "Ex: v1.0.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ver-os
+    attributes:
+      label: OS / Distro
+      description: The operating system you are currently running. Type `lsb_release -a` in terminal to get precise version.
+      placeholder: "Ex: ZorinOS v16.3"
+    validations:
+      required: true
+      
+  - type: input
+    id: target-app
+    attributes:
+      label: Application
+      description: Which application did you experience this bug with? If it happens to any app, type `All`.
+      placeholder: "Ex: ALL"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: Device
+      description: |
+        What type of system is your OS running on?
+        If you're renting a computer from a hosting company, select `VPS` or `Dedicated`.
+        If you're running a computer using `VMWare`, `VirtualBox`, `WSL`, `Hyper-V` or any other virtual software, select `VM`.
+      options:
+        - "Personal Computer"
+        - "Dedicated Server"
+        - "VPS (Virtual Private Server) [Rented]"
+        - "VM (Virtual Machine) [VMWare / VirtualBox]"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Paste any entries in your manager log file. Logs are located in the same folder where the `setup.sh` file exists.
+        Log files are usually labeled `/logs/zorin_DATE.log`
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: |
+        Please provide screenshots of any errors or the issue you're having. 
+        Gifs are even better.
