@@ -28,7 +28,6 @@ export TIME=$(date '+%H:%M:%S')
 export ARGS=$1
 export LOGS_DIR="$dir/logs"
 export LOGS_FILE="$LOGS_DIR/zorin_${DATE}.log"
-mkdir -p $dir
 
 ##--------------------------------------------------------------------------
 #   arguments
@@ -303,18 +302,7 @@ function Logs_Begin()
         --text="Logging disabled, running in silent mode" \
         --ok-label "I Understand"
     else
-
-        printf "%-30s %-5s\n" "${TIME}      Software  : ${gui_title}" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      Version   : v$(get_version)" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      Process   : $$" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      OS        : ${OS}" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      OS VER    : ${OS_VER}" | tee -a "${LOGS_FILE}" >/dev/null
-
-        printf "%-30s %-5s\n" "${TIME}      DATE      : ${DATE}" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      TIME      : ${TIME}" | tee -a "${LOGS_FILE}" >/dev/null
-
-        [[ -d $LOGS_DIR ]] || mkdir -p $LOGS_DIR
-        sudo chmod -R 775 $LOGS_DIR
+        mkdir -p $LOGS_DIR
         Pipe=${LOGS_FILE}.pipe
 
         # get name of display in use
@@ -324,10 +312,7 @@ function Logs_Begin()
         local user=$(who | grep '('$display')' | awk '{print $1}' | head -n 1)
 
         if ! [[ -p $Pipe ]]; then
-            mkfifo -m 700 $Pipe
-
-            sudo chown -R $user $Pipe
-
+            mkfifo -m 775 $Pipe
             printf "%-30s %-5s\n" "${TIME}      Creating new pipe ${Pipe}" | tee -a "${LOGS_FILE}" >/dev/null
         fi
 
@@ -339,6 +324,16 @@ function Logs_Begin()
         PIPE_OPENED=1
 
         printf "%-30s %-5s\n" "${TIME}      Logging to ${LOGS_OBJ}" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf "%-30s %-5s\n" "${TIME}      Software  : ${gui_title}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-30s %-5s\n" "${TIME}      Version   : v$(get_version)" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-30s %-5s\n" "${TIME}      Process   : $$" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-30s %-5s\n" "${TIME}      OS        : ${OS}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-30s %-5s\n" "${TIME}      OS VER    : ${OS_VER}" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf "%-30s %-5s\n" "${TIME}      DATE      : ${DATE}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-30s %-5s\n" "${TIME}      TIME      : ${TIME}" | tee -a "${LOGS_FILE}" >/dev/null
+
     fi
 }
 
