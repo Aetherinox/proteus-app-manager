@@ -24,6 +24,7 @@ app_ver=("1" "0" "0" "0")
 app_dir=$PWD
 app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
+apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
 app_pid_spin=0
 app_pid=$BASHPID
@@ -536,7 +537,8 @@ bInstall_app_neofetch=true
 bInstall_app_nettools=true
 bInstall_app_npm=true
 bInstall_app_ocsurl=true
-bInstall_app_pacman=true
+bInstall_app_pacman_game=true
+bInstall_app_pacman_manager=true
 bInstall_app_pihole=true
 bInstall_app_reprepro=true
 bInstall_app_rpm=true
@@ -587,7 +589,8 @@ app_neofetch="neofetch"
 app_nettools="net-tools"
 app_npm="npm"
 app_ocsurl="ocs-url"
-app_pacman="Pacman Package Management"
+app_pacman_game="Pacman (Game)"
+app_pacman_manager="Pacman (Package Management)"
 app_pihole="Pi-Hole"
 app_reprepro="reprepro (Apt on Github)"
 app_rpm="RPM Package Manager"
@@ -659,7 +662,8 @@ get_functions=(
     ["$app_nettools"]='fn_app_nettools'
     ["$app_npm"]='fn_app_npm'
     ["$app_ocsurl"]='fn_app_ocsurl'
-    ["$app_pacman"]='fn_app_pacman'
+    ["$app_pacman_game"]='fn_app_pacman_game'
+    ["$app_pacman_manager"]='fn_app_pacman_manager'
     ["$app_pihole"]='fn_app_serv_pihole'
     ["$app_reprepro"]='fn_app_reprepro'
     ["$app_rpm"]='fn_app_rpm'
@@ -1038,7 +1042,7 @@ function fn_app_gnome_ext_core()
     printf '%-46s %-5s' "    |--- Installer" ""
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        wget -O gnome-shell-extension-installer -q "https://github.com/brunelli/gnome-shell-extension-installer/raw/master/gnome-shell-extension-installer" >> $LOGS_FILE 2>&1
+        sudo wget -O gnome-shell-extension-installer -q "https://github.com/brunelli/gnome-shell-extension-installer/raw/master/gnome-shell-extension-installer" >> $LOGS_FILE 2>&1
         sudo chmod +x gnome-shell-extension-installer
         sudo mv gnome-shell-extension-installer /usr/bin/
     fi
@@ -1262,11 +1266,38 @@ function fn_app_ocsurl()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo wget -P /var/cache/apt/archives/ https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/packages/dists/focal/main/ocs-url_3.1.0-0ubuntu1_amd64.deb >> $LOGS_FILE 2>&1
+        sudo wget -P "${apt_dir_deb}" https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/packages/dists/focal/main/ocs-url_3.1.0-0ubuntu1_amd64.deb >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install libqt5svg5 qml-module-qtquick-controls -y -qq >> $LOGS_FILE 2>&1
-        sudo apt-get install /var/cache/apt/archives/ocs-url*.deb >> $LOGS_FILE 2>&1
-        # sudo dpkg --force-depends --install /var/cache/apt/archives/ocs-url*.deb >> $LOGS_FILE 2>&1
+        sudo apt-get install ${apt_dir_deb}/ocs-url*.deb -f -y -qq >> $LOGS_FILE 2>&1
+
+        # sudo dpkg --force-depends --install "${apt_dir_deb}/ocs-url*.deb" >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 0.5
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Pacman (Game)
+#
+#   You are Pacman, and you are supposed to eat all the small dots to get to
+#   the next level. You are also supposed to keep away from the ghosts,
+#   if they take you, you lose one life, unless you have eaten a large dot,
+#   then you can, for a limited amount of time, chase and eat the ghosts.
+#   There is also bonus available, for a limited amount of time.
+#   An X gives just points, but a little pacman gives an extra life.
+##--------------------------------------------------------------------------
+
+function fn_app_pacman_game()
+{
+    begin "${1}"
+
+    if [ "$app_cfg_bDev_NullRun" = false ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install pacman -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -1279,13 +1310,17 @@ function fn_app_ocsurl()
 #   Pacman Package Manager
 ##--------------------------------------------------------------------------
 
-function fn_app_pacman()
+function fn_app_pacman_manager()
 {
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install pacman -y -qq >> $LOGS_FILE 2>&1
+        sudo wget -P "${apt_dir_deb}" "https://gitlab.com/trivoxel-utils/deb-pacman/uploads/460d83f8711c1ab5e16065e57e7eeabc/deb-pacman-2.0-0.deb" >> $LOGS_FILE 2>&1
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install ${apt_dir_deb}/deb-pacman*.deb -f -y -qq >> $LOGS_FILE 2>&1
+
+        # sudo rm "${apt_dir_deb}/deb-pacman*.deb" >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -1403,7 +1438,7 @@ function fn_app_surfshark()
         surfshark_url=https://downloads.surfshark.com/linux/debian-install.sh
         surfshark_file=surfshark-install
 
-        wget -O "${surfshark_file}" -q "${surfshark_url}"
+        sudo wget -O "${surfshark_file}" -q "${surfshark_url}"
         sudo chmod +x "${surfshark_file}" >> $LOGS_FILE 2>&1
 
         sudo bash "./${surfshark_file}" >> $LOGS_FILE 2>&1
@@ -1432,7 +1467,7 @@ function fn_app_swizzin()
     printf '%-46s %-5s' "    |--- Download ${swizzin_url}" ""
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        wget -O "${swizzin_file}" -q "${swizzin_url}"
+        sudo wget -O "${swizzin_file}" -q "${swizzin_url}"
         sudo chmod +x "${swizzin_file}"
     fi
 
@@ -1501,11 +1536,12 @@ function fn_app_teamviewer()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install -y libminizip1 -qq >> $LOGS_FILE 2>&1
 
-        wget -q "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb" >> $LOGS_FILE 2>&1
-        sudo dpkg -i teamviewer_*.deb >> $LOGS_FILE 2>&1
-        sudo apt-get -y -f install -qq >> $LOGS_FILE 2>&1
+        sudo wget -P "${apt_dir_deb}" "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb" >> $LOGS_FILE 2>&1
 
-        sudo rm teamviewer_*.deb >> $LOGS_FILE 2>&1
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install ${apt_dir_deb}/teamviewer_*.deb -f -y -qq >> $LOGS_FILE 2>&1
+
+        #sudo rm teamviewer_*.deb >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -2168,8 +2204,13 @@ if [ "$bInstall_app_ocsurl" = true ]; then
     let app_i=app_i+1
 fi
 
-if [ "$bInstall_app_pacman" = true ]; then
-    apps+=("${app_pacman}")
+if [ "$bInstall_app_pacman_game" = true ]; then
+    apps+=("${app_pacman_game}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_pacman_manager" = true ]; then
+    apps+=("${app_pacman_manager}")
     let app_i=app_i+1
 fi
 
