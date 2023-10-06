@@ -521,7 +521,8 @@ bInstall_app_cdialog=true
 bInstall_app_blender_flatpak=true
 bInstall_app_blender_snapd=true
 bInstall_app_colorpicker_snapd=true
-bInstall_app_conky=true
+bInstall_app_conky1=true
+bInstall_app_conky2=true
 bInstall_app_curl=true
 bInstall_app_flatpak=true
 bInstall_app_gdebi=true
@@ -573,7 +574,8 @@ app_blender_flatpak="Blender (using Flatpak)"
 app_blender_snapd="Blender (using Snapd)"
 app_cdialog="cdialog (ComeOn Dialog)"
 app_colorpicker_snapd="Color Picker (using Snapd)"
-app_conky="Conky Manager"
+app_conky1="Conky Manager v1"
+app_conky2="Conky Manager v2"
 app_curl="curl"
 app_flatpak="Flatpak"
 app_gdebi="GDebi"
@@ -646,7 +648,8 @@ get_functions=(
     ["$app_blender_snapd"]='fn_app_blender_snapd'
     ["$app_colorpicker_snapd"]='fn_app_colorpicker_snapd'
     ["$app_cdialog"]='fn_app_cdialog'
-    ["$app_conky"]='fn_app_conky'
+    ["$app_conky1"]='fn_app_conky1'
+    ["$app_conky2"]='fn_app_conky2'
     ["$app_curl"]='fn_app_curl'
     ["$app_flatpak"]='fn_app_flatpak'
     ["$app_gdebi"]='fn_app_gdebi'
@@ -845,10 +848,10 @@ function fn_app_cdialog()
 }
 
 ##--------------------------------------------------------------------------
-#   Conky Manager
+#   Conky Manager 1
 ##--------------------------------------------------------------------------
 
-function fn_app_conky()
+function fn_app_conky1()
 {
     begin "${1}"
 
@@ -856,9 +859,7 @@ function fn_app_conky()
 
         sudo add-apt-repository --yes ppa:teejee2008/foss >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-
         sudo apt-get install conky-all -y -qq >> $LOGS_FILE 2>&1
-        sudo apt-get install conky-manager2 -y -qq >> $LOGS_FILE 2>&1
 
         echo -e "[ ${STATUS_OK} ]"
         printf '%-46s %-5s' "    |--- Creating .desktop" ""
@@ -894,6 +895,30 @@ EOF
         sudo chgrp ${USER} ${path_autostart}/${path_desktop} >> $LOGS_FILE 2>&1
         sudo chown ${USER} ${path_autostart}/${path_desktop} >> $LOGS_FILE 2>&1
         chmod u+x ${path_autostart}/${path_desktop} >> $LOGS_FILE 2>&1
+
+        sleep 0.5
+
+    fi
+
+    sleep 0.5
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Conky Manager 2
+##--------------------------------------------------------------------------
+
+function fn_app_conky2()
+{
+    begin "${1}"
+
+    if [ "$app_cfg_bDev_NullRun" = false ]; then
+
+        sudo add-apt-repository --yes ppa:teejee2008/foss >> $LOGS_FILE 2>&1
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install conky-manager2 -y -qq >> $LOGS_FILE 2>&1
 
         sleep 0.5
 
@@ -2161,8 +2186,13 @@ if [ "$bInstall_app_cdialog" = true ]; then
     let app_i=app_i+1
 fi
 
-if [ "$bInstall_app_conky" = true ]; then
-    apps+=("${app_conky}")
+if [ "$bInstall_app_conky1" = true ]; then
+    apps+=("${app_conky1}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_conky2" = true ]; then
+    apps+=("${app_conky2}")
     let app_i=app_i+1
 fi
 
