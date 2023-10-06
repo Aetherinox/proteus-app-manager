@@ -90,7 +90,7 @@ This is a simple application manager which allows you to install a number of pro
 <br />
 
 ## Usage
-Information related to using this ation wizard.
+Information related to using this wizard.
 
 <br />
 
@@ -101,8 +101,16 @@ This script contains many features that may have settings that you might not wan
 
 ### Install
 To use this script, do the following:
+
+<br />
+
+> [!WARNING]
+> Do not run `sudo` when executing this script. The script will automatically ask you for sudo permission. It needs to be ran as the user you are currently logged in as.
+
+<br />
+
 ```shell
-wget "https://github.com/Aetherinox/zorinos-app-manager/main/setup.sh"
+wget "https://raw.githubusercontent.com/Aetherinox/zorin-app-manager/main/setup.sh"
 ```
 
 Once you download the script to a location on your machine, set its permissions to be `executable`
@@ -114,8 +122,6 @@ Finally, run the script
 ```shell
 ./setup.sh
 ```
-
-Because certain features require `sudo`, you will be asked to enter your sudo password to give the proper permissions.
 
 <br />
 <br />
