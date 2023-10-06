@@ -1,11 +1,17 @@
 <p align="center"><img src="docs/images/readme/banner.jpg" width="860"></p>
-<h1 align="center"><b>ZorinOS App Manager</b></h1>
+<h1 align="center"><b>ZorinOS App Manager (yad)</b></h1>
 
 <br />
 <br />
 
 > [!WARNING]
 > This script has been specifically developed for ZorinOS v16.x [based on 20.04.6 LTS (Focal Fossa)]. There is absolutely no guarantee that this will work on other distros. There's a good likelihood that most features will work, but use at your own risk.
+
+<br />
+<br />
+
+## Yad
+This is an unreleased future version of Zorin App Manager which utilizes `yad` for its dialog library instead of zenity due to the limitations that zenity has.
 
 <br />
 <br />
@@ -42,6 +48,7 @@ This is a simple application manager which allows you to install a number of pro
 - mlocate
 - neofetch
 - net-tools
+- NPM
 - ocs-url
 - Pacman Package Management
 - Pihole [^3]
@@ -49,6 +56,7 @@ This is a simple application manager which allows you to install a number of pro
 - RPM Package Manager
 - Seahorse + seahorse-nautilus
 - Snapd
+- Surfshark
 - Swizzin
 - System Monitor
 - Teamviewer
@@ -58,6 +66,8 @@ This is a simple application manager which allows you to install a number of pro
 - Visual Studio Code (Insiders)
 - wxHexEditor
 - YAD (Yet Another Dialog)
+- Yarn
+- Zenity Dialogs
 - Ziet Cron Manager
 - ZorinOS Pro: Layouts
 
@@ -70,6 +80,7 @@ This is a simple application manager which allows you to install a number of pro
   - Automatically assigns static ip address
   - Configures network adapter to use Quad9 DNS servers
 - Update Network /etc/hosts file
+- VBox Additions package disrepency issue with non-Pro releases.
 - ZorinOS Pro Layouts
 
 <br />
@@ -128,7 +139,9 @@ When this installer is launched, a `/logs/zorin_[DATE].log` file will be generat
 <br />
 
 ## ZorinOS Pro Features
-
+Even though this release includes ZorinOS Pro layouts, there are still reasons to purchase ZorinOS Pro which include:
+- Zorin Installation Support
+- Support developers of ZorinOS
 
 <br />
 
@@ -142,12 +155,6 @@ Some of the packages in this wizard include what ZorinOS Pro comes with. If you 
 - [Conky Manager](#conky-manager)
 - [Internet Speed Monitor](#internet-speed-monitor)
 - [System Load Indicator (Multiload)](#system-load-indicator-multiload)
-
-<br />
-
-Even though this release includes ZorinOS Pro layouts, there are still reasons to purchase ZorinOS Pro which include:
-- Zorin Installation Support
-- Support developers of ZorinOS
 
 <br />
 
@@ -244,7 +251,7 @@ You can then modify the preferences to fit your needs.
 <br />
 
 ## Swizzin
-The Swizzin repo where the original `setup.sh` is downloaded does not allow for ZorinOS to be installed. A modified setup installation script has been provided on this repo and supports ZorinOS.
+The official Swizzin repo does not support ZorinOS. Attempting to install the stock Swizzin program will result in an **unsupported OSA** error. This app manager includes a modified setup installation script which allows for ZorinOS to be installed without issues.
 
 <br />
 
@@ -262,8 +269,8 @@ This program has numerous variables that the general public shouldn't modify. Th
 
 | Var | Default | Desc |
 | --- | --- | --- |
-| `bDev` | false | <br /> `True`: Specialized list of apps will appear instead of the installable list.<br />Also displays debugging prints. <br /> <br /> |
-| `bDevNoAct` | false | <br /> `True`: Any of the installable applications selected will do a "fake" install. No actual install will take place. <br /> <br /> Requires `bDev = false` <br /> <br />  |
+| `app_cfg_bDev` | false | <br /> `True`: Specialized list of apps will appear instead of the installable list.<br />Also displays debugging prints. <br /> <br /> |
+| `app_cfg_bDev_NullRun` | false | <br /> `True`: Any of the installable applications selected will do a "fake" install. No actual install will take place. <br /> <br /> Requires `app_cfg_bDev = false` <br /> <br />  |
 
 <br />
 
