@@ -17,9 +17,9 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin"
 
 app_repo_dev="Aetherinox"
 app_repo="zorin-app-manager"
+app_repo_apt="zorin-apt-repo"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
 app_title="ZorinOS App Manager (${app_repo_dev})"
-app_desc="Select the app / package you wish to install. Most apps will run as silent installs.\n\nIf you encounter issues, review the logfile located at:\n      <span color='#3477eb'><b>${LOGS_FILE}</b></span>\n\nStart typing or press <span color='#3477eb'><b>CTRL+F</b></span> to search for an app\n\n"
 app_ver=("1" "0" "0" "0")
 app_dir=$PWD
 app_dir_hosts="/etc/hosts"
@@ -175,9 +175,10 @@ netplan_macaddr=$(cat /sys/class/net/$netplan_adapt_old/address 2> /dev/null )
 #   vars > general
 ##--------------------------------------------------------------------------
 
-gui_width=500
-gui_height=425
+gui_width=540
+gui_height=525
 gui_column="Available Packages"
+gui_desc="Select the app / package you wish to install. Most apps will run as silent installs.\n\nIf you encounter issues, review the logfile located at:\n      <span color='#3477eb'><b>${LOGS_FILE}</b></span>\n\nStart typing or press <span color='#3477eb'><b>CTRL+F</b></span> to search for an app\n\n"
 
 ##--------------------------------------------------------------------------
 #   vars > colors
@@ -225,16 +226,6 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 
 apps=()
 devs=()
-
-##--------------------------------------------------------------------------
-#   func > require yad
-##--------------------------------------------------------------------------
-
-if ! [ -x "$(command -v yad)" ]; then
-    sudo apt-get update -y -q >> /dev/null 2>&1
-    sudo apt-get install yad -y -qq >> /dev/null 2>&1
-    sleep 0.5
-fi
 
 ##--------------------------------------------------------------------------
 #   distro
@@ -325,12 +316,7 @@ function notify-send()
 function Logs_Begin()
 {
     if [ $NO_JOB_LOGGING ] ; then
-        yad --info \
-        --width="250" \
-        --height="100" \
-        --title="Silent Mode" \
-        --text="Logging disabled, running in silent mode" \
-        --ok-label "I Understand"
+        notify-send -u critical "Logging Disabled" "Logging for this manager has been disabled." >> $LOGS_FILE 2>&1
     else
         mkdir -p $LOGS_DIR
         Pipe=${LOGS_FILE}.pipe
@@ -418,6 +404,50 @@ else
         printf "\n%-30s %-5s\n\n" "${TIME}      SUDO [EXISTING]: $USER" | tee -a "${LOGS_FILE}" >/dev/null
     fi
 fi
+
+##--------------------------------------------------------------------------
+#   func > require yad
+##--------------------------------------------------------------------------
+
+if ! [ -x "$(command -v yad)" ]; then
+    printf "%-30s %-5s\n" "${TIME}      Commencing first time setup" | tee -a "${LOGS_FILE}" >/dev/null
+
+    echo
+    echo -e "  ${BOLD}${FUCHSIA} Please wait - initializing first time setup ...${NORMAL}" >&2
+    echo
+
+    sudo apt-get update -y -q >> /dev/null 2>&1
+    sudo apt-get install yad -y -qq >> /dev/null 2>&1
+    sleep 0.5
+fi
+
+##--------------------------------------------------------------------------
+#   func > check zorin repo registery
+#
+#   NOTE:   can be removed via
+#           sudo add-apt-repository -r "deb [arch=amd64] https://raw.githubusercontent.com/Aetherinox/zorin-aabd-repo/master focal main"
+#
+#   ${1}    bSilence
+##--------------------------------------------------------------------------
+
+function app_add_repo
+{
+    bSilence=${1}
+    app_repo_ppa="${app_repo_dev}/${app_repo_apt}"
+
+    if ! grep -q "^deb .*$app_repo_ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+        if ! [ "$bSilence" = true ]; then
+            printf "%-30s %-5s\n" "${TIME}      Adding Zorin apt repository" | tee -a "${LOGS_FILE}" >/dev/null
+
+            echo
+            echo -e "  ${BOLD}${FUCHSIA} Registering ZorinOS apt repository ...${NORMAL}" >&2
+            echo
+        fi
+
+        sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
+    fi
+}
+app_add_repo
 
 ##--------------------------------------------------------------------------
 #   func > spinner animation
@@ -527,6 +557,7 @@ bInstall_app_curl=true
 bInstall_app_flatpak=true
 bInstall_app_gdebi=true
 bInstall_app_git=true
+bInstall_app_github_desktop=true
 bInstall_app_gnome_ext_arcmenu=true
 bInstall_app_gnome_ext_core=true
 bInstall_app_gnome_ext_ism=true
@@ -580,6 +611,7 @@ app_curl="curl"
 app_flatpak="Flatpak"
 app_gdebi="GDebi"
 app_git="Git"
+app_github_desktop="Github Desktop"
 app_gnome_ext_arcmenu="Gnome Ext (ArcMenu)"
 app_gnome_ext_core="Gnome Manager (Core)"
 app_gnome_ext_ism="Gnome Ext (Speed Monitor)"
@@ -654,6 +686,7 @@ get_functions=(
     ["$app_flatpak"]='fn_app_flatpak'
     ["$app_gdebi"]='fn_app_gdebi'
     ["$app_git"]='fn_app_git'
+    ["$app_github_desktop"]='fn_app_github_desktop'
     ["$app_gnome_ext_arcmenu"]='fn_app_gnome_ext_arcmenu'
     ["$app_gnome_ext_core"]='fn_app_gnome_ext_core'
     ["$app_gnome_ext_ism"]='fn_app_gnome_ext_ism'
@@ -859,45 +892,61 @@ function fn_app_conky1()
 
         sudo add-apt-repository --yes ppa:teejee2008/foss >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install lm-sensors hddtemp -y -qq >> $LOGS_FILE 2>&1
+        sleep 1
+        yes | sudo sensors-detect >> $LOGS_FILE 2>&1
+        sleep 1
         sudo apt-get install conky-all -y -qq >> $LOGS_FILE 2>&1
 
+        # detect CPUs
+        get_cpus=$(nproc --all)
+
         echo -e "[ ${STATUS_OK} ]"
-        printf '%-46s %-5s' "    |--- Creating .desktop" ""
+        printf '%-46s %-5s' "    |--- Creating config.conf" ""
         sleep 0.5
 
+        path_conky="/home/${USER}/.config/conky"
         path_autostart="/home/${USER}/.config/autostart"
-        path_desktop=conky.desktop
+        file_config="conky.conf"
+        file_autostart="conky.desktop"
 
-        if [ ! -d "${path_autostart}" ]; then
-            mkdir -p "${path_autostart}"
+        if [ ! -d "${path_conky}" ]; then
+            mkdir -p "${path_conky}" >> $LOGS_FILE 2>&1
         fi
 
-sudo tee "${path_autostart}/${path_desktop}" >/dev/null <<EOF
-# This file is auto-generated by ZorinOS App Manager
-# ${app_repo_url}
-[Desktop Entry]
-Type=Application
-Exec=conky --daemonize --pause=5
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name[en_IN]=Conky
-Name=Conky
-Comment[en_IN]=
-Comment=Startup script for Conky
-EOF
+        cp "${app_dir}/libraries/conky/v1/${file_config}" "${path_conky}/${file_config}"
+
+        # sloppy way, but it works for now
+        if [ "$app_cfg_bDev_NullRun" = false ]; then
+            while IFS='' read -r a; do
+                echo "${a//VAL_CPU/${get_cpus}}"
+            done < "${path_conky}/${file_config}" > "${path_conky}/${file_config}.t"
+
+            mv "${path_conky}/${file_config}"{.t,} >> $LOGS_FILE 2>&1
+
+            sleep 3
+
+            while IFS='' read -r a; do
+                echo "${a//VAL_GENERATED/${DATE}}"
+            done < "${path_conky}/${file_config}" > "${path_conky}/${file_config}.t"
+
+            mv "${path_conky}/${file_config}"{.t,} >> $LOGS_FILE 2>&1
+        fi
 
         echo -e "[ ${STATUS_OK} ]"
         printf '%-46s %-5s' "    |--- Setting perms" ""
         sleep 0.5
 
-        sudo touch ${path_autostart}/${path_desktop} >> $LOGS_FILE 2>&1
-        sudo chgrp ${USER} ${path_autostart}/${path_desktop} >> $LOGS_FILE 2>&1
-        sudo chown ${USER} ${path_autostart}/${path_desktop} >> $LOGS_FILE 2>&1
-        chmod u+x ${path_autostart}/${path_desktop} >> $LOGS_FILE 2>&1
+        sudo touch ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
+        sudo chgrp ${USER} ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
+        sudo chown ${USER} ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
+        chmod u+x ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
 
-        sleep 0.5
+        echo -e "[ ${STATUS_OK} ]"
+        printf '%-46s %-5s' "    |--- Starting conky" ""
+        sleep 4
 
+        conky -q -d -c ~/.config/conky/conky.conf >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -915,13 +964,9 @@ function fn_app_conky2()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-
         sudo add-apt-repository --yes ppa:teejee2008/foss >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install conky-manager2 -y -qq >> $LOGS_FILE 2>&1
-
-        sleep 0.5
-
     fi
 
     sleep 0.5
@@ -939,10 +984,8 @@ function fn_app_curl()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install curl -y -qq >> $LOGS_FILE 2>&1
-
     fi
 
     sleep 0.5
@@ -960,10 +1003,8 @@ function fn_app_flatpak()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install flatpak -y -qq >> $LOGS_FILE 2>&1
-
     fi
 
     sleep 0.5
@@ -1011,6 +1052,27 @@ function fn_app_git()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install git -y -qq >> $LOGS_FILE 2>&1
 
+    fi
+
+    sleep 0.5
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Github Desktop
+##--------------------------------------------------------------------------
+
+function fn_app_github_desktop()
+{
+    begin "${1}"
+
+    if [ "$app_cfg_bDev_NullRun" = false ]; then
+        app_add_repo true
+
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install github-desktop -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -1328,12 +1390,12 @@ function fn_app_ocsurl()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo wget -P "${apt_dir_deb}" https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/packages/dists/focal/main/ocs-url_3.1.0-0ubuntu1_amd64.deb >> $LOGS_FILE 2>&1
+        app_add_repo true
+
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install libqt5svg5 qml-module-qtquick-controls -y -qq >> $LOGS_FILE 2>&1
-        sudo apt-get install ${apt_dir_deb}/ocs-url*.deb -f -y -qq >> $LOGS_FILE 2>&1
-
-        # sudo dpkg --force-depends --install "${apt_dir_deb}/ocs-url*.deb" >> $LOGS_FILE 2>&1
+        sleep 1
+        sudo apt-get install ocs-url -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -1370,6 +1432,19 @@ function fn_app_pacman_game()
 
 ##--------------------------------------------------------------------------
 #   Pacman Package Manager
+#   
+#   Emulates the Archlinux Pacman package manager feel for Debian/Ubuntu 
+#   and OpenSUSE users who may prefer the style of Pacman over Apt. 
+#
+#   This program does not require any additional dependencies!
+#   Don't expect all features to be added because Apt simply 
+#   doesn't support all Pacman features and some Pacman features 
+#   would be too tedious to replicate anyways. 
+#
+#   Casual users should find no trouble with the lack of features 
+#   as all the most common Pacman functionality is present.
+#
+#   NOTE:       https://gitlab.com/trivoxel/utilities/deb-pacman
 ##--------------------------------------------------------------------------
 
 function fn_app_pacman_manager()
@@ -1377,12 +1452,10 @@ function fn_app_pacman_manager()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo wget -P "${apt_dir_deb}" "https://gitlab.com/trivoxel-utils/deb-pacman/uploads/460d83f8711c1ab5e16065e57e7eeabc/deb-pacman-2.0-0.deb" >> $LOGS_FILE 2>&1
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install ${apt_dir_deb}/deb-pacman*.deb -f -y -qq >> $LOGS_FILE 2>&1
+        app_add_repo true
 
-        # sudo rm "${apt_dir_deb}/deb-pacman*.deb" >> $LOGS_FILE 2>&1
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install deb-pacman -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -2216,6 +2289,11 @@ if [ "$bInstall_app_git" = true ]; then
     let app_i=app_i+1
 fi
 
+if [ "$bInstall_app_github_desktop" = true ]; then
+    apps+=("${app_github_desktop}")
+    let app_i=app_i+1
+fi
+
 if [ "$bInstall_app_gnome_ext_arcmenu" = true ]; then
     apps+=("${app_gnome_ext_arcmenu}")
     let app_i=app_i+1
@@ -2610,7 +2688,7 @@ function show_menu()
         --search-column=1 \
         --tooltip-column=1 \
         --title="${app_title} - v$(get_version)" \
-        --text="${app_desc}" \
+        --text="${gui_desc}" \
         --buttons-layout=end \
         --button="Install:0" \
         --button="Github:3" \
