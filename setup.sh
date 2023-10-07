@@ -1234,10 +1234,8 @@ function fn_app_gpick()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install gpick -y -qq >> $LOGS_FILE 2>&1
-
     fi
 
     sleep 0.5
@@ -1282,6 +1280,27 @@ function fn_app_kooha()
 
     sleep 0.5
 	echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Lintian
+#
+#   required for creating debian packages
+##--------------------------------------------------------------------------
+
+function fn_app_lint
+{
+    begin "${1}"
+
+    if [ "$app_cfg_bDev_NullRun" = false ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install lintian -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 0.5
+    echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -2136,6 +2155,30 @@ function fn_app_zorinospro_lo()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
+        app_add_repo true
+
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install zorin-pro-layouts -y -qq >> $LOGS_FILE 2>&1
+        sleep 1
+        sudo dpkg -i --force-overwrite "/var/cache/apt/archives/zorin-pro-layouts_*_all.deb" >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 0.5
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   ZorinOS Pro Layouts (Old)
+##--------------------------------------------------------------------------
+
+<<comment
+function fn_app_zorinospro_lo()
+{
+    begin "${1}"
+
+    if [ "$app_cfg_bDev_NullRun" = false ]; then
 
         echo
 
@@ -2220,6 +2263,7 @@ function fn_app_zorinospro_lo()
 
     finish
 }
+comment
 
 ##--------------------------------------------------------------------------
 #   register apps to show in list
