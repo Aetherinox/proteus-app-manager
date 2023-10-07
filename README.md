@@ -47,7 +47,7 @@ This is a simple application manager which allows you to install a number of pro
 ## Packages Included
 | App                                                                                         | Descript |
 | ------------------------------------------------------------------------------------------- | -------- |
-| [Alien Package Converter](http://joeyh.name/code/alien/)                              | converts between the rpm, dpkg, stampede slp, and slackware tgz file formats |
+| [Alien Package Converter](http://joeyh.name/code/alien/)                              | Converts between the rpm, dpkg, stampede slp, and slackware tgz file formats |
 | [AppImage Launcher](https://github.com/TheAssassin/AppImageLauncher)                  | Manage `.appimage` files in one place         |
 | [Blender (Flatpak)](https://flathub.org/apps/org.blender.Blender)                     | Free / Open-source 3D creation suite          |
 | [Blender (Snap)](https://snapcraft.io/blender)                                        | Free / Open-source 3D creation suite          |
@@ -60,9 +60,9 @@ This is a simple application manager which allows you to install a number of pro
 | [GDebi .deb Package Manager](https://pkgs.org/download/gdebi)                         | Program for installing debian executable files |
 | [Git](https://git-scm.com/download/linux)                                             | Version control system (Command-line)         |
 | [Github Desktop](https://github.com/Aetherinox/zorin-apt-repo/tree/master/incoming)   | Github Desktop for linux.                     |
-| [Gnome Extension Manager (Core)](https://flathub.org/apps/com.mattjakeman.ExtensionManager) | Utility for browsing / installing GNOME Shell Extensions.         |
-| [Gnome Extension: ArcMenu](https://extensions.gnome.org/extension/3628/arcmenu/)      | Replacement shell for Linux. Includes MacOS / Windows themes.  |
-| [Gnome Extension: Internet Speed Monitor](https://launchpad.net/indicator-multiload)  | Monitor network traffic as widget |
+| [Gnome Extension Manager (Core)](https://flathub.org/apps/com.mattjakeman.ExtensionManager) [^2] | Utility for browsing / installing GNOME Shell Extensions.         |
+| [Gnome Extension: ArcMenu](https://extensions.gnome.org/extension/3628/arcmenu/) [^1]      | Replacement shell for Linux. Includes MacOS / Windows themes.  |
+| [Gnome Extension: Internet Speed Monitor](https://launchpad.net/indicator-multiload) [^1]  | Monitor network traffic as widget |
 | [gPick (Color Picker)](https://github.com/thezbyg/gpick)                              | Color picker |
 | [Kooha](https://github.com/SeaDve/Kooha)                                              | Screen recorder |
 | [members](https://packages.ubuntu.com/search?keywords=members)                        | Tool for displaying the users of a group |
@@ -83,8 +83,8 @@ This is a simple application manager which allows you to install a number of pro
 | [Teamviewer](https://www.teamviewer.com/en-us/download/linux/)                        | Remote desktop application |
 | [Tree](https://packages.ubuntu.com/search?keywords=tree)                              | View files in tree-like ASCII structure  |
 | [Unrar](https://packages.ubuntu.com/search?keywords=unrar)                            | Manage rar files / extraction |
-| [Visual Studio Code (Stable))](https://code.visualstudio.com/)                        | IDE for developers / source-code editor (Stable) |
-| [Visual Studio Code (Insiders))](https://code.visualstudio.com/insiders/)             | IDE for developers / source-code editor (Testing) |
+| [Visual Studio Code (Stable)](https://code.visualstudio.com/)                        | IDE for developers / source-code editor (Stable) |
+| [Visual Studio Code (Insiders)](https://code.visualstudio.com/insiders/)             | IDE for developers / source-code editor (Testing) |
 | [wxHexEditor)](https://github.com/EUA/wxHexEditor)                                    | Hex editor |
 | [YAD (Yet Another Dialog)](https://github.com/v1cont/yad)                             | Create bash shell dialogs. Based on Zenity. |
 | [Yarn](https://github.com/yarnpkg/berry)                                              | Modern package manager |
