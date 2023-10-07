@@ -8,6 +8,29 @@
 > This script has been specifically developed for ZorinOS v16.x [based on 20.04.6 LTS (Focal Fossa)]. There is absolutely no guarantee that this will work on other distros. There's a good likelihood that most features will work, but use at your own risk.
 
 <br />
+
+---
+
+<br />
+
+- [About](#about)
+- [Packages Included](#packages-included)
+- [Tweaks / Changes](#tweaks--changes)
+- [Usage](#usage)
+  - [Configuration](#configuration)
+  - [Install](#install)
+  - [Prerequisites](#prerequisites)
+  - [Logs](#logs)
+- [ZorinOS Pro Features](#zorinos-pro-features)
+- [Wiki](#wiki)
+- [Notes](#notes)
+  - [Developer Vars](#developer-vars)
+- [Footnotes](#footnotes)
+
+<br />
+
+---
+
 <br />
 
 ## About
@@ -153,123 +176,8 @@ Even though this release includes ZorinOS Pro layouts, there are still reasons t
 
 <br />
 
-## Packages
-Some of the packages in this wizard include what ZorinOS Pro comes with. If you are a ZorinOS Lite or Core user, some of the packages here will give you the features that a ZorinOS Pro user would have including:
-- [About](#about)
-- [Packages Included](#packages-included)
-- [Tweaks / Changes](#tweaks--changes)
-- [Usage](#usage)
-  - [Configuration](#configuration)
-  - [Install](#install)
-  - [Prerequisites](#prerequisites)
-  - [Logs](#logs)
-- [ZorinOS Pro Features](#zorinos-pro-features)
-- [Packages](#packages)
-  - [ArcMenu](#arcmenu)
-  - [Conky Manager](#conky-manager)
-  - [Internet Speed Monitor](#internet-speed-monitor)
-  - [System Load Indicator (Multiload)](#system-load-indicator-multiload)
-- [Swizzin](#swizzin)
-- [Notes](#notes)
-  - [Developer Vars](#developer-vars)
-- [Footnotes](#footnotes)
-
-<br />
-
-### ArcMenu
-ZorinOS Pro includes numerous shell themes which will simulate Windows 10 / 11 & MacOS. While ZorinOS Pro has a specialized extension, this is where another extension comes into play.
-`ArcMenu` is an extension which provides interface changes featured in ZorinOS Pro and includes skins such as Windows 10 & 11, MacOS, and a multitude of others. The ArcMenu extension actually includes more skins and features than what ZorinOS Pro includes.
-
-<p align="center"><img style="width: 75%;text-align: center;" src="docs/images/readme/271899251.png"></p>
-
-You may use the `setup.sh` script in this repo to install ArcMenu. However, if you've like to manually install it; it requires a few steps.
-
-<br />
-
-### Conky Manager
-`Conky Manager` is what displays a widget on your desktop which shows various statistics about your machine. This package comes with ZorinOS Pro, however, non-Pro users can also install it.
-
-<p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/271900503.gif"></p>
-
-<p align="center"><img style="width: 65%;text-align: center;" src="docs/images/readme/2c624f4da.gif"></p>
-
-
-The package can be manually installed with
-```shell
-sudo add-apt-repository --yes ppa:teejee2008/foss
-sudo apt-get update
-    
-sudo apt-get install conky-all
-sudo apt-get install conky-manager2
-```
-
-After installing Conky, click the ZorinOS start button and find `Startup Applications`. Select `Add` and enter the following:
-
-<p align="center"><img style="width: 45%;text-align: center;" src="docs/images/readme/271899510.png"></p>
-
-Once you've done the above steps, `reboot` the system. You should sign back into ZorinOS with a widget on your desktop.
-
-If you want to move where the widget displays on your desktop, open `Terminal` and execute
-```shell
-sudo nano /etc/conky/conky.conf
-```
-
-In the config file, change `conky.config.alignment`
-
-```bash
-conky.config = {
-    alignment = 'top_right',
-...
-```
-
-You can edit the other properties in the config, for mine, I've decreased the font size as well
-```bash
-font = 'DejaVu Sans Mono:size=9
-```
-
-<br />
-
-### Internet Speed Monitor
-`Internet Speed Monitor` is a Gnome extension to show internet upload speed, download speed and daily data usage in a minimal fashion. 
-
-After running the setup scripts in this repo, you can access this extension by clicking the `start menu` and searching for `Extension Manager`. 
-
-<p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/271907326.gif"></p>
-
-The extension will rest within your ZorinOS taskbar.
-
-<p align="center"><img style="width: 75%;text-align: center;" src="docs/images/readme/271906959.gif"></p>
-
-Overall, the extension is very basic and includes minimal settings.
-
-<p align="center"><img style="width: 75%;text-align: center;" src="docs/images/readme/271907511.png"></p>
-
-<br />
-
-### System Load Indicator (Multiload)
-`System Load Indicator` is a system load monitor capable of displaying graphs for CPU, ram, harddisk, and swap space use, plus network traffic. The widget will sit within your ZorinOS taskbar, and also includes many customization options.
-
-<p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/271901792.gif"></p>
-
-To access the customizations, right click on the graph in the taskbar and select `Preferences`
-
-<p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/271902501.gif"></p>
-
-You can then modify the preferences to fit your needs.
-
-<p align="center"><img style="width: 55%;text-align: center;" src="docs/images/readme/271902528.png"></p>
-
-> [!WARNING]
-> Ensure you don't set the `System Monitor Update Interval` too low, otherwise your system may experience performance issues. Under normal conditions, I set this to `3000 - 5000` which means the stats will update every 3-5 seconds.
-
-<br />
-
----
-
-<br />
-
-## Swizzin
-The official Swizzin repo does not support ZorinOS. Attempting to install the stock Swizzin program will result in an **unsupported OSA** error. This app manager includes a modified setup installation script which allows for ZorinOS to be installed without issues.
+## Wiki
+For detailed documentation, please visit this repo's [Wiki](wiki)
 
 <br />
 
