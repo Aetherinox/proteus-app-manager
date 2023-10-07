@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/images/readme/banner.jpg" width="860"></p>
-<h1 align="center"><b>ZorinOS App Manager (yad)</b></h1>
+<h1 align="center"><b>ZorinOS App Manager</b></h1>
 
 <br />
 <br />
@@ -58,7 +58,7 @@ This is a simple application manager which allows you to install a number of pro
 | [Swizzin](https://github.com/swizzin/swizzin)                                         | Modular seedbox solution (torrents) 15+ apps bundled  |
 | [System Monitor / Multiload Indicator](https://launchpad.net/indicator-multiload)     | Monitor CPU, Memory, Network stats in widget  |
 | [Teamviewer](https://www.teamviewer.com/en-us/download/linux/)                        | Remote desktop application |
-| [Tree](https://packages.ubuntu.com/search?keywords=tree)                              | View files in tree format  |
+| [Tree](https://packages.ubuntu.com/search?keywords=tree)                              | View files in tree-like ASCII structure  |
 | [Unrar](https://packages.ubuntu.com/search?keywords=unrar)                            | Manage rar files / extraction |
 | [Visual Studio Code (Stable))](https://code.visualstudio.com/)                        | IDE for developers / source-code editor (Stable) |
 | [Visual Studio Code (Insiders))](https://code.visualstudio.com/insiders/)             | IDE for developers / source-code editor (Testing) |
