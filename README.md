@@ -10,12 +10,6 @@
 <br />
 <br />
 
-## Yad
-This is an unreleased future version of Zorin App Manager which utilizes `yad` for its dialog library instead of zenity due to the limitations that zenity has.
-
-<br />
-<br />
-
 ## About
 This is a simple application manager which allows you to install a number of programs right from the menu with little interaction. The packages and libraries provided are from personal choice, since these are the things I like to have when I get a new server going. The latest version includes a GUI which allows you to select the programs you wish to install.
 
@@ -28,48 +22,52 @@ This is a simple application manager which allows you to install a number of pro
 <br />
 
 ## Packages Included
-- Alien Package Converter
-- AppImage Launcher
-- Blender (using Flatpak)
-- Blender (using Snap)
-- cdialog (Comeon Dialog)
-- Color Picker (using Snapd)
-- Conky Manager
-- curl
-- Flatpak
-- GDebi .deb Package Manager
-- Git
-- Gnome Extension Manager (Core) [^2]
-- Gnome Extension: ArcMenu [^1]
-- Gnome Extension: Internet Speed Monitor [^1]
-- gPick (Color Picker)
-- Kooha (Screen Recorder)
-- members
-- mlocate
-- neofetch
-- net-tools
-- NPM
-- ocs-url
-- Pacman Package Management
-- Pihole [^3]
-- reprepro (Apt on Github)
-- RPM Package Manager
-- Seahorse + seahorse-nautilus
-- Snapd
-- Surfshark
-- Swizzin
-- System Monitor
-- Teamviewer
-- Tree
-- Unrar
-- Visual Studio Code (Stable)
-- Visual Studio Code (Insiders)
-- wxHexEditor
-- YAD (Yet Another Dialog)
-- Yarn
-- Zenity Dialogs
-- Ziet Cron Manager
-- ZorinOS Pro: Layouts
+| App                                                                                         | Descript |
+| ------------------------------------------------------------------------------------------- | -------- |
+| [Alien Package Converter](http://joeyh.name/code/alien/)                              | converts between the rpm, dpkg, stampede slp, and slackware tgz file formats |
+| [AppImage Launcher](https://github.com/TheAssassin/AppImageLauncher)                  | Manage `.appimage` files in one place         |
+| [Blender (Flatpak)](https://flathub.org/apps/org.blender.Blender)                     | Free / Open-source 3D creation suite          |
+| [Blender (Snap)](https://snapcraft.io/blender)                                        | Free / Open-source 3D creation suite          |
+| [cdialog (Comeon Dialog)](https://launchpad.net/~eugenesan/+archive/ubuntu/ppa)       | Create bash shell dialogs                     |
+| [Color Picker (Snapd)](https://snapcraft.io/color-picker)                             | Advanced color-picker                         |
+| [Conky v1](https://pkgs.org/download/conky-all)                                       | GUI for managing Conky widgets                |
+| [Conky v2](https://github.com/teejee2008/conky-manager)                               | GUI for managing Conky widgets                |
+| [curl](https://packages.ubuntu.com/search?keywords=curl)                              | Command line tool for transferring data with URL syntax |
+| [Flatpak](https://flatpak.org/)                                                       | Utility for software deployment and package management |
+| [GDebi .deb Package Manager](https://pkgs.org/download/gdebi)                         | Program for installing debian executable files |
+| [Git](https://git-scm.com/download/linux)                                             | Version control system (Command-line)         |
+| [Github Desktop](https://github.com/Aetherinox/zorin-apt-repo/tree/master/incoming)   | Github Desktop for linux.                     |
+| [Gnome Extension Manager (Core)](https://flathub.org/apps/com.mattjakeman.ExtensionManager) | Utility for browsing / installing GNOME Shell Extensions.         |
+| [Gnome Extension: ArcMenu](https://extensions.gnome.org/extension/3628/arcmenu/)      | Replacement shell for Linux. Includes MacOS / Windows themes.  |
+| [Gnome Extension: Internet Speed Monitor](https://launchpad.net/indicator-multiload)  | Monitor network traffic as widget |
+| [gPick (Color Picker)](https://github.com/thezbyg/gpick)                              | Color picker |
+| [Kooha](https://github.com/SeaDve/Kooha)                                              | Screen recorder |
+| [members](https://packages.ubuntu.com/search?keywords=members)                        | Tool for displaying the users of a group |
+| [mlocate](https://github.com/msekletar/mlocate)                                       | Find files on your computer  |
+| [neofetch](https://github.com/dylanaraps/neofetch)                                    | Command-line system information tool  |
+| [net-tools](https://packages.ubuntu.com/search?keywords=net-tools)                    | Network management toolkit |
+| [NPM](https://npmjs.com/)                                                             | Package installer |
+| [ocs-url](https://opendesktop.org/p/1136805/)                                         | Helper program for items served via ocs:// |
+| [Pacman Package Management](https://gitlab.com/trivoxel/utilities/deb-pacman)         | Emulates the Archlinux Pacman package manager for Debian users who may prefer Pacman over Apt. |
+| [Pihole](https://github.com/pi-hole/pi-hole/#one-step-automated-install)              | Ads and tracker blocking app which acts as a DNS sinkhole |
+| [reprepro (Apt on Github)](https://github.com/ionos-cloud/reprepro)                   | Debian package repository producer  |
+| [RPM Package Manager](https://packages.ubuntu.com/focal/rpm)                          | RPM Package Manager |
+| [Seahorse + seahorse-nautilus](https://github.com/GNOME/seahorse)                     | Manage encryption keys and passwords in GNOME Keyring |
+| [Snapd](https://github.com/snapcore/snapd)                                            | Install and manage packages  |
+| [Surfshark](https://surfshark.com/download/linux)                                     | VPN application |
+| [Swizzin](https://github.com/swizzin/swizzin)                                         | Modular seedbox solution (torrents) 15+ apps bundled  |
+| [System Monitor / Multiload Indicator](https://launchpad.net/indicator-multiload)     | Monitor CPU, Memory, Network stats in widget  |
+| [Teamviewer](https://www.teamviewer.com/en-us/download/linux/)                        | Remote desktop application |
+| [Tree](https://packages.ubuntu.com/search?keywords=tree)                              | View files in tree format  |
+| [Unrar](https://packages.ubuntu.com/search?keywords=unrar)                            | Manage rar files / extraction |
+| [Visual Studio Code (Stable))](https://code.visualstudio.com/)                        | IDE for developers / source-code editor (Stable) |
+| [Visual Studio Code (Insiders))](https://code.visualstudio.com/insiders/)             | IDE for developers / source-code editor (Testing) |
+| [wxHexEditor)](https://github.com/EUA/wxHexEditor)                                    | Hex editor |
+| [YAD (Yet Another Dialog)](https://github.com/v1cont/yad)                             | Create bash shell dialogs. Based on Zenity. |
+| [Yarn](https://github.com/yarnpkg/berry)                                              | Modern package manager |
+| [Zenity Dialogs](https://gitlab.gnome.org/GNOME/zenity)                               | Create bash shell dialogs |
+| [Ziet Cron Manager](https://github.com/loimu/zeit)                                    | Manage crons in browser admin panel  |
+| [ZorinOS Pro: Layouts](#zorinos-pro-layouts)                                          | Professional layouts included in ZorinOS Pro |
 
 <br />
 
@@ -157,10 +155,24 @@ Even though this release includes ZorinOS Pro layouts, there are still reasons t
 
 ## Packages
 Some of the packages in this wizard include what ZorinOS Pro comes with. If you are a ZorinOS Lite or Core user, some of the packages here will give you the features that a ZorinOS Pro user would have including:
-- [ArcMenu Extension](#arcmenu)
-- [Conky Manager](#conky-manager)
-- [Internet Speed Monitor](#internet-speed-monitor)
-- [System Load Indicator (Multiload)](#system-load-indicator-multiload)
+- [About](#about)
+- [Packages Included](#packages-included)
+- [Tweaks / Changes](#tweaks--changes)
+- [Usage](#usage)
+  - [Configuration](#configuration)
+  - [Install](#install)
+  - [Prerequisites](#prerequisites)
+  - [Logs](#logs)
+- [ZorinOS Pro Features](#zorinos-pro-features)
+- [Packages](#packages)
+  - [ArcMenu](#arcmenu)
+  - [Conky Manager](#conky-manager)
+  - [Internet Speed Monitor](#internet-speed-monitor)
+  - [System Load Indicator (Multiload)](#system-load-indicator-multiload)
+- [Swizzin](#swizzin)
+- [Notes](#notes)
+  - [Developer Vars](#developer-vars)
+- [Footnotes](#footnotes)
 
 <br />
 
