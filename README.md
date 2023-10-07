@@ -177,7 +177,7 @@ Even though this release includes ZorinOS Pro layouts, there are still reasons t
 <br />
 
 ## Wiki
-For detailed documentation, please visit this repo's [Wiki](wiki)
+For detailed documentation, please visit this repo's [Wiki](https://github.com/Aetherinox/zorin-app-manager/wiki)
 
 <br />
 
