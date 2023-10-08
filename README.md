@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/images/readme/banner.jpg" width="860"></p>
-<h1 align="center"><b>ZorinOS App Manager</b></h1>
+<h1 align="center"><b>Zorin App Manager</b></h1>
 
 <div align="center">
 
@@ -11,7 +11,7 @@
 <br />
 
 > [!WARNING]
-> This script has been specifically developed for ZorinOS v16.x [based on 20.04.6 LTS (Focal Fossa)]. There is absolutely no guarantee that this will work on other distros. There's a good likelihood that most features will work, but use at your own risk.
+> This script has been developed for ZorinOS [based on 20.04.6 LTS (Focal Fossa)] and Ubuntu platforms. At present, other distributions are not planned until stability has been reached on its originally planned distros.
 
 <br />
 
