@@ -101,7 +101,7 @@ hosts="
 #   if you wish to use alternative Quad9 servers for No Malware Blocking
 #   or ECS, the list is provided below
 #
-#   [ QUAD9 DNS ]
+#   [ QUAD9 DNS ]                                                   DEFAULT
 #
 #       Malware Blocking, DNSSEC Validation (most typical configuration)
 #            IPv4 Primary:          9.9.9.9
@@ -563,6 +563,7 @@ bInstall_app_gnome_ext_core=true
 bInstall_app_gnome_ext_ism=true
 bInstall_app_gpick=true
 bInstall_app_kooha=true
+bInstall_app_lintian=true
 bInstall_app_members=true
 bInstall_app_mlocate=true
 bInstall_app_neofetch=true
@@ -617,6 +618,7 @@ app_gnome_ext_core="Gnome Manager (Core)"
 app_gnome_ext_ism="Gnome Ext (Speed Monitor)"
 app_gpick="gPick (Color Picker)"
 app_kooha="Kooha (Screen Recorder)"
+app_lintian="lintian"
 app_members="members"
 app_mlocate="mlocate"
 app_neofetch="neofetch"
@@ -692,6 +694,7 @@ get_functions=(
     ["$app_gnome_ext_ism"]='fn_app_gnome_ext_ism'
     ["$app_gpick"]='fn_app_gpick'
     ["$app_kooha"]='fn_app_kooha'
+    ["$app_lintian"]='fn_app_lintian'
     ["$app_members"]='fn_app_members'
     ["$app_mlocate"]='fn_app_mlocate'
     ["$app_neofetch"]='fn_app_neofetch'
@@ -1288,9 +1291,12 @@ function fn_app_kooha()
 #   Lintian
 #
 #   required for creating debian packages
+#   e.g.
+#       dpkg-deb --root-owner-group --build package-name
+#       lintian package-name.deb --no-tag-display-limit
 ##--------------------------------------------------------------------------
 
-function fn_app_lint
+function fn_app_lintian
 {
     begin "${1}"
 
@@ -2148,6 +2154,9 @@ function fn_app_ziet_cron()
 
 ##--------------------------------------------------------------------------
 #   ZorinOS Pro Layouts
+#
+#   list of layouts provided in ZorinOS Pro
+#   served via zorin-apt-repo
 ##--------------------------------------------------------------------------
 
 function fn_app_zorinospro_lo()
@@ -2160,7 +2169,7 @@ function fn_app_zorinospro_lo()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install zorin-pro-layouts -y -qq >> $LOGS_FILE 2>&1
         sleep 1
-        sudo dpkg -i --force-overwrite "/var/cache/apt/archives/zorin-pro-layouts_*_all.deb" >> $LOGS_FILE 2>&1
+        sudo dpkg -i --force-overwrite "/var/cache/apt/archives/zorin-pro-layouts_*.deb" >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -2360,6 +2369,11 @@ fi
 
 if [ "$bInstall_app_kooha" = true ]; then
     apps+=("${app_kooha}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_lintian" = true ]; then
+    apps+=("${app_lintian}")
     let app_i=app_i+1
 fi
 
