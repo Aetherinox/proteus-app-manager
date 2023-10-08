@@ -5,11 +5,11 @@
 
 <div align="center">
 
-[![View](https://img.shields.io/badge/%20-%20View%20Conky%20Repo%20-%20%23de2343?style=for-the-badge&logo=github&logoColor=FFFFFF&color=581c8c)](https://github.com/brndnmtthws/conky)
-
 [![View](https://img.shields.io/badge/%20-%20View%20Conky%20Manager%20Repo%20-%20%23de2343?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/teejee2008/conky-manager)
 
 [![View](https://img.shields.io/badge/%20-%20View%20Forked%20Conky%20Manager%20Repo%20-%20%23de2343?style=for-the-badge&logo=github&logoColor=FFFFFF&color=1a67ed)](https://github.com/zcot/conky-manager2)
+
+[![View](https://img.shields.io/badge/%20-%20View%20Conky%20Remake%20Repo%20-%20%23de2343?style=for-the-badge&logo=github&logoColor=FFFFFF&color=581c8c)](https://github.com/brndnmtthws/conky)
 
 </div>
 
@@ -41,3 +41,26 @@ If you use to modify your desktop using config files and manual edits, then you 
 
 # Zorin App Manager
 If you decide to use the Zorin App Manager, it will provide you with options to install `Conky Base` and `Conky Manager`. There will be no need to utilize any of the files in this folder.
+
+<br />
+
+---
+
+<br />
+
+# Note on Conky Remake Repo
+In regards to the link at the top of this page related to the `Conky Remake Repo`, it is listed as a warning for people who may find that repo while searching for Conky. 
+
+When running the `appimage` for that particular version, ZorinOS 16 users will receive the error
+
+```bash
+./conky-x86_64.AppImage: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found (required by /tmp/.mount_conky-aIz6xO/usr/bin/../lib/libpulse.so.0)
+./conky-x86_64.AppImage: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.32' not found (required by /tmp/.mount_conky-aIz6xO/usr/bin/../lib/libpulse.so.0)
+./conky-x86_64.AppImage: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.33' not found (required by /tmp/.mount_conky-aIz6xO/usr/bin/../lib/libcurl-gnutls.so.4)
+
+[Continued]...
+```
+
+This is due to ZorinOS 16 running Glibc `2.31`. The only safe solution is to wait until Zorin 17 releases. Glibc is a system-wide library, and attempting to build your own upgraded package can result in bricking your operating system.
+
+Use the versions of Conky provided in the Zorin App Manager for now.
