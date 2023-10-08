@@ -53,8 +53,8 @@ This is a simple application manager which allows you to install a number of pro
 | [Blender (Snap)](https://snapcraft.io/blender)                                        | Free / Open-source 3D creation suite          |
 | [cdialog (Comeon Dialog)](https://launchpad.net/~eugenesan/+archive/ubuntu/ppa)       | Create bash shell dialogs                     |
 | [Color Picker (Snapd)](https://snapcraft.io/color-picker)                             | Advanced color-picker                         |
-| [Conky v1](https://pkgs.org/download/conky-all)                                       | GUI for managing Conky widgets                |
-| [Conky v2](https://github.com/teejee2008/conky-manager)                               | GUI for managing Conky widgets                |
+| [Conky](https://github.com/brndnmtthws/conky)                                         | System monitor software                       |
+| [Conky Manager](https://github.com/zcot/conky-manager2)                               | GUI for managing Conky widgets / themes       |
 | [curl](https://packages.ubuntu.com/search?keywords=curl)                              | Command line tool for transferring data with URL syntax |
 | [Flatpak](https://flatpak.org/)                                                       | Utility for software deployment and package management |
 | [GDebi .deb Package Manager](https://pkgs.org/download/gdebi)                         | Program for installing debian executable files |
