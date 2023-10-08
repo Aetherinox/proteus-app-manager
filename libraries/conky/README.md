@@ -5,7 +5,7 @@
 
 <div align="center">
 
-[![View](https://img.shields.io/badge/%20-%20View%20Conky%20Manager%20Repo%20-%20%23de2343?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/teejee2008/conky-manager)
+[![View](https://img.shields.io/badge/%20-%20View%20Original%20Conky%20Manager%20Repo%20-%20%23de2343?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/teejee2008/conky-manager)
 
 [![View](https://img.shields.io/badge/%20-%20View%20Forked%20Conky%20Manager%20Repo%20-%20%23de2343?style=for-the-badge&logo=github&logoColor=FFFFFF&color=1a67ed)](https://github.com/zcot/conky-manager2)
 
