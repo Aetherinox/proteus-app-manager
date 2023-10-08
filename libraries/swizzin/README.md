@@ -3,11 +3,11 @@
 
 <br />
 
-<center>
+<div align="center">
 
 [![View](https://img.shields.io/badge/%20-%20View%20Official%20Swizzin%20Repo%20-%20%23de2343?style=for-the-badge&logo=firefox&logoColor=FFFFFF)](https://github.com/swizzin/swizzin)
 
-</center>
+</div>
 
 <br />
 <br />
