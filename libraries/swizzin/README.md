@@ -16,6 +16,20 @@ Swizzin is a light, modular seedbox solution that can be installed on Debian 10/
 
 Box has been revamped to reduce and consolidate the amount of commands you need to remember to manage your seedbox. More on this below. In addition to that, additional add-on packages can be installed during installation. No need to wait until the installer finishes! Now with unattended installs!
 
+Swizzin includes the following apps bundled with the script:
+
+| Category | Apps |
+| --- | --- |
+| <center>`Automation`</center> | Autobrr, Autodl, Bazarr, Lidarr, Medusa, Mylar3, Ombi, Sickchill, Sickgear, Sonarr, Radarr, Prowlarr |
+| <center>`Backup & Sync`</center> | Resilio, Nextcloud, Rclone, Syncthing, vsftpd |
+| <center>`Indexers`</center> | Jackett, NZBHydra2 |
+| <center>`IRC`</center> | Lounge, Quassel, ZNC |
+| <center>`Media Servers`</center> | Airsonic, Calibre-Web, Emby, Jellyfin, Mango, Navidrome, Plex, Tautulli |
+| <center>`Torrents`</center> | Deluge, Flood, qBittorrent, rTorrent, ruTorrent, Transmission |
+| <center>`Usenet`</center> | NZBGet, SABnzbd, NZBHydra |
+| <center>`Utilities`</center> | ffmpeg, jfago, Librespeed, Netdata, Pyload, Quota, Rapidleech, Wireguard, X2go, xmrig |
+| <center>`Web`</center> | DuckDNS, Filebrowser, Letsencrypt, Nginx, Organizr, Panel, Shellinabox, Webmin |
+
 <br />
 
 ---
@@ -23,3 +37,18 @@ Box has been revamped to reduce and consolidate the amount of commands you need 
 <br />
 
 # What Is This Folder?
+This folder contains a modified `setup.sh` Swizzin installation file. This is for users who wish to install Swizzin separate from using the Zorin App Manager.
+
+To execute the install script
+```bash
+sudo bash libraries/swizzin/setup.sh --local
+```
+
+<br />
+
+---
+
+<br />
+
+# Zorin App Manager
+If you decide to use the Zorin App Manager, it will automatically download the latest version of the Swizzin install script directly from their official website to ensure all the files are the latest. It will then make the required edits automatically before initializing the Swizzin installation wizard. There's no need on your part to edit anything.
