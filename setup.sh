@@ -19,8 +19,9 @@ app_repo_dev="Aetherinox"
 app_repo="zorin-app-manager"
 app_repo_apt="zorin-apt-repo"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
-app_title="ZorinOS App Manager (${app_repo_dev})"
-app_ver=("1" "0" "0" "0")
+app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
+app_title="Zorin App Manager (${app_repo_dev})"
+app_ver=("1" "0" "0" "4")
 app_dir=$PWD
 app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
@@ -47,6 +48,7 @@ app_cfg_bPendRestart=false
 ##--------------------------------------------------------------------------
 
 export DATE=$(date '+%Y%m%d')
+export YEAR=$(date +'%Y')
 export TIME=$(date '+%H:%M:%S')
 export ARGS=$1
 export LOGS_DIR="$app_dir/logs"
@@ -231,7 +233,7 @@ devs=()
 #   distro
 #
 #   returns distro information.
-#   even though this was strictly built for ZorinOS, I can already foresee
+#   even though this was strictly built for Zorin, I can already foresee
 #   people on other distros using this, so I may as well plan ahead.
 ##--------------------------------------------------------------------------
 
@@ -319,7 +321,7 @@ function Logs_Begin()
         notify-send -u critical "Logging Disabled" "Logging for this manager has been disabled." >> $LOGS_FILE 2>&1
     else
         mkdir -p $LOGS_DIR
-        Pipe=${LOGS_FILE}.pipe
+        LOGS_PIPE=${LOGS_FILE}.pipe
 
         # get name of display in use
         local display=":$(ls /tmp/.X11-unix/* | sed 's#/tmp/.X11-unix/X##' | head -n 1)"
@@ -327,28 +329,28 @@ function Logs_Begin()
         # get user using display
         local user=$(who | grep '('$display')' | awk '{print $1}' | head -n 1)
 
-        if ! [[ -p $Pipe ]]; then
-            mkfifo -m 775 $Pipe
-            printf "%-30s %-5s\n" "${TIME}      Creating new pipe ${Pipe}" | tee -a "${LOGS_FILE}" >/dev/null
+        if ! [[ -p $LOGS_PIPE ]]; then
+            mkfifo -m 775 $LOGS_PIPE
+            printf "%-57s %-5s\n" "${TIME}      Creating new pipe ${LOGS_PIPE}" | tee -a "${LOGS_FILE}" >/dev/null
         fi
 
         LOGS_OBJ=${LOGS_FILE}
         exec 3>&1
-        tee -a ${LOGS_OBJ} <$Pipe >&3 &
-        teepid=$!
-        exec 1>$Pipe
+        tee -a ${LOGS_OBJ} <$LOGS_PIPE >&3 &
+        app_pid_tee=$!
+        exec 1>$LOGS_PIPE
         PIPE_OPENED=1
 
-        printf "%-30s %-5s\n" "${TIME}      Logging to ${LOGS_OBJ}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      Logging to ${LOGS_OBJ}" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf "%-30s %-5s\n" "${TIME}      Software  : ${app_title}" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      Version   : v$(get_version)" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      Process   : $$" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      OS        : ${OS}" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      OS VER    : ${OS_VER}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      Software  : ${app_title}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      Version   : v$(get_version)" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      Process   : $$" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      OS        : ${OS}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      OS VER    : ${OS_VER}" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf "%-30s %-5s\n" "${TIME}      DATE      : ${DATE}" | tee -a "${LOGS_FILE}" >/dev/null
-        printf "%-30s %-5s\n" "${TIME}      TIME      : ${TIME}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      DATE      : ${DATE}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      TIME      : ${TIME}" | tee -a "${LOGS_FILE}" >/dev/null
 
     fi
 }
@@ -362,25 +364,25 @@ function Logs_Finish()
     if [ ${PIPE_OPENED} ] ; then
         exec 1<&3
         sleep 0.2
-        ps --pid $teepid >/dev/null
+        ps --pid $app_pid_tee >/dev/null
         if [ $? -eq 0 ] ; then
-            # wait $teepid whould be better but some
-            # commands leave file descriptors open
+            # using $(wait $app_pid_tee) would be better
+            # however, some commands leave file descriptors open
             sleep 1
-            kill $teepid
+            kill $app_pid_tee >> $LOGS_FILE 2>&1
         fi
 
-        printf "%-30s %-15s\n" "${TIME}      Destroying Pipe ${Pipe} (${teepid})" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-15s\n" "${TIME}      Destroying Pipe ${LOGS_PIPE} (${app_pid_tee})" | tee -a "${LOGS_FILE}" >/dev/null
 
-        rm $Pipe
+        rm $LOGS_PIPE
         unset PIPE_OPENED
     fi
 
     duration=$SECONDS
     elapsed="$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
-    printf "%-30s %-15s\n" "${TIME}      User Input: OnClick ......... Exit App" | tee -a "${LOGS_FILE}" >/dev/null
-    printf "%-30s %-15s\n\n\n\n" "${TIME}      ${elapsed}" | tee -a "${LOGS_FILE}" >/dev/null
+    printf "%-57s %-15s\n" "${TIME}      User Input: OnClick ......... Exit App" | tee -a "${LOGS_FILE}" >/dev/null
+    printf "%-57s %-15s\n\n\n\n" "${TIME}      ${elapsed}" | tee -a "${LOGS_FILE}" >/dev/null
 
     sudo pkill -9 -f ".$LOGS_FILE." >> $LOGS_FILE 2>&1
 }
@@ -389,65 +391,23 @@ Logs_Begin
 
 ##--------------------------------------------------------------------------
 #   Cache Sudo Password
+#
+#   require normal user sudo authentication for certain actions
 ##--------------------------------------------------------------------------
 
 if [[ $EUID -ne 0 ]]; then
     sudo -k # make sure to ask for password on next sudo
     if sudo true && [ -n "${USER}" ]; then
-        printf "\n%-30s %-5s\n\n" "${TIME}      SUDO [SIGN-IN]: Welcome, ${USER}" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "\n%-57s %-5s\n\n" "${TIME}      SUDO [SIGN-IN]: Welcome, ${USER}" | tee -a "${LOGS_FILE}" >/dev/null
     else
-        printf "\n%-30s %-5s\n\n" "${TIME}      SUDO Failure: Wrong Password x3" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "\n%-57s %-5s\n\n" "${TIME}      SUDO Failure: Wrong Password x3" | tee -a "${LOGS_FILE}" >/dev/null
         exit 1
     fi
 else
     if [ -n "${USER}" ]; then
-        printf "\n%-30s %-5s\n\n" "${TIME}      SUDO [EXISTING]: $USER" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "\n%-57s %-5s\n\n" "${TIME}      SUDO [EXISTING]: $USER" | tee -a "${LOGS_FILE}" >/dev/null
     fi
 fi
-
-##--------------------------------------------------------------------------
-#   func > require yad
-##--------------------------------------------------------------------------
-
-if ! [ -x "$(command -v yad)" ]; then
-    printf "%-30s %-5s\n" "${TIME}      Commencing first time setup" | tee -a "${LOGS_FILE}" >/dev/null
-
-    echo
-    echo -e "  ${BOLD}${FUCHSIA} Please wait - initializing first time setup ...${NORMAL}" >&2
-    echo
-
-    sudo apt-get update -y -q >> /dev/null 2>&1
-    sudo apt-get install yad -y -qq >> /dev/null 2>&1
-    sleep 0.5
-fi
-
-##--------------------------------------------------------------------------
-#   func > check zorin repo registery
-#
-#   NOTE:   can be removed via
-#           sudo add-apt-repository -r "deb [arch=amd64] https://raw.githubusercontent.com/Aetherinox/zorin-aabd-repo/master focal main"
-#
-#   ${1}    bSilence
-##--------------------------------------------------------------------------
-
-function app_add_repo
-{
-    bSilence=${1}
-    app_repo_ppa="${app_repo_dev}/${app_repo_apt}"
-
-    if ! grep -q "^deb .*$app_repo_ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-        if ! [ "$bSilence" = true ]; then
-            printf "%-30s %-5s\n" "${TIME}      Adding Zorin apt repository" | tee -a "${LOGS_FILE}" >/dev/null
-
-            echo
-            echo -e "  ${BOLD}${FUCHSIA} Registering ZorinOS apt repository ...${NORMAL}" >&2
-            echo
-        fi
-
-        sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
-    fi
-}
-app_add_repo
 
 ##--------------------------------------------------------------------------
 #   func > spinner animation
@@ -474,7 +434,7 @@ spin()
 
 function title()
 {
-    printf '%-46s %-5s' "  ${1}" ""
+    printf '%-57s %-5s' "  ${1}" ""
     sleep 0.3
 }
 
@@ -490,12 +450,12 @@ function begin()
     # spinner PID
     app_pid_spin=$!
 
-    printf "%-30s %-5s\n\n" "${TIME}      NEW Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
+    printf "%-57s %-5s\n\n" "${TIME}      NEW Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
 
     # kill spinner on any signal
     trap "kill -9 $app_pid_spin 2> /dev/null" `seq 0 15`
 
-    printf '%-46s %-5s' "  ${1}" ""
+    printf '%-57s %-5s' "  ${1}" ""
 
     sleep 0.3
 }
@@ -509,7 +469,7 @@ function finish()
     if ps -p $app_pid_spin > /dev/null
     then
         kill -9 $app_pid_spin 2> /dev/null
-        printf "\n%-30s %-5s\n" "${TIME}      KILL Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "\n%-57s %-5s\n" "${TIME}      KILL Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
     fi
 }
 
@@ -524,14 +484,125 @@ function exit()
 }
 
 ##--------------------------------------------------------------------------
+#   func > check zorin repo registery
+#
+#   NOTE:   can be removed via:
+#               sudo rm -rf /etc/apt/sources.list.d/aetherinox*list
+#
+#           gpg ksy stored in:
+#               /usr/share/keyrings/aetherinox-zorin-apt-repo-archive.gpg
+#               sudo rm -rf /usr/share/keyrings/aetherinox*gpg
+#
+#   as of 1.0.0.3-alpha, deprecated apt-key method removed for adding
+#   gpg key. view readme for new instructions. registered repo now
+#   contains two files
+#       -   trusted gpg key:        aetherinox-zorin-apt-repo-archive.gpg
+#       -   source .list:           /etc/apt/sources.list.d/aetherinox*list
+#
+#   ${1}    ReqTitle
+#           contains a string if exists
+#           triggers is function called from another function to check for
+#               a prerequisite
+##--------------------------------------------------------------------------
+
+function app_setup
+{
+    ReqTitle=${1}
+    bMissingYad=false
+    bMissingGPG=false
+    bMissingRepo=false
+
+    #   NOTE:   apt-key has been deprecated
+    #
+    #   sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
+
+    # require yad
+    if ! [ -x "$(command -v yad)" ]; then
+        bMissingYad=true
+    fi
+
+    # Missing zorin-apt-repo gpg key
+    if ! [ -f "/usr/share/keyrings/${app_repo_aptpkg}.gpg" ]; then
+        bMissingGPG=true
+    fi
+
+    # Missing zorin-apt-repo .list
+    if ! [ -f "/etc/apt/sources.list.d/${app_repo_aptpkg}.list" ]; then
+        bMissingRepo=true
+    fi
+
+    # Check if contains title
+    # If so, called from another function
+    if [ -n "$ReqTitle" ]; then
+        if [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
+            echo -e "[ ${STATUS_HALT} ]"
+        fi
+    else
+        if [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
+            echo
+            title "First Time Setup ..."
+            echo
+            sleep 1
+        fi
+    fi
+
+    if [ "$bMissingYad" = true ]; then
+        printf "%-57s %-5s\n" "${TIME}      Installing yad package" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf '%-57s %-5s' "    |--- Adding yad package" ""
+        sleep 1
+        sudo apt-get update -y -q >> /dev/null 2>&1
+        sudo apt-get install yad -y -qq >> /dev/null 2>&1
+        sleep 1
+        echo -e "[ ${STATUS_OK} ]"
+    fi
+
+    if [ "$bMissingGPG" = true ]; then
+        printf "%-57s %-5s\n" "${TIME}      Adding ${app_repo_dev} GPG key: [https://github.com/${app_repo_dev}.gpg]" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf '%-57s %-5s' "    |--- Adding github.com/${app_repo_dev}.gpg" ""
+        sleep 1
+        sudo wget -qO - "https://github.com/${app_repo_dev}.gpg" | sudo gpg --dearmor -o "/usr/share/keyrings/${app_repo_aptpkg}.gpg" >> $LOGS_FILE 2>&1
+        sleep 1
+        echo -e "[ ${STATUS_OK} ]"
+    fi
+
+    if [ "$bMissingRepo" = true ]; then
+        printf "%-57s %-5s\n" "${TIME}      Registering ${app_repo_apt}: https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf '%-57s %-5s' "    |--- Registering ${app_repo_apt}" ""
+        sleep 1
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/${app_repo_aptpkg}.gpg] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/${app_repo_aptpkg}.list >> $LOGS_FILE 2>&1
+        sleep 0.5
+        echo -e "[ ${STATUS_OK} ]"
+
+        printf "%-57s %-5s\n" "${TIME}      Updating user repo list with apt-get update" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf '%-57s %-5s' "    |--- Updating repo list" ""
+        sleep 1
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sleep 0.5
+        echo -e "[ ${STATUS_OK} ]"
+    fi
+
+    if [ -n "$ReqTitle" ]; then
+        title "Retry: ${1}"
+    fi
+
+    sleep 2
+
+}
+app_setup
+
+##--------------------------------------------------------------------------
 #   output some logging
 ##--------------------------------------------------------------------------
 
-[ "$app_cfg_bDev" = true ] && printf "%-30s %-5s\n" "${TIME}      Notice: Dev Mode Enabled" | tee -a "${LOGS_FILE}" >/dev/null
-[ "$app_cfg_bDev" = false ] && printf "%-30s %-5s\n" "${TIME}      Notice: Dev Mode Disabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ "$app_cfg_bDev" = true ] && printf "%-57s %-5s\n" "${TIME}      Notice: Dev Mode Enabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ "$app_cfg_bDev" = false ] && printf "%-57s %-5s\n" "${TIME}      Notice: Dev Mode Disabled" | tee -a "${LOGS_FILE}" >/dev/null
 
-[ "$app_cfg_bDev_NullRun" = true ] && printf "%-30s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Enabled" | tee -a "${LOGS_FILE}" >/dev/null
-[ "$app_cfg_bDev_NullRun" = false ] && printf "%-30s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Disabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ "$app_cfg_bDev_NullRun" = true ] && printf "%-57s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Enabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ "$app_cfg_bDev_NullRun" = false ] && printf "%-57s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Disabled" | tee -a "${LOGS_FILE}" >/dev/null
 
 ##--------------------------------------------------------------------------
 #   vars > gnome extension ids
@@ -912,7 +983,7 @@ function fn_app_conky()
         get_cpus=$(nproc --all)
 
         echo -e "[ ${STATUS_OK} ]"
-        printf '%-46s %-5s' "    |--- Creating config.conf" ""
+        printf '%-57s %-5s' "    |--- Creating config.conf" ""
         sleep 0.5
 
         path_conky="/home/${USER}/.config/conky"
@@ -944,7 +1015,7 @@ function fn_app_conky()
         fi
 
         echo -e "[ ${STATUS_OK} ]"
-        printf '%-46s %-5s' "    |--- Setting perms" ""
+        printf '%-57s %-5s' "    |--- Setting perms" ""
         sleep 0.5
 
         sudo touch ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
@@ -953,7 +1024,7 @@ function fn_app_conky()
         chmod u+x ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
 
         echo -e "[ ${STATUS_OK} ]"
-        printf '%-46s %-5s' "    |--- Starting conky" ""
+        printf '%-57s %-5s' "    |--- Starting conky" ""
         sleep 4
 
         conky -q -d -c ~/.config/conky/conky.conf >> $LOGS_FILE 2>&1
@@ -1084,7 +1155,7 @@ function fn_app_github_desktop()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        app_add_repo true
+        app_setup "${1}"
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install github-desktop -y -qq >> $LOGS_FILE 2>&1
@@ -1121,7 +1192,7 @@ function fn_app_gnome_ext_arcmenu()
     fi
     
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Restarting Shell" ""
+    printf '%-57s %-5s' "    |--- Restarting Shell" ""
     sleep 3
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1129,7 +1200,7 @@ function fn_app_gnome_ext_arcmenu()
     fi
 
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Enable ArcMenu" ""
+    printf '%-57s %-5s' "    |--- Enable ArcMenu" ""
     sleep 3
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1166,7 +1237,7 @@ function fn_app_gnome_ext_core()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Plugins" ""
+    printf '%-57s %-5s' "    |--- Plugins" ""
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -1178,7 +1249,7 @@ function fn_app_gnome_ext_core()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Installer" ""
+    printf '%-57s %-5s' "    |--- Installer" ""
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
         sudo wget -O gnome-shell-extension-installer -q "https://github.com/brunelli/gnome-shell-extension-installer/raw/master/gnome-shell-extension-installer" >> $LOGS_FILE 2>&1
@@ -1218,7 +1289,7 @@ function fn_app_gnome_ext_ism()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Restarting Shell" ""
+    printf '%-57s %-5s' "    |--- Restarting Shell" ""
     sleep 3
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1227,7 +1298,7 @@ function fn_app_gnome_ext_ism()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Enabling" ""
+    printf '%-57s %-5s' "    |--- Enabling" ""
     sleep 0.5
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1284,7 +1355,7 @@ function fn_app_kooha()
 
     sleep 0.5
 	echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Install pipewire" ""
+    printf '%-57s %-5s' "    |--- Install pipewire" ""
     sleep 0.5
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1427,7 +1498,7 @@ function fn_app_ocsurl()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        app_add_repo true
+        app_setup "${1}"
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install libqt5svg5 qml-module-qtquick-controls -y -qq >> $LOGS_FILE 2>&1
@@ -1489,7 +1560,7 @@ function fn_app_pacman_manager()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        app_add_repo true
+        app_setup true
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install deb-pacman -y -qq >> $LOGS_FILE 2>&1
@@ -1551,22 +1622,22 @@ function fn_app_seahorse()
 
         echo
 
-        printf '%-46s %-5s' "    |--- Remove Base" ""
+        printf '%-57s %-5s' "    |--- Remove Base" ""
         sleep 1
         sudo dpkg -r --force seahorse >> $LOGS_FILE 2>&1
         echo -e "[ ${STATUS_OK} ]"
 
-        printf '%-46s %-5s' "    |--- Apt Update" ""
+        printf '%-57s %-5s' "    |--- Apt Update" ""
         sleep 1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         echo -e "[ ${STATUS_OK} ]"
 
-        printf '%-46s %-5s' "    |--- Install seahorse" ""
+        printf '%-57s %-5s' "    |--- Install seahorse" ""
         sleep 1
         sudo apt-get install seahorse -y -qq >> $LOGS_FILE 2>&1
         echo -e "[ ${STATUS_OK} ]"
 
-        printf '%-46s %-5s' "    |--- Install seahorse-nautilus" ""
+        printf '%-57s %-5s' "    |--- Install seahorse-nautilus" ""
         sleep 1
         sudo apt-get install seahorse-nautilus -y -qq >> $LOGS_FILE 2>&1
 
@@ -1636,7 +1707,7 @@ function fn_app_swizzin()
     swizzin_file=swizzin.sh
 
     sleep 0.5
-    printf '%-46s %-5s' "    |--- Download ${swizzin_url}" ""
+    printf '%-57s %-5s' "    |--- Download ${swizzin_url}" ""
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
         sudo wget -O "${swizzin_file}" -q "${swizzin_url}"
@@ -1645,7 +1716,7 @@ function fn_app_swizzin()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Adding Zorin Compatibility" ""
+    printf '%-57s %-5s' "    |--- Adding Zorin Compatibility" ""
 
     # Add Zorin compatibility to install script
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1658,7 +1729,7 @@ function fn_app_swizzin()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Killing apt-get" ""
+    printf '%-57s %-5s' "    |--- Killing apt-get" ""
 
     # instances where an issue will cause apt-get to hang and keeps the installation
     # wizard from running again. ensure
@@ -1712,8 +1783,6 @@ function fn_app_teamviewer()
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install ${apt_dir_deb}/teamviewer_*.deb -f -y -qq >> $LOGS_FILE 2>&1
-
-        #sudo rm teamviewer_*.deb >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -1812,7 +1881,7 @@ function fn_twk_netplan()
         fi
 
 sudo tee /etc/netplan/50-cloud-init.yaml >/dev/null <<EOF
-# This file is auto-generated by ZorinOS App Manager
+# This file is auto-generated by ${app_title}
 # ${app_repo_url}
 network:
   version: 2
@@ -1866,7 +1935,7 @@ function fn_twk_network_hosts()
         do
             id=$(echo "$item"  | sed 's/ *\\t.*//')
 
-            printf '%-46s %-5s' "    |--- + $id" ""
+            printf '%-57s %-5s' "    |--- + $id" ""
             sleep 1
 
             if grep -Fxq "$id" $app_dir_hosts
@@ -1917,7 +1986,7 @@ function fn_twk_vbox_additions_fix()
     begin "${1}"
 
     echo
-    printf '%-46s %-5s' "    |--- Updating packages" ""
+    printf '%-57s %-5s' "    |--- Updating packages" ""
     sleep 0.5
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1926,7 +1995,7 @@ function fn_twk_vbox_additions_fix()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Installing dependencies" ""
+    printf '%-57s %-5s' "    |--- Installing dependencies" ""
     sleep 0.5
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -1935,7 +2004,7 @@ function fn_twk_vbox_additions_fix()
 
     sleep 0.5
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-46s %-5s' "    |--- Remove open-vm-tools*" ""
+    printf '%-57s %-5s' "    |--- Remove open-vm-tools*" ""
     sleep 0.5
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -2176,7 +2245,7 @@ function fn_app_zorinospro_lo()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
-        app_add_repo true
+        app_setup true
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install zorin-pro-layouts -y -qq >> $LOGS_FILE 2>&1
@@ -2203,7 +2272,7 @@ function fn_app_zorinospro_lo()
 
         echo
 
-        printf '%-46s %-5s' "    |--- clean /appearance" ""
+        printf '%-57s %-5s' "    |--- clean /appearance" ""
         sleep 0.5
 
         # clean existing backup folder /zorin_appearance_bk/
@@ -2215,7 +2284,7 @@ function fn_app_zorinospro_lo()
             echo -e "[ ${STATUS_SKIP} ]"
         fi
 
-        printf '%-46s %-5s' "    |--- clean /appearance-4.1.egg" ""
+        printf '%-57s %-5s' "    |--- clean /appearance-4.1.egg" ""
         sleep 0.5
 
         # clean existing backup folder /zorin_appearance-4.1.egg-info_bk/
@@ -2227,7 +2296,7 @@ function fn_app_zorinospro_lo()
             echo -e "[ ${STATUS_SKIP} ]"
         fi
 
-        printf '%-46s %-5s' "    |--- backup /appearance" ""
+        printf '%-57s %-5s' "    |--- backup /appearance" ""
         sleep 0.5
 
         # backup /zorin_appearance/
@@ -2239,7 +2308,7 @@ function fn_app_zorinospro_lo()
             echo -e "[ ${STATUS_MISS} ]"
         fi
 
-        printf '%-46s %-5s' "    |--- backup /appearance-4.1.egg" ""
+        printf '%-57s %-5s' "    |--- backup /appearance-4.1.egg" ""
         sleep 0.5
 
         # backup /zorin_appearance-4.1.egg-info/
@@ -2253,7 +2322,7 @@ function fn_app_zorinospro_lo()
 
         # move new /zorin_appearance/
 
-        printf '%-46s %-5s' "    |--- install /appearance" ""
+        printf '%-57s %-5s' "    |--- install /appearance" ""
         sleep 0.5
 
         if [ -d "$app_dir/libraries/zorin_appearance" ]
@@ -2264,7 +2333,7 @@ function fn_app_zorinospro_lo()
             echo -e "[ ${STATUS_FAIL} ]"
         fi
 
-        printf '%-46s %-5s' "    |--- install /appearance-4.1.egg" ""
+        printf '%-57s %-5s' "    |--- install /appearance-4.1.egg" ""
         sleep 0.5
 
         # move new /zorin_appearance-4.1.egg-info/
@@ -2663,17 +2732,17 @@ function show_header()
     echo -e "  Some of these programs and libraries may take up to 10 minutes to"
     echo -e "  install, please do not force close the installer."
     echo
-    printf '%-30s %-40s\n' "  ${BOLD}${DEVGREY}PID ${NORMAL}" "${BOLD}${FUCHSIA} $$ ${NORMAL}"
-    printf '%-30s %-40s\n' "  ${BOLD}${DEVGREY}USER ${NORMAL}" "${BOLD}${FUCHSIA} ${USER} ${NORMAL}"
-    printf '%-30s %-40s\n' "  ${BOLD}${DEVGREY}APPS ${NORMAL}" "${BOLD}${FUCHSIA} ${app_i} ${NORMAL}"
-    printf '%-30s %-40s\n' "  ${BOLD}${DEVGREY}DEV ${NORMAL}" "${BOLD}${FUCHSIA} ${app_cfg_bDev_str} ${NORMAL}"
+    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}PID ${NORMAL}" "${BOLD}${FUCHSIA} $$ ${NORMAL}"
+    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}USER ${NORMAL}" "${BOLD}${FUCHSIA} ${USER} ${NORMAL}"
+    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}APPS ${NORMAL}" "${BOLD}${FUCHSIA} ${app_i} ${NORMAL}"
+    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}DEV ${NORMAL}" "${BOLD}${FUCHSIA} ${app_cfg_bDev_str} ${NORMAL}"
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
     echo
 
     sleep 0.3
 
-    printf "%-30s %-5s\n" "${TIME}      Successfully loaded ${app_i} apps" | tee -a "${LOGS_FILE}" >/dev/null
-    printf "%-30s %-5s\n" "${TIME}      Waiting for user input ..." | tee -a "${LOGS_FILE}" >/dev/null
+    printf "%-57s %-5s\n" "${TIME}      Successfully loaded ${app_i} apps" | tee -a "${LOGS_FILE}" >/dev/null
+    printf "%-57s %-5s\n" "${TIME}      Waiting for user input ..." | tee -a "${LOGS_FILE}" >/dev/null
 
     echo -e "  ${BOLD}${NORMAL}Waiting on selection ..." >&2
     echo
@@ -2686,10 +2755,10 @@ function show_about()
     --image=./img/Tux.png \
     --website-label="Github" \
     --website="${app_repo_url}" \
-    --authors="Aetherinox" \
+    --authors="${app_repo_dev}" \
     --license="MIT" \
-    --comments="An installation manager developed specifically for ZorinOS 16 / Ubuntu 20.04 LTS. " \
-    --copyright="Copyright (c) 2023 Aetherx" \
+    --comments="An installation manager developed specifically for ZorinOS / Ubuntu 20.04 LTS. " \
+    --copyright="Copyright (c) ${YEAR} ${app_repo_dev}" \
     --pversion="v$(get_version)" \
     --pname="Test Application"
 
@@ -2707,7 +2776,7 @@ function show_menu()
 
     if ! [ -x "$(command -v yad)" ]; then
 
-        printf "%-30s %-5s\n" "${TIME}      Warning: yad package missing. Attempting to install." | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s %-5s\n" "${TIME}      Warning: yad package missing. Attempting to install." | tee -a "${LOGS_FILE}" >/dev/null
 
         echo
         echo -e "  ${BOLD}${FUCHSIA} Setting up for the first time ...${NORMAL}" >&2
@@ -2719,7 +2788,7 @@ function show_menu()
         fn_app_zenity ${app_zenity} nil true
 
         if [ -x "$(command -v yad)" ]; then
-            printf "%-30s %-5s\n" "${TIME}      Install successful. Package now available to use." | tee -a "${LOGS_FILE}" >/dev/null
+            printf "%-57s %-5s\n" "${TIME}      Install successful. Package now available to use." | tee -a "${LOGS_FILE}" >/dev/null
         fi
 
         sleep 0.5
@@ -2785,7 +2854,7 @@ function show_menu()
             firefox "${app_repo_url}" || xdg-open "${app_repo_url}" &
             yad --notification --text='Website will open in browser'
 
-            printf "%-30s %-5s\n" "${TIME}      User Input: OnClick ......... Github (Button)" | tee -a "${LOGS_FILE}" >/dev/null
+            printf "%-57s %-5s\n" "${TIME}      User Input: OnClick ......... Github (Button)" | tee -a "${LOGS_FILE}" >/dev/null
             continue
         fi
 
@@ -2806,7 +2875,7 @@ function show_menu()
 
         case "$res" in
             "${res[0]}")
-                printf "%-30s %-15s\n" "${TIME}      User Input: OnClick ......... ${res} (App)" | tee -a "${LOGS_FILE}" >/dev/null
+                printf "%-57s %-15s\n" "${TIME}      User Input: OnClick ......... ${res} (App)" | tee -a "${LOGS_FILE}" >/dev/null
 
                 assoc_func="${get_functions[$res]}"
                 $assoc_func "${res}" "${assoc_func}"
