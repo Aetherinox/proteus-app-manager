@@ -1,9 +1,13 @@
-<p align="center"><img src="../docs/images/readme/libraries/swizzin/banner_panel.png" width="860"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/Aetherinox/zorin-app-manager/main/docs/images/readme/libraries/swizzin/banner_panel.png" width="860"></p>
 <h1 align="center"><b>What is Swizzin?</b></h1>
 
 <br />
 
-<p align="center">[![View](https://img.shields.io/badge/%20-%20View%20Official%20Swizzin%20Repo%20-%20%23de2343?style=for-the-badge&logo=firefox&logoColor=FFFFFF)](https://github.com/swizzin/swizzin)</p>
+<center>
+
+[![View](https://img.shields.io/badge/%20-%20View%20Official%20Swizzin%20Repo%20-%20%23de2343?style=for-the-badge&logo=firefox&logoColor=FFFFFF)](https://github.com/swizzin/swizzin)
+
+</center>
 
 <br />
 <br />
