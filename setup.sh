@@ -551,8 +551,8 @@ bInstall_app_cdialog=true
 bInstall_app_blender_flatpak=true
 bInstall_app_blender_snapd=true
 bInstall_app_colorpicker_snapd=true
-bInstall_app_conky1=true
-bInstall_app_conky2=true
+bInstall_app_conky=true
+bInstall_app_conky_mngr=true
 bInstall_app_curl=true
 bInstall_app_flatpak=true
 bInstall_app_gdebi=true
@@ -606,8 +606,8 @@ app_blender_flatpak="Blender (using Flatpak)"
 app_blender_snapd="Blender (using Snapd)"
 app_cdialog="cdialog (ComeOn Dialog)"
 app_colorpicker_snapd="Color Picker (using Snapd)"
-app_conky1="Conky Manager v1"
-app_conky2="Conky Manager v2"
+app_conky="Conky"
+app_conky_mngr="Conky Manager"
 app_curl="curl"
 app_flatpak="Flatpak"
 app_gdebi="GDebi"
@@ -682,8 +682,8 @@ get_functions=(
     ["$app_blender_snapd"]='fn_app_blender_snapd'
     ["$app_colorpicker_snapd"]='fn_app_colorpicker_snapd'
     ["$app_cdialog"]='fn_app_cdialog'
-    ["$app_conky1"]='fn_app_conky1'
-    ["$app_conky2"]='fn_app_conky2'
+    ["$app_conky"]='fn_app_conky'
+    ["$app_conky_mngr"]='fn_app_conky_mngr'
     ["$app_curl"]='fn_app_curl'
     ["$app_flatpak"]='fn_app_flatpak'
     ["$app_gdebi"]='fn_app_gdebi'
@@ -884,10 +884,17 @@ function fn_app_cdialog()
 }
 
 ##--------------------------------------------------------------------------
-#   Conky Manager 1
+#   Conky Package
+#
+#   Conky is a system monitor software. It is free software released 
+#   under the terms of the GPL license. Conky is able to monitor many
+#   system variables including CPU, memory, swap, disk space,
+#   temperature, top, upload, download, system messages, and much more.
+#   
+#   It is extremely configurable. Conky is a fork of torsmo. 
 ##--------------------------------------------------------------------------
 
-function fn_app_conky1()
+function fn_app_conky()
 {
     begin "${1}"
 
@@ -917,7 +924,7 @@ function fn_app_conky1()
             mkdir -p "${path_conky}" >> $LOGS_FILE 2>&1
         fi
 
-        cp "${app_dir}/libraries/conky/v1/${file_config}" "${path_conky}/${file_config}"
+        cp "${app_dir}/libraries/conky/conky_base/${file_config}" "${path_conky}/${file_config}"
 
         # sloppy way, but it works for now
         if [ "$app_cfg_bDev_NullRun" = false ]; then
@@ -959,10 +966,15 @@ function fn_app_conky1()
 }
 
 ##--------------------------------------------------------------------------
-#   Conky Manager 2
+#   Conky Manager
+#
+#   Conky Manager is a graphical front-end for managing Conky config 
+#   files. It provides options to start/stop, browse and edit Conky
+#   themes installed on the system. Packages are currently available
+#   in Launchpad for Ubuntu and derivatives (Linux Mint, etc).
 ##--------------------------------------------------------------------------
 
-function fn_app_conky2()
+function fn_app_conky_mngr()
 {
     begin "${1}"
 
@@ -2312,13 +2324,13 @@ if [ "$bInstall_app_cdialog" = true ]; then
     let app_i=app_i+1
 fi
 
-if [ "$bInstall_app_conky1" = true ]; then
-    apps+=("${app_conky1}")
+if [ "$bInstall_app_conky" = true ]; then
+    apps+=("${app_conky}")
     let app_i=app_i+1
 fi
 
-if [ "$bInstall_app_conky2" = true ]; then
-    apps+=("${app_conky2}")
+if [ "$bInstall_app_conky_mngr" = true ]; then
+    apps+=("${app_conky_mngr}")
     let app_i=app_i+1
 fi
 
