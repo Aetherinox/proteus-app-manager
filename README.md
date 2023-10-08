@@ -1,6 +1,12 @@
 <p align="center"><img src="docs/images/readme/banner.jpg" width="860"></p>
 <h1 align="center"><b>ZorinOS App Manager</b></h1>
 
+<center>
+
+![Version](https://img.shields.io/github/v/tag/Aetherinox/zorin-app-manager?logo=GitHub&label=version&color=ba5225) ![Release Date](https://img.shields.io/github/release-date-pre/Aetherinox/zorin-app-manager?color=eb1a58) ![Downloads](https://img.shields.io/github/downloads/Aetherinox/zorin-app-manager/total) ![Repo Size](https://img.shields.io/github/repo-size/Aetherinox/zorin-app-manager?label=size&color=59702a) ![Last Commit)](https://img.shields.io/github/last-commit/Aetherinox/zorin-app-manager?color=b43bcc) [![View Apt Repo](https://img.shields.io/badge/Repo%20-%20Here%20-%20%23f00e7f?logo=Zorin&logoColor=FFFFFF&label=Download)](https://github.com/Aetherinox/zorin-app-manager/releases/)
+
+</center>
+
 <br />
 <br />
 
@@ -65,6 +71,7 @@ This is a simple application manager which allows you to install a number of pro
 | [Gnome Extension: Internet Speed Monitor](https://launchpad.net/indicator-multiload) [^1]  | Monitor network traffic as widget |
 | [gPick (Color Picker)](https://github.com/thezbyg/gpick)                              | Color picker |
 | [Kooha](https://github.com/SeaDve/Kooha)                                              | Screen recorder |
+| [lintian](https://wiki.debian.org/Teams/Lintian)                                      | Package checker for creating Debian packages  |
 | [members](https://packages.ubuntu.com/search?keywords=members)                        | Tool for displaying the users of a group |
 | [mlocate](https://github.com/msekletar/mlocate)                                       | Find files on your computer  |
 | [neofetch](https://github.com/dylanaraps/neofetch)                                    | Command-line system information tool  |
