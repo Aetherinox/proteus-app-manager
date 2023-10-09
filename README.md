@@ -23,8 +23,8 @@
 - [Packages](#packages)
 - [Patches](#patches)
 - [Usage](#usage)
-  - [Configuration](#configuration)
   - [Install](#install)
+  - [Configuration](#configuration)
   - [Prerequisites](#prerequisites)
   - [Logs](#logs)
 - [Command-line Arguments](#command-line-arguments)
@@ -78,7 +78,7 @@ This manager features a selection menu which allows you to choose which programs
 | [Github Desktop](https://github.com/Aetherinox/zorin-apt-repo/tree/master/incoming)   | Github Desktop for linux.                     |
 | [Gnome Extension Manager (Core)](https://flathub.org/apps/com.mattjakeman.ExtensionManager) [^2] | Utility for browsing / installing GNOME Shell Extensions.         |
 | [Gnome Extension: ArcMenu](https://extensions.gnome.org/extension/3628/arcmenu/) [^1]      | Replacement shell for Linux. Includes MacOS / Windows themes.  |
-| [Gnome Extension: Internet Speed Monitor](https://launchpad.net/indicator-multiload) [^1]  | Monitor network traffic as widget |
+| [Gnome Extension: Internet Speed Monitor](https://github.com/rishuinfinity/InternetSpeedMonitor) [^1]  | Monitor network traffic as widget |
 | [gPick (Color Picker)](https://github.com/thezbyg/gpick)                              | Color picker |
 | [Kooha](https://github.com/SeaDve/Kooha)                                              | Screen recorder |
 | [lintian](https://wiki.debian.org/Teams/Lintian)                                      | Package checker for creating Debian packages  |
@@ -117,7 +117,7 @@ This manager features a selection menu which allows you to choose which programs
   - Automatically assigns static ip address
   - Configures network adapter to use Quad9 DNS servers
 - Update Network /etc/hosts file
-- VBox Additions package disrepency issue with non-Pro releases.
+- VBox Additions package discrepancy issue with non-Pro releases.
 
 <br />
 
@@ -126,12 +126,7 @@ This manager features a selection menu which allows you to choose which programs
 <br />
 
 ## Usage
-Information related to using this wizard.
-
-<br />
-
-### Configuration
-This script contains many features that may have settings that you might not want. It is HIGHLY recommended that you open the `setup.sh` file in a text editor and review the settings. One particular feature is the `Netplan Configuration` which has default settings that include what static ip address to assign to the network adapter, as well as the default gateway, and Quad9 DNS servers.
+Information on getting started.
 
 <br />
 
@@ -141,7 +136,11 @@ To use this script, do the following:
 <br />
 
 > [!WARNING]
-> Do not run `sudo` when executing this script. The script will automatically ask you for sudo permission. It needs to be ran as the user you are currently logged in as.
+> Do NOT attempt to run this script as another user that you are not signed in as. If you are signed into your device as user `David`, don't `su` in terminal to another user and then attempt to run the script. Whatever user you're signed into the device with, is the user you should be running the script under.
+>
+> Do not `su root` and try to run the script. It will fail. You shouldn't be running things under root anyway.
+> 
+> You should also not need `sudo` to run the script. It will automatically ask you for sudo permission.
 
 <br />
 
@@ -160,6 +159,10 @@ Finally, run the script
 ```
 
 <br />
+
+### Configuration
+This script contains many features that may have settings that you might not want. It is HIGHLY recommended that you open the `setup.sh` file in a text editor and review the settings. One particular feature is the `Netplan Configuration` which has default settings that include what static ip address to assign to the network adapter, as well as the default gateway, and Quad9 DNS servers.
+
 <br />
 
 ### Prerequisites
