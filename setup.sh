@@ -12,30 +12,6 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin"
 ##--------------------------------------------------------------------------
 
 ##--------------------------------------------------------------------------
-#   GTK Theme
-#
-#   Invalid themes will default to 'Adwaita'
-#       -   Adwaita
-#       -   HighContrast
-#       -   HighContrastInverse
-#       -   dark
-#       -   Adwaita-dark
-#       -   ZorinBlue-Light
-#       -   ZorinBlue-Dark
-#       -        Red
-#       -        Green
-#       -        Grey
-#       -        Orange
-#       -        Purple
-#   
-#   If we're going for support on Ubuntu and Zorin, set default to theme
-#   both commonly share.
-#
-##--------------------------------------------------------------------------
-
-export GTK_THEME="Adwaita-dark"
-
-##--------------------------------------------------------------------------
 #   vars > app
 ##--------------------------------------------------------------------------
 
@@ -45,7 +21,7 @@ app_repo_apt="zorin-apt-repo"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
 app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
 app_title="Zorin App Manager (${app_repo_dev})"
-app_ver=("1" "0" "0" "5")
+app_ver=("1" "0" "0" "4")
 app_dir=$PWD
 app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
@@ -204,7 +180,7 @@ netplan_macaddr=$(cat /sys/class/net/$netplan_adapt_old/address 2> /dev/null )
 gui_width=540
 gui_height=525
 gui_column="Available Packages"
-gui_desc="Select the app / package you wish to install. Most apps will run as silent installs.\n\nStart typing or press <span color='#3477eb'><b>CTRL+F</b></span> to search for an app\n\nIf you encounter issues, review the logfile located at:\n      <span color='#3477eb'><b>${LOGS_FILE}</b></span>\n\n"
+gui_desc="Select the app / package you wish to install. Most apps will run as silent installs.\n\nIf you encounter issues, review the logfile located at:\n      <span color='#3477eb'><b>${LOGS_FILE}</b></span>\n\nStart typing or press <span color='#3477eb'><b>CTRL+F</b></span> to search for an app\n\n"
 
 ##--------------------------------------------------------------------------
 #   vars > colors
@@ -306,14 +282,43 @@ function get_version()
 }
 
 ##--------------------------------------------------------------------------
+#   func > notify-send
+#
+#   because this script requires some actions as sudo, notify-send will not
+#   work because it has no clue which user to send the notification to.
+#
+#   use this as a bypass to figure out what user is logged in.
+#
+#   could use zenity for this, but notifications are limited.
+#
+#   TODO:   Migrate to yad library
+##--------------------------------------------------------------------------
+
+function notify-send()
+{
+    # func name
+    fn_name=${FUNCNAME[0]}
+
+    # get name of display in use
+    local display=":$(ls /tmp/.X11-unix/* | sed 's#/tmp/.X11-unix/X##' | head -n 1)"
+
+    # get user using display
+    local user=$(who | grep '('$display')' | awk '{print $1}' | head -n 1)
+
+    # detect id of user
+    local uid=$(id -u $user)
+
+    sudo -u $user DISPLAY=$display DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus $fn_name "$@"
+}
+
+##--------------------------------------------------------------------------
 #   func > logs > begin
 ##--------------------------------------------------------------------------
 
 function Logs_Begin()
 {
     if [ $NO_JOB_LOGGING ] ; then
-        printf '%-57s %-5s' "    Logging for this manager has been disabled." ""
-        sleep 3
+        notify-send -u critical "Logging Disabled" "Logging for this manager has been disabled." >> $LOGS_FILE 2>&1
     else
         mkdir -p $LOGS_DIR
         LOGS_PIPE=${LOGS_FILE}.pipe
@@ -382,10 +387,6 @@ function Logs_Finish()
     sudo pkill -9 -f ".$LOGS_FILE." >> $LOGS_FILE 2>&1
 }
 
-##--------------------------------------------------------------------------
-#   Begin Logging
-##--------------------------------------------------------------------------
-
 Logs_Begin
 
 ##--------------------------------------------------------------------------
@@ -425,19 +426,6 @@ spin()
             sleep 0.4
         done
     done
-}
-
-##--------------------------------------------------------------------------
-#   func > open url
-#
-#   opening urls in bash can be wonky as hell. just doing it the manual
-#   way to ensure a browser gets opened.
-##--------------------------------------------------------------------------
-
-function open_url()
-{
-   local URL="$1"
-   xdg-open $URL || firefox $URL || sensible-browser $URL || x-www-browser $URL || gnome-open $URL
 }
 
 ##--------------------------------------------------------------------------
@@ -483,11 +471,6 @@ function finish()
         kill -9 $app_pid_spin 2> /dev/null
         printf "\n%-57s %-5s\n" "${TIME}      KILL Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
     fi
-
-    if ! [ -z "${1}" ]; then
-        assoc_uri="${get_uri[$1]}"
-        open_url ${assoc_uri}
-    fi
 }
 
 ##--------------------------------------------------------------------------
@@ -501,15 +484,7 @@ function exit()
 }
 
 ##--------------------------------------------------------------------------
-#   func > first time setup
-#
-#   this is the default func executed when script is launched to make sure
-#   end-user has all the required libraries.
-#
-#   since we're working on other distros, add curl and wget into the mix
-#   since some distros don't include these.
-#
-#   [ GPG KEY / APT REPO ]
+#   func > check zorin repo registery
 #
 #   NOTE:   can be removed via:
 #               sudo rm -rf /etc/apt/sources.list.d/aetherinox*list
@@ -533,36 +508,18 @@ function exit()
 function app_setup
 {
     ReqTitle=${1}
-    bMissingCurl=false
-    bMissingWget=false
-    bMissingNotify=false
     bMissingYad=false
     bMissingGPG=false
     bMissingRepo=false
 
-    # require curl
-    if ! [ -x "$(command -v curl)" ]; then
-        bMissingCurl=true
-    fi
-
-    # require wget
-    if ! [ -x "$(command -v wget)" ]; then
-        bMissingWget=true
-    fi
-
-    # require wget
-    if ! [ -x "$(command -v notify-send)" ]; then
-        bMissingNotify=true
-    fi
+    #   NOTE:   apt-key has been deprecated
+    #
+    #   sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
 
     # require yad
     if ! [ -x "$(command -v yad)" ]; then
         bMissingYad=true
     fi
-
-    #   NOTE:   apt-key has been deprecated
-    #
-    #   sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
 
     # Missing zorin-apt-repo gpg key
     if ! [ -f "/usr/share/keyrings/${app_repo_aptpkg}.gpg" ]; then
@@ -577,11 +534,11 @@ function app_setup
     # Check if contains title
     # If so, called from another function
     if [ -n "$ReqTitle" ]; then
-        if [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
+        if [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
             echo -e "[ ${STATUS_HALT} ]"
         fi
     else
-        if [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
+        if [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
             echo
             title "First Time Setup ..."
             echo
@@ -589,47 +546,14 @@ function app_setup
         fi
     fi
 
-    if [ "$bMissingCurl" = true ]; then
-        printf "%-57s %-5s\n" "${TIME}      Installing curl package" | tee -a "${LOGS_FILE}" >/dev/null
-
-        printf '%-57s %-5s' "    |--- Adding curl package" ""
-        sleep 0.5
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install curl -y -qq >> /dev/null 2>&1
-        sleep 0.5
-        echo -e "[ ${STATUS_OK} ]"
-    fi
-
-    if [ "$bMissingWget" = true ]; then
-        printf "%-57s %-5s\n" "${TIME}      Installing wget package" | tee -a "${LOGS_FILE}" >/dev/null
-
-        printf '%-57s %-5s' "    |--- Adding wget package" ""
-        sleep 0.5
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install wget -y -qq >> /dev/null 2>&1
-        sleep 0.5
-        echo -e "[ ${STATUS_OK} ]"
-    fi
-
-    if [ "$bMissingNotify" = true ]; then
-        printf "%-57s %-5s\n" "${TIME}      Installing notify-send package" | tee -a "${LOGS_FILE}" >/dev/null
-
-        printf '%-57s %-5s' "    |--- Adding notify-send package" ""
-        sleep 0.5
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install libnotify-bin notify-osd -y -qq >> /dev/null 2>&1
-        sleep 0.5
-        echo -e "[ ${STATUS_OK} ]"
-    fi
-
     if [ "$bMissingYad" = true ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing yad package" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Adding yad package" ""
-        sleep 0.5
+        sleep 1
         sudo apt-get update -y -q >> /dev/null 2>&1
         sudo apt-get install yad -y -qq >> /dev/null 2>&1
-        sleep 0.5
+        sleep 1
         echo -e "[ ${STATUS_OK} ]"
     fi
 
@@ -637,9 +561,9 @@ function app_setup
         printf "%-57s %-5s\n" "${TIME}      Adding ${app_repo_dev} GPG key: [https://github.com/${app_repo_dev}.gpg]" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Adding github.com/${app_repo_dev}.gpg" ""
-        sleep 0.5
+        sleep 1
         sudo wget -qO - "https://github.com/${app_repo_dev}.gpg" | sudo gpg --dearmor -o "/usr/share/keyrings/${app_repo_aptpkg}.gpg" >> $LOGS_FILE 2>&1
-        sleep 0.5
+        sleep 1
         echo -e "[ ${STATUS_OK} ]"
     fi
 
@@ -647,7 +571,7 @@ function app_setup
         printf "%-57s %-5s\n" "${TIME}      Registering ${app_repo_apt}: https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Registering ${app_repo_apt}" ""
-        sleep 0.5
+        sleep 1
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/${app_repo_aptpkg}.gpg] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/${app_repo_aptpkg}.list >> $LOGS_FILE 2>&1
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
@@ -655,7 +579,7 @@ function app_setup
         printf "%-57s %-5s\n" "${TIME}      Updating user repo list with apt-get update" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Updating repo list" ""
-        sleep 0.5
+        sleep 1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
@@ -665,41 +589,10 @@ function app_setup
         title "Retry: ${1}"
     fi
 
-    sleep 0.5
+    sleep 2
 
 }
 app_setup
-
-##--------------------------------------------------------------------------
-#   func > notify-send
-#
-#   because this script requires some actions as sudo, notify-send will not
-#   work because it has no clue which user to send the notification to.
-#
-#   use this as a bypass to figure out what user is logged in.
-#
-#   could use zenity for this, but notifications are limited.
-#
-#   NOTE:   must be placed after func app_setup() otherwise notify-send
-#           will not be detected as installed.
-##--------------------------------------------------------------------------
-
-function notify-send()
-{
-    # func name
-    fn_name=${FUNCNAME[0]}
-
-    # get name of display in use
-    local display=":$(ls /tmp/.X11-unix/* | sed 's#/tmp/.X11-unix/X##' | head -n 1)"
-
-    # get user using display
-    local user=$(who | grep '('$display')' | awk '{print $1}' | head -n 1)
-
-    # detect id of user
-    local uid=$(id -u $user)
-
-    sudo -u $user DISPLAY=$display DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus $fn_name "$@"
-}
 
 ##--------------------------------------------------------------------------
 #   output some logging
@@ -725,12 +618,9 @@ app_ext_id_sysload=4585
 bInstall_all=true
 bInstall_app_alien=true
 bInstall_app_appimage=true
-bInstall_app_app_outlet=true
+bInstall_app_cdialog=true
 bInstall_app_blender_flatpak=true
 bInstall_app_blender_snapd=true
-bInstall_app_browser_chrome=true
-bInstall_app_browser_tor=true
-bInstall_app_cdialog=true
 bInstall_app_colorpicker_snapd=true
 bInstall_app_conky=true
 bInstall_app_conky_mngr=true
@@ -742,11 +632,9 @@ bInstall_app_github_desktop=true
 bInstall_app_gnome_ext_arcmenu=true
 bInstall_app_gnome_ext_core=true
 bInstall_app_gnome_ext_ism=true
-bInstall_app_gnome_tweaks=true
 bInstall_app_gpick=true
 bInstall_app_kooha=true
 bInstall_app_lintian=true
-bInstall_app_makedeb=true
 bInstall_app_members=true
 bInstall_app_mlocate=true
 bInstall_app_neofetch=true
@@ -785,11 +673,8 @@ bInstall_app_zorinospro_lo=true
 app_all="⭐ All"
 app_alien="Alien Package Converter"
 app_appimage="AppImage Launcher"
-app_app_outlet="App Outlet Manager"
 app_blender_flatpak="Blender (using Flatpak)"
 app_blender_snapd="Blender (using Snapd)"
-app_browser_chrome="Browser: Google Chrome"
-app_browser_tor="Browser: Tor"
 app_cdialog="cdialog (ComeOn Dialog)"
 app_colorpicker_snapd="Color Picker (using Snapd)"
 app_conky="Conky"
@@ -802,11 +687,9 @@ app_github_desktop="Github Desktop"
 app_gnome_ext_arcmenu="Gnome Ext (ArcMenu)"
 app_gnome_ext_core="Gnome Manager (Core)"
 app_gnome_ext_ism="Gnome Ext (Speed Monitor)"
-app_gnome_tweaks="Gnome Tweaks Tool"
 app_gpick="gPick (Color Picker)"
 app_kooha="Kooha (Screen Recorder)"
 app_lintian="lintian"
-app_makedeb="Makedeb"
 app_members="members"
 app_mlocate="mlocate"
 app_neofetch="neofetch"
@@ -865,14 +748,11 @@ get_functions=(
 
     ["$app_all"]='fn_app_all'
     ["$app_alien"]='fn_app_alien'
-    ["$app_appimage"]='fn_app_appimage'
-    ["$app_app_outlet"]='fn_app_app_outlet'
+    ["$app_appimage"]='fn_app_appimg'
     ["$app_blender_flatpak"]='fn_app_blender_flatpak'
     ["$app_blender_snapd"]='fn_app_blender_snapd'
-    ["$app_browser_chrome"]='fn_app_browser_chrome'
-    ["$app_browser_tor"]='fn_app_browser_tor'
-    ["$app_cdialog"]='fn_app_cdialog'
     ["$app_colorpicker_snapd"]='fn_app_colorpicker_snapd'
+    ["$app_cdialog"]='fn_app_cdialog'
     ["$app_conky"]='fn_app_conky'
     ["$app_conky_mngr"]='fn_app_conky_mngr'
     ["$app_curl"]='fn_app_curl'
@@ -883,11 +763,9 @@ get_functions=(
     ["$app_gnome_ext_arcmenu"]='fn_app_gnome_ext_arcmenu'
     ["$app_gnome_ext_core"]='fn_app_gnome_ext_core'
     ["$app_gnome_ext_ism"]='fn_app_gnome_ext_ism'
-    ["$app_gnome_tweaks"]='fn_app_gnome_tweaks'
     ["$app_gpick"]='fn_app_gpick'
     ["$app_kooha"]='fn_app_kooha'
     ["$app_lintian"]='fn_app_lintian'
-    ["$app_makedeb"]='fn_app_makedeb'
     ["$app_members"]='fn_app_members'
     ["$app_mlocate"]='fn_app_mlocate'
     ["$app_neofetch"]='fn_app_neofetch'
@@ -922,21 +800,6 @@ get_functions=(
 )
 
 ##--------------------------------------------------------------------------
-#   associated app urls
-#
-#   when certain apps are installed, we may want to open a browser window
-#   so that the user can get a better understanding of where to find
-#   resources for that app.
-#
-#   not all apps have to have a website, as that would get annoying.
-##--------------------------------------------------------------------------
-
-declare -A get_uri
-get_uri=(
-    ["$app_makedeb"]="https://docs.makedeb.org/introduction/welcome/"
-)
-
-##--------------------------------------------------------------------------
 #   Alien package converter
 #
 #   A program that converts between Red Hat rpm, Debian deb, Stampede slp,
@@ -951,8 +814,10 @@ function fn_app_alien()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
+
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install alien -y -qq >> $LOGS_FILE 2>&1
+
     fi
 
     sleep 0.5
@@ -965,7 +830,7 @@ function fn_app_alien()
 #   App Image Launcher
 ##--------------------------------------------------------------------------
 
-function fn_app_appimage()
+function fn_app_appimg()
 {
     begin "${1}"
 
@@ -975,34 +840,6 @@ function fn_app_appimage()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install appimagelauncher -y -qq >> $LOGS_FILE 2>&1
 
-    fi
-
-    sleep 0.5
-    echo -e "[ ${STATUS_OK} ]"
-
-    finish
-}
-
-##--------------------------------------------------------------------------
-#   App Outlet
-#
-#   URL:        https://github.com/AppOutlet/AppOutlet
-#   DESC:       App Outlet is a Universal application store. It easily 
-#               allows you to search and download applications that runs 
-#               on most Linux distributions. It currently supports 
-#               AppImages, Flatpaks and Snaps packages.
-#   
-##--------------------------------------------------------------------------
-
-function fn_app_app_outlet()
-{
-    begin "${1}"
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        app_setup "${1}"
-
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install app-outlet -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 0.5
@@ -1063,54 +900,6 @@ function fn_app_blender_snapd()
 
     sleep 0.5
 	echo -e "[ ${STATUS_OK} ]"
-
-    finish
-}
-
-##--------------------------------------------------------------------------
-#   Browser: Chrome
-##--------------------------------------------------------------------------
-
-function fn_app_browser_chrome()
-{
-    begin "${1}"
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install wget -y -qq >> $LOGS_FILE 2>&1
-
-        sudo wget -P "${apt_dir_deb}" "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" >> $LOGS_FILE 2>&1
-
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install ${apt_dir_deb}/google-chrome*.deb -f -y -qq >> $LOGS_FILE 2>&1
-    fi
-
-    sleep 0.5
-    echo -e "[ ${STATUS_OK} ]"
-
-    finish
-}
-
-##--------------------------------------------------------------------------
-#   Browser: Tor
-#
-#   URL:        https://torproject.org/download/
-#   DESC:       Tor Browser uses the Tor network to protect your privacy
-#               and anonymity.
-#   
-##--------------------------------------------------------------------------
-
-function fn_app_browser_tor()
-{
-    begin "${1}"
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
-    fi
-
-    sleep 0.5
-    echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -1236,7 +1025,7 @@ function fn_app_conky()
 
         echo -e "[ ${STATUS_OK} ]"
         printf '%-57s %-5s' "    |--- Starting conky" ""
-        sleep 1
+        sleep 4
 
         conky -q -d -c ~/.config/conky/conky.conf >> $LOGS_FILE 2>&1
     fi
@@ -1345,8 +1134,10 @@ function fn_app_git()
     begin "${1}"
 
     if [ "$app_cfg_bDev_NullRun" = false ]; then
+
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install git -y -qq >> $LOGS_FILE 2>&1
+
     fi
 
     sleep 0.5
@@ -1521,25 +1312,6 @@ function fn_app_gnome_ext_ism()
 }
 
 ##--------------------------------------------------------------------------
-#   Gnome Tweaks Tool
-##--------------------------------------------------------------------------
-
-function fn_app_gnome_tweaks()
-{
-    begin "${1}"
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install gnome-tweak-tool -y -qq >> $LOGS_FILE 2>&1
-    fi
-
-    sleep 0.5
-    echo -e "[ ${STATUS_OK} ]"
-
-    finish
-}
-
-##--------------------------------------------------------------------------
 #   gPick (Color Picker)
 ##--------------------------------------------------------------------------
 
@@ -1601,11 +1373,10 @@ function fn_app_kooha()
 ##--------------------------------------------------------------------------
 #   Lintian
 #
-#   URL:        https://wiki.debian.org/Teams/Lintian
-#   DESC:       required for creating debian packages
-#               e.g.
-#                   dpkg-deb --root-owner-group --build package-name
-#                   lintian package-name.deb --no-tag-display-limit
+#   required for creating debian packages
+#   e.g.
+#       dpkg-deb --root-owner-group --build package-name
+#       lintian package-name.deb --no-tag-display-limit
 ##--------------------------------------------------------------------------
 
 function fn_app_lintian
@@ -1621,31 +1392,6 @@ function fn_app_lintian
     echo -e "[ ${STATUS_OK} ]"
 
     finish
-}
-
-##--------------------------------------------------------------------------
-#   Makedeb 
-#
-#   URL:        https://www.makedeb.org/
-#   DESC:       makedeb creates packages through the use of PKGBUILDs: 
-#               packaging format designed to be concise and easy to pick 
-#               up, all while remaining powerful enough to match the 
-#               flexibility of standard Debian packaging tools.
-##--------------------------------------------------------------------------
-
-function fn_app_makedeb()
-{
-    begin "${1}"
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        export MAKEDEB_RELEASE='makedeb'
-        bash -c "$(wget -qO - 'https://shlink.makedeb.org/install')" >> $LOGS_FILE 2>&1
-    fi
-
-    sleep 0.5
-    echo -e "[ ${STATUS_OK} ]"
-
-    finish "${1}"
 }
 
 ##--------------------------------------------------------------------------
@@ -2627,11 +2373,6 @@ if [ "$bInstall_app_appimage" = true ]; then
     let app_i=app_i+1
 fi
 
-if [ "$bInstall_app_app_outlet" = true ]; then
-    apps+=("${app_app_outlet}")
-    let app_i=app_i+1
-fi
-
 if [ "$bInstall_app_blender_flatpak" = true ]; then
     apps+=("${app_blender_flatpak}")
     let app_i=app_i+1
@@ -2642,23 +2383,13 @@ if [ "$bInstall_app_blender_snapd" = true ]; then
     let app_i=app_i+1
 fi
 
-if [ "$bInstall_app_browser_chrome" = true ]; then
-    apps+=("${app_browser_chrome}")
-    let app_i=app_i+1
-fi
-
-if [ "$bInstall_app_browser_tor" = true ]; then
-    apps+=("${app_browser_tor}")
+if [ "$bInstall_app_colorpicker_snapd" = true ]; then
+    apps+=("${app_colorpicker_snapd}")
     let app_i=app_i+1
 fi
 
 if [ "$bInstall_app_cdialog" = true ]; then
     apps+=("${app_cdialog}")
-    let app_i=app_i+1
-fi
-
-if [ "$bInstall_app_colorpicker_snapd" = true ]; then
-    apps+=("${app_colorpicker_snapd}")
     let app_i=app_i+1
 fi
 
@@ -2712,11 +2443,6 @@ if [ "$bInstall_app_gnome_ext_ism" = true ]; then
     let app_i=app_i+1
 fi
 
-if [ "$bInstall_app_gnome_tweaks" = true ]; then
-    apps+=("${app_gnome_tweaks}")
-    let app_i=app_i+1
-fi
-
 if [ "$bInstall_app_gpick" = true ]; then
     apps+=("${app_gpick}")
     let app_i=app_i+1
@@ -2729,11 +2455,6 @@ fi
 
 if [ "$bInstall_app_lintian" = true ]; then
     apps+=("${app_lintian}")
-    let app_i=app_i+1
-fi
-
-if [ "$bInstall_app_makedeb" = true ]; then
-    apps+=("${app_makedeb}")
     let app_i=app_i+1
 fi
 
@@ -3109,9 +2830,7 @@ function show_menu()
         --text="${gui_desc}" \
         --buttons-layout=end \
         --button="Install:0" \
-        --button="App Docs!!Click app then click this button to view docs:4" \
         --button="Github:3" \
-        --button="!gtk-close!exit:1" \
         --borders=15 \
         --column="${gui_column}" ${app_all} "${apps_sorted[@]}")
         RET=$?
@@ -3119,22 +2838,11 @@ function show_menu()
         res="${dev//|}"
 
         ##--------------------------------------------------------------------------
-        #   button > docs
-        #
-        #   get associated url for app
+        #   button > about
         ##--------------------------------------------------------------------------
 
-        if [ $RET -eq 4 ]; then
-            if ! [ -z "${res}" ] && [ "${res}" != "${app_all}" ]; then
-                assoc_uri="${get_uri[$res]}"
-                if ! [ -z "${assoc_uri}" ]; then
-                    open_url ${assoc_uri}
-                else
-                    query=$(yad --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" --center --width=150 --height=125 --fixed --title "No Docs Available" --borders=10 --button="!gtk-yes!yes:0" --button="!gtk-close!exit:1" --text "The app <span color='#3477eb'><b>${res}</b></span> does not have any provided docs\nor websites to show.\n\nReach out to the developer if you feel this entry should\nhave docs.")
-                fi
-            else
-                query=$(yad --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" --center --width=150 --height=155 --fixed --title "No Selection" --borders=10 --button="!gtk-yes!yes:0" --button="!gtk-close!exit:1" --text "Select an individual app from the list and then click the <span color='#3477eb'><b>App Docs</b></span>\nbutton to view the documentation.\n\nThe option <span color='#3477eb'><b>${app_all}</b></span> is not a valid option. Do you really want ${app_i}\nbrowser windows open?")
-            fi
+        if [ $RET -eq 5 ]; then
+            ab=$(yad --pname="Test Application" --about  )
             continue
         fi
 
@@ -3143,17 +2851,10 @@ function show_menu()
         ##--------------------------------------------------------------------------
 
         if [ $RET -eq 3 ]; then
-            open_url ${app_repo_url}
+            firefox "${app_repo_url}" || xdg-open "${app_repo_url}" &
+            yad --notification --text='Website will open in browser'
+
             printf "%-57s %-5s\n" "${TIME}      User Input: OnClick ......... Github (Button)" | tee -a "${LOGS_FILE}" >/dev/null
-            continue
-        fi
-
-        ##--------------------------------------------------------------------------
-        #   button > about
-        ##--------------------------------------------------------------------------
-
-        if [ $RET -eq 5 ]; then
-            ab=$(yad --pname="Test Application" --about  )
             continue
         fi
 
@@ -3166,19 +2867,6 @@ function show_menu()
             exit
             sleep 0.2
             break
-        fi
-
-        ##--------------------------------------------------------------------------
-        #   confirmation dialog to make sure we really want to install
-        ##--------------------------------------------------------------------------
-
-        if [ $RET -eq 0 ]; then
-            answer=$(yad --image dialog-question --title "Install ${res}?" --borders=10 --button="!gtk-yes!yes:0" --button="!gtk-close!exit:1" --text "Are you sure you want to install the app\n\n${res}?")
-            ANSWER=$?
-
-            if [ $ANSWER -eq 1 ] || [ $ANSWER -eq 252 ]; then
-                continue
-            fi
         fi
 
         ##--------------------------------------------------------------------------
