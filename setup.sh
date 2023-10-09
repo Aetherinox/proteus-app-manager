@@ -474,6 +474,11 @@ function begin()
 
 ##--------------------------------------------------------------------------
 #   func > finish action
+#
+#   this func supports opening a url at the end of the installation
+#   however the command needs to have
+#       finish "${1}"
+#
 ##--------------------------------------------------------------------------
 
 function finish()
@@ -484,8 +489,9 @@ function finish()
         printf "\n%-57s %-5s\n" "${TIME}      KILL Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
     fi
 
+    # if var1 not empty
     if ! [ -z "${1}" ]; then
-        assoc_uri="${get_uri[$1]}"
+        assoc_uri="${get_docs_uri[$1]}"
         open_url ${assoc_uri}
     fi
 }
@@ -931,9 +937,18 @@ get_functions=(
 #   not all apps have to have a website, as that would get annoying.
 ##--------------------------------------------------------------------------
 
-declare -A get_uri
-get_uri=(
+declare -A get_docs_uri
+get_docs_uri=(
+    ["$app_alien"]='http://joeyh.name/code/alien/'
+    ["$app_conky"]='http://ifxgroup.net/conky.htm'
+    ["$app_curl"]='https://manpages.ubuntu.com/manpages/trusty/man1/curl.1.html'
+    ["$app_github_desktop"]='https://docs.github.com/en/desktop'
     ["$app_makedeb"]="https://docs.makedeb.org/introduction/welcome/"
+    ["$app_snapd"]="https://snapcraft.io/docs"
+    ["$app_swizzin"]="https://swizzin.ltd/getting-started"
+    ["$app_yad"]="https://mankier.com/1/yad"
+    ["$app_zenity"]="https://help.gnome.org/users/zenity/stable/"
+    ["$app_zorinospro_lo"]="${app_repo_url}/wiki/Packages#zorinos-pro-layouts"
 )
 
 ##--------------------------------------------------------------------------
@@ -3126,7 +3141,7 @@ function show_menu()
 
         if [ $RET -eq 4 ]; then
             if ! [ -z "${res}" ] && [ "${res}" != "${app_all}" ]; then
-                assoc_uri="${get_uri[$res]}"
+                assoc_uri="${get_docs_uri[$res]}"
                 if ! [ -z "${assoc_uri}" ]; then
                     open_url ${assoc_uri}
                 else
