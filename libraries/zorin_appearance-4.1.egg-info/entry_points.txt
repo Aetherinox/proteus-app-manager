@@ -1,3 +1,0 @@
-[gui_scripts]
-zorin-appearance = zorin_appearance.__main__:main
-

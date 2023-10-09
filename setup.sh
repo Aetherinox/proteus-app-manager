@@ -1,10 +1,11 @@
 #!/bin/bash
 PATH="/bin:/usr/bin:/sbin:/usr/sbin"
+echo 
 
 ##--------------------------------------------------------------------------
 #   @author :           aetherinox
-#   @script :           ZorinOS App Manager
-#   @when   :           2023-10-06 00:03:44
+#   @script :           Zorin App Manager
+#   @when   :           2023-10-09 08:37:31
 #   @url    :           https://github.com/Aetherinox/zorin-app-manager
 #
 #   requires chmod +x setup.sh
@@ -12,28 +13,44 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin"
 ##--------------------------------------------------------------------------
 
 ##--------------------------------------------------------------------------
-#   GTK Theme
+#   vars > colors
 #
-#   Invalid themes will default to 'Adwaita'
-#       -   Adwaita
-#       -   HighContrast
-#       -   HighContrastInverse
-#       -   dark
-#       -   Adwaita-dark
-#       -   ZorinBlue-Light
-#       -   ZorinBlue-Dark
-#       -        Red
-#       -        Green
-#       -        Grey
-#       -        Orange
-#       -        Purple
-#   
-#   If we're going for support on Ubuntu and Zorin, set default to theme
-#   both commonly share.
-#
+#   tput setab  [1-7]       – Set a background color using ANSI escape
+#   tput setb   [1-7]       – Set a background color
+#   tput setaf  [1-7]       – Set a foreground color using ANSI escape
+#   tput setf   [1-7]       – Set a foreground color
 ##--------------------------------------------------------------------------
 
-export GTK_THEME="Adwaita-dark"
+BLACK=$(tput setaf 0)
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+LIME_YELLOW=$(tput setaf 190)
+POWDER_BLUE=$(tput setaf 153)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+GREYL=$(tput setaf 242)
+DEV=$(tput setaf 157)
+DEVGREY=$(tput setaf 243)
+FUCHSIA=$(tput setaf 198)
+PINK=$(tput setaf 200)
+BRIGHT=$(tput bold)
+NORMAL=$(tput sgr0)
+BLINK=$(tput blink)
+REVERSE=$(tput smso)
+UNDERLINE=$(tput smul)
+
+##--------------------------------------------------------------------------
+#   vars > status messages
+##--------------------------------------------------------------------------
+
+STATUS_MISS="${BOLD}${GREYL} MISS ${NORMAL}"
+STATUS_SKIP="${BOLD}${GREYL} SKIP ${NORMAL}"
+STATUS_OK="${BOLD}${GREEN}  OK  ${NORMAL}"
+STATUS_FAIL="${BOLD}${RED} FAIL ${NORMAL}"
+STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 
 ##--------------------------------------------------------------------------
 #   vars > app
@@ -53,19 +70,10 @@ apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
 app_pid_spin=0
 app_pid=$BASHPID
+app_queue_restart=false
+app_queue_url=()
 app_i=0
-
-##--------------------------------------------------------------------------
-#   vars > app > dev
-#
-#   these settings should not be messed with. they cause the program to
-#   act in unexpected ways.
-##--------------------------------------------------------------------------
-
-app_cfg_bDev=false
-app_cfg_bDev_str=$(if [ "$app_cfg_bDev" = true ]; then echo "Enabled"; else echo "Disabled"; fi)
-app_cfg_bDev_NullRun=false
-app_cfg_bPendRestart=false
+app_cfg_bDev_str=$([ -n "${OPT_DEV_ENABLE}" ] && echo "Enabled" || echo "Disabled" )
 
 ##--------------------------------------------------------------------------
 #   vars > logs
@@ -80,17 +88,173 @@ export LOGS_FILE="$LOGS_DIR/zorin_${DATE}.log"
 export SECONDS=0
 
 ##--------------------------------------------------------------------------
-#   arguments
+#   vars > general
 ##--------------------------------------------------------------------------
 
+gui_width=540
+gui_height=525
+gui_column="Available Packages"
+gui_about="An app manager which allows you to install applications and packages with very minimal interaction."
+gui_desc="Select the app / package you wish to install. Most apps will run as silent installs.\n\nStart typing or press <span color='#3477eb'><b>CTRL+F</b></span> to search for an app\n\nIf you encounter issues, review the logfile located at:\n      <span color='#3477eb'><b>${LOGS_FILE}</b></span>\n\n"
+
+##--------------------------------------------------------------------------
+#   distro
+#
+#   returns distro information.
+#   even though this was strictly built for Zorin, I can already foresee
+#   people on other distros using this, so I may as well plan ahead.
+##--------------------------------------------------------------------------
+
+# freedesktop.org and systemd
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$NAME
+    OS_VER=$VERSION_ID
+
+# linuxbase.org
+elif type lsb_release >/dev/null 2>&1; then
+    OS=$(lsb_release -si)
+    OS_VER=$(lsb_release -sr)
+
+# versions of Debian/Ubuntu without lsb_release cmd
+elif [ -f /etc/lsb-release ]; then
+    . /etc/lsb-release
+    OS=$DISTRIB_ID
+    OS_VER=$DISTRIB_RELEASE
+
+# older Debian/Ubuntu/etc distros
+elif [ -f /etc/debian_version ]; then
+    OS=Debian
+    OS_VER=$(cat /etc/debian_version)
+
+# fallback: uname, e.g. "Linux <version>", also works for BSD
+else
+    OS=$(uname -s)
+    OS_VER=$(uname -r)
+fi
+
+##--------------------------------------------------------------------------
+#   func > get version
+#
+#   returns current version of app
+#   converts to human string.
+#       e.g.    "1" "2" "4" "0"
+#               1.2.4.0
+##--------------------------------------------------------------------------
+
+function get_version()
+{
+    ver_join=${app_ver[@]}
+    ver_str=${ver_join// /.}
+    echo ${ver_str}
+}
+
+##--------------------------------------------------------------------------
+#   options
+#
+#       -d      developer mode
+#       -h      help menu
+#       -n      developer: null run
+#       -s      silent mode | logging disabled
+#       -t      theme
+##--------------------------------------------------------------------------
+
+function opt_usage()
+{
+    echo
+    printf "  ${BLUE}${app_title}${NORMAL}\n" 1>&2
+    printf "  ${GRAY}${gui_about}${NORMAL}\n" 1>&2
+    echo
+    printf '  %-15s %-40s\n' "Usage:" "${0} [${GREYL}options${NORMAL}]" 1>&2
+    printf '  %-15s %-40s\n\n' "    " "${0} [${GREYL}-h${NORMAL}] [${GREYL}-d${NORMAL}] [${GREYL}-n${NORMAL}] [${GREYL}-s${NORMAL}] [${GREYL}-t THEME${NORMAL}] [${GREYL}-v${NORMAL}]" 1>&2
+    printf '  %-15s %-40s\n' "Options:" "" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "-d" "dev mode" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "-h" "show help menu" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "-n" "dev: null run" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "" "simulate app installs (no changes)" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "-s" "silent mode which disables logging" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "-t" "specify theme to use" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "" "    Adwaita" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "" "    Adwaita-dark" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "" "    HighContrast" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "" "    HighContrastInverse" 1>&2
+    printf '  %-15s %-5s %-40s\n' "    " "-v" "current version of app manager" 1>&2
+    echo
+    echo
+    exit 1
+}
+
 OPTIND=1
-while getopts ":S" opt ; do
-    case $opt in
-        S)
-            NO_JOB_LOGGING="true"
+while getopts "dhnst:v" opt; do
+    case ${opt} in
+        d)
+            OPT_DEV_ENABLE=true
+            echo -e "  ${FUCHSIA}${BLINK}Devmode Enabled${NORMAL}"
+            ;;
+
+        h)
+            opt_usage
+            ;;
+
+        n)
+            OPT_DEV_NULLRUN=true
+            echo -e "  ${FUCHSIA}${BLINK}Devnull Enabled${NORMAL}"
+
+            ;;
+
+        s)
+            OPT_NOLOG=true
+            echo -e "  ${FUCHSIA}${BLINK}Logging Disabled{NORMAL}"
+
+            ;;
+
+        t)
+            OPT_THEME=${OPTARG}
+            ;;
+
+        v)
+            echo
+            echo -e "  ${GREEN}${BOLD}${app_title}${NORMAL} - v$(get_version)${NORMAL}"
+            echo -e "  ${LGRAY}${BOLD}${app_repo_url}${NORMAL}"
+            echo -e "  ${LGRAY}${BOLD}${OS} | ${OS_VER}${NORMAL}"
+            echo
+            exit 1
+            ;;
+
+        *)
+            opt_usage
             ;;
     esac
 done
+shift $((OPTIND-1))
+
+##--------------------------------------------------------------------------
+#   GTK Theme
+#
+#   Invalid themes will default to 'Adwaita'
+#       -   Adwaita
+#       -   Adwaita-dark
+#       -   HighContrast
+#       -   HighContrastInverse
+#       -   dark
+#       -   ZorinBlue-Light
+#       -   ZorinBlue-Dark
+#       -        Red
+#       -        Green
+#       -        Grey
+#       -        Orange
+#       -        Purple
+#   
+#   If we're going for support on Ubuntu and Zorin, set default to theme
+#   both commonly share.
+#
+##--------------------------------------------------------------------------
+
+if [ -z "${OPT_THEME}" ]; then
+    OPT_THEME="Adwaita-dark"
+fi
+
+export GTK_THEME="${OPT_THEME}"
 
 ##--------------------------------------------------------------------------
 #   vars > /etc/hosts
@@ -198,112 +362,13 @@ netplan_dns_2=149.112.112.112
 netplan_macaddr=$(cat /sys/class/net/$netplan_adapt_old/address 2> /dev/null )
 
 ##--------------------------------------------------------------------------
-#   vars > general
-##--------------------------------------------------------------------------
-
-gui_width=540
-gui_height=525
-gui_column="Available Packages"
-gui_desc="Select the app / package you wish to install. Most apps will run as silent installs.\n\nStart typing or press <span color='#3477eb'><b>CTRL+F</b></span> to search for an app\n\nIf you encounter issues, review the logfile located at:\n      <span color='#3477eb'><b>${LOGS_FILE}</b></span>\n\n"
-
-##--------------------------------------------------------------------------
-#   vars > colors
-#
-#   tput setab  [1-7]       – Set a background color using ANSI escape
-#   tput setb   [1-7]       – Set a background color
-#   tput setaf  [1-7]       – Set a foreground color using ANSI escape
-#   tput setf   [1-7]       – Set a foreground color
-##--------------------------------------------------------------------------
-
-BLACK=$(tput setaf 0)
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-LIME_YELLOW=$(tput setaf 190)
-POWDER_BLUE=$(tput setaf 153)
-BLUE=$(tput setaf 4)
-MAGENTA=$(tput setaf 5)
-CYAN=$(tput setaf 6)
-WHITE=$(tput setaf 7)
-GREYL=$(tput setaf 242)
-DEV=$(tput setaf 157)
-DEVGREY=$(tput setaf 243)
-FUCHSIA=$(tput setaf 198)
-PINK=$(tput setaf 200)
-BRIGHT=$(tput bold)
-NORMAL=$(tput sgr0)
-BLINK=$(tput blink)
-REVERSE=$(tput smso)
-UNDERLINE=$(tput smul)
-
-##--------------------------------------------------------------------------
-#   vars > status messages
-##--------------------------------------------------------------------------
-
-STATUS_MISS="${BOLD}${GREYL} MISS ${NORMAL}"
-STATUS_SKIP="${BOLD}${GREYL} SKIP ${NORMAL}"
-STATUS_OK="${BOLD}${GREEN}  OK  ${NORMAL}"
-STATUS_FAIL="${BOLD}${RED} FAIL ${NORMAL}"
-STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
-
-##--------------------------------------------------------------------------
 #   arrays
+#
+#   stores the list of apps to populate list
 ##--------------------------------------------------------------------------
 
 apps=()
 devs=()
-
-##--------------------------------------------------------------------------
-#   distro
-#
-#   returns distro information.
-#   even though this was strictly built for Zorin, I can already foresee
-#   people on other distros using this, so I may as well plan ahead.
-##--------------------------------------------------------------------------
-
-# freedesktop.org and systemd
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS=$NAME
-    OS_VER=$VERSION_ID
-
-# linuxbase.org
-elif type lsb_release >/dev/null 2>&1; then
-    OS=$(lsb_release -si)
-    OS_VER=$(lsb_release -sr)
-
-# versions of Debian/Ubuntu without lsb_release cmd
-elif [ -f /etc/lsb-release ]; then
-    . /etc/lsb-release
-    OS=$DISTRIB_ID
-    OS_VER=$DISTRIB_RELEASE
-
-# older Debian/Ubuntu/etc distros
-elif [ -f /etc/debian_version ]; then
-    OS=Debian
-    OS_VER=$(cat /etc/debian_version)
-
-# fallback: uname, e.g. "Linux <version>", also works for BSD
-else
-    OS=$(uname -s)
-    OS_VER=$(uname -r)
-fi
-
-##--------------------------------------------------------------------------
-#   func > get version
-#
-#   returns current version of app
-#   converts to human string.
-#       e.g.    "1" "2" "4" "0"
-#               1.2.4.0
-##--------------------------------------------------------------------------
-
-function get_version()
-{
-    ver_join=${app_ver[@]}
-    ver_str=${ver_join// /.}
-    echo ${ver_str}
-}
 
 ##--------------------------------------------------------------------------
 #   func > logs > begin
@@ -311,8 +376,12 @@ function get_version()
 
 function Logs_Begin()
 {
-    if [ $NO_JOB_LOGGING ] ; then
+    if [ $OPT_NOLOG ] ; then
+        echo
+        echo
         printf '%-57s %-5s' "    Logging for this manager has been disabled." ""
+        echo
+        echo
         sleep 3
     else
         mkdir -p $LOGS_DIR
@@ -483,16 +552,18 @@ function begin()
 
 function finish()
 {
+    arg1=${1}
+
     if ps -p $app_pid_spin > /dev/null
     then
         kill -9 $app_pid_spin 2> /dev/null
         printf "\n%-57s %-5s\n" "${TIME}      KILL Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
     fi
 
-    # if var1 not empty
-    if ! [ -z "${1}" ]; then
-        assoc_uri="${get_docs_uri[$1]}"
-        open_url ${assoc_uri}
+    # if arg1 not empty
+    if ! [ -z "${arg1}" ]; then
+        assoc_uri="${get_docs_uri[$arg1]}"
+        app_queue_url+=($assoc_uri)
     fi
 }
 
@@ -538,6 +609,9 @@ function exit()
 
 function app_setup
 {
+
+    clear
+
     ReqTitle=${1}
     bMissingCurl=false
     bMissingWget=false
@@ -644,7 +718,7 @@ function app_setup
 
         printf '%-57s %-5s' "    |--- Adding github.com/${app_repo_dev}.gpg" ""
         sleep 0.5
-        sudo wget -qO - "https://github.com/${app_repo_dev}.gpg" | sudo gpg --dearmor -o "/usr/share/keyrings/${app_repo_aptpkg}.gpg" >> $LOGS_FILE 2>&1
+        sudo wget -qO - "https://github.com/${app_repo_dev}.gpg" | sudo gpg --batch --yes --dearmor -o "/usr/share/keyrings/${app_repo_aptpkg}.gpg" >> $LOGS_FILE 2>&1
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -711,11 +785,11 @@ function notify-send()
 #   output some logging
 ##--------------------------------------------------------------------------
 
-[ "$app_cfg_bDev" = true ] && printf "%-57s %-5s\n" "${TIME}      Notice: Dev Mode Enabled" | tee -a "${LOGS_FILE}" >/dev/null
-[ "$app_cfg_bDev" = false ] && printf "%-57s %-5s\n" "${TIME}      Notice: Dev Mode Disabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ -n "${OPT_DEV_ENABLE}" ] && printf "%-57s %-5s\n" "${TIME}      Notice: Dev Mode Enabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ -z "${OPT_DEV_ENABLE}" ] && printf "%-57s %-5s\n" "${TIME}      Notice: Dev Mode Disabled" | tee -a "${LOGS_FILE}" >/dev/null
 
-[ "$app_cfg_bDev_NullRun" = true ] && printf "%-57s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Enabled" | tee -a "${LOGS_FILE}" >/dev/null
-[ "$app_cfg_bDev_NullRun" = false ] && printf "%-57s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Disabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ -n "${OPT_DEV_NULLRUN}" ] && printf "%-57s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Enabled" | tee -a "${LOGS_FILE}" >/dev/null
+[ -z "${OPT_DEV_NULLRUN}" ] && printf "%-57s %-5s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Disabled" | tee -a "${LOGS_FILE}" >/dev/null
 
 ##--------------------------------------------------------------------------
 #   vars > gnome extension ids
@@ -860,8 +934,8 @@ app_dev_f="Demo Blank F"
 #   associated app functions
 ##--------------------------------------------------------------------------
 
-declare -A get_functions
-get_functions=(
+declare -A app_functions
+app_functions=(
     ["$app_dev_a"]='fn_dev_a'
     ["$app_dev_b"]='fn_dev_b'
     ["$app_dev_c"]='fn_dev_c'
@@ -965,12 +1039,12 @@ function fn_app_alien()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install alien -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -984,15 +1058,13 @@ function fn_app_appimage()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes ppa:appimagelauncher-team/stable >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install appimagelauncher -y -qq >> $LOGS_FILE 2>&1
-
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1013,14 +1085,14 @@ function fn_app_app_outlet()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         app_setup "${1}"
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install app-outlet -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1032,23 +1104,28 @@ function fn_app_app_outlet()
 
 function fn_app_blender_flatpak()
 {
+    begin "${1}"
+    sleep 1
+
     if ! [ -x "$(command -v flatpak)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_flatpak ${app_flatpak}
+        fn_app_flatpak "${app_flatpak}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo flatpak repair --system >> $LOGS_FILE 2>&1
         flatpak install flathub org.blender.Blender -y --noninteractive >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
 	echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1060,23 +1137,28 @@ function fn_app_blender_flatpak()
 
 function fn_app_blender_snapd()
 {
+    begin "${1}"
+    sleep 1
+
     if ! [ -x "$(command -v snap)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_snapd ${app_snapd}
+        fn_app_snapd "${app_snapd}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo flatpak repair --system >> $LOGS_FILE 2>&1
         flatpak install flathub org.blender.Blender -y --noninteractive >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
 	echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1090,7 +1172,7 @@ function fn_app_browser_chrome()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install wget -y -qq >> $LOGS_FILE 2>&1
 
@@ -1100,7 +1182,7 @@ function fn_app_browser_chrome()
         sudo apt-get install ${apt_dir_deb}/google-chrome*.deb -f -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1119,12 +1201,12 @@ function fn_app_browser_tor()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1136,23 +1218,27 @@ function fn_app_browser_tor()
 
 function fn_app_colorpicker_snapd()
 {
+    begin "${1}"
+    sleep 1
 
     if ! [ -x "$(command -v snap)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_snapd ${app_snapd}
+        fn_app_snapd "${app_snapd}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo snap install color-picker >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1166,15 +1252,13 @@ function fn_app_cdialog()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install dialog -y -qq >> $LOGS_FILE 2>&1
-
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1195,7 +1279,7 @@ function fn_app_conky()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
 
         sudo add-apt-repository --yes ppa:teejee2008/foss >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -1210,7 +1294,7 @@ function fn_app_conky()
 
         echo -e "[ ${STATUS_OK} ]"
         printf '%-57s %-5s' "    |--- Creating config.conf" ""
-        sleep 0.5
+        sleep 1
 
         path_conky="/home/${USER}/.config/conky"
         path_autostart="/home/${USER}/.config/autostart"
@@ -1224,7 +1308,7 @@ function fn_app_conky()
         cp "${app_dir}/libraries/conky/conky_base/${file_config}" "${path_conky}/${file_config}"
 
         # sloppy way, but it works for now
-        if [ "$app_cfg_bDev_NullRun" = false ]; then
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
             while IFS='' read -r a; do
                 echo "${a//VAL_CPU/${get_cpus}}"
             done < "${path_conky}/${file_config}" > "${path_conky}/${file_config}.t"
@@ -1242,7 +1326,7 @@ function fn_app_conky()
 
         echo -e "[ ${STATUS_OK} ]"
         printf '%-57s %-5s' "    |--- Setting perms" ""
-        sleep 0.5
+        sleep 1
 
         sudo touch ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
         sudo chgrp ${USER} ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
@@ -1256,7 +1340,7 @@ function fn_app_conky()
         conky -q -d -c ~/.config/conky/conky.conf >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1275,13 +1359,13 @@ function fn_app_conky_mngr()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes ppa:teejee2008/foss >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install conky-manager2 -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1295,12 +1379,12 @@ function fn_app_curl()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install curl -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1314,12 +1398,12 @@ function fn_app_flatpak()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install flatpak -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
 	echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1337,15 +1421,13 @@ function fn_app_gdebi()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install gdebi -y -qq >> $LOGS_FILE 2>&1
-
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1359,12 +1441,12 @@ function fn_app_git()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install git -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1378,15 +1460,70 @@ function fn_app_github_desktop()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         app_setup "${1}"
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install github-desktop -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Gnome Extension Manager
+##--------------------------------------------------------------------------
+
+function fn_app_gnome_ext_core()
+{
+    begin "${1}"
+    sleep 1
+
+    if ! [ -x "$(command -v flatpak)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
+        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
+        sleep 1
+
+        fn_app_flatpak "${app_flatpak}"
+
+        begin "Retry: ${1}"
+
+        sleep 1
+    fi
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo flatpak repair --system >> $LOGS_FILE 2>&1
+        flatpak install flathub com.mattjakeman.ExtensionManager -y --noninteractive >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    printf '%-57s %-5s' "    |--- Plugins" ""
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get upgrade -q >> $LOGS_FILE 2>&1
+        sudo apt-get install gnome-shell-extensions -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install gnome-tweaks -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install chrome-gnome-shell -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    printf '%-57s %-5s' "    |--- Installer" ""
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo wget -O gnome-shell-extension-installer -q "https://github.com/brunelli/gnome-shell-extension-installer/raw/master/gnome-shell-extension-installer" >> $LOGS_FILE 2>&1
+        sudo chmod +x gnome-shell-extension-installer
+        sudo mv gnome-shell-extension-installer /usr/bin/
+    fi
+
+    sleep 1
+	echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -1399,27 +1536,32 @@ function fn_app_github_desktop()
 
 function fn_app_gnome_ext_arcmenu()
 {
+    begin "${1}"
+    sleep 1
 
     if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_flatpak ${app_gnome_ext_core}
+        fn_app_gnome_ext_core "${app_gnome_ext_core}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-shell-extension-installer $app_ext_id_arcmenu --yes >> $LOGS_FILE 2>&1
     fi
     
+    # END ------------------------------------
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Restarting Shell" ""
     sleep 3
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
     fi
 
@@ -1427,62 +1569,12 @@ function fn_app_gnome_ext_arcmenu()
     printf '%-57s %-5s' "    |--- Enable ArcMenu" ""
     sleep 3
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-extensions enable "arcmenu@arcmenu.com"
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
-    finish
-}
-
-##--------------------------------------------------------------------------
-#   Gnome Extension Manager
-##--------------------------------------------------------------------------
-
-function fn_app_gnome_ext_core()
-{
-    if ! [ -x "$(command -v flatpak)" ]; then
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
-
-        fn_app_flatpak ${app_flatpak}
-
-        sleep 0.5
-    fi
-
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo flatpak repair --system >> $LOGS_FILE 2>&1
-        flatpak install flathub com.mattjakeman.ExtensionManager -y --noninteractive >> $LOGS_FILE 2>&1
-    fi
-
-    sleep 0.5
-    echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Plugins" ""
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get upgrade -q >> $LOGS_FILE 2>&1
-        sudo apt-get install gnome-shell-extensions -y -qq >> $LOGS_FILE 2>&1
-        sudo apt-get install gnome-tweaks -y -qq >> $LOGS_FILE 2>&1
-        sudo apt-get install chrome-gnome-shell -y -qq >> $LOGS_FILE 2>&1
-    fi
-
-    sleep 0.5
-    echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Installer" ""
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-        sudo wget -O gnome-shell-extension-installer -q "https://github.com/brunelli/gnome-shell-extension-installer/raw/master/gnome-shell-extension-installer" >> $LOGS_FILE 2>&1
-        sudo chmod +x gnome-shell-extension-installer
-        sudo mv gnome-shell-extension-installer /usr/bin/
-    fi
-
-    sleep 0.5
-	echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -1493,43 +1585,48 @@ function fn_app_gnome_ext_core()
 
 function fn_app_gnome_ext_ism()
 {
-    if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
-
-        fn_app_gnome_ext_core ${app_gnome_ext_core}
-
-        sleep 0.5
-    fi
-
     begin "${1}"
-    sleep 0.5
+    sleep 1
+
+    if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
+        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        sleep 1
+
+        fn_app_gnome_ext_core "${app_gnome_ext_core}"
+
+        begin "Retry: ${1}"
+
+        sleep 1
+    fi
 
     # Internet Speed Monitor
     # this is the one with the bar at the bottom with up/down/total text
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-shell-extension-installer $app_ext_id_sysload --yes >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Restarting Shell" ""
     sleep 3
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Enabling" ""
-    sleep 0.5
+    sleep 1
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-extensions enable "InternetSpeedMonitor@Rishu"
     fi
 
-    sleep 0.5
+    sleep 1
 	echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1543,12 +1640,12 @@ function fn_app_gnome_tweaks()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install gnome-tweak-tool -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1562,12 +1659,12 @@ function fn_app_gpick()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install gpick -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1579,35 +1676,40 @@ function fn_app_gpick()
 
 function fn_app_kooha()
 {
+    begin "${1}"
+    sleep 1
+
     if ! [ -x "$(command -v flatpak)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_flatpak ${app_flatpak}
+        fn_app_flatpak "${app_flatpak}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo flatpak repair --system >> $LOGS_FILE 2>&1
         flatpak remote-add --comment="Screen recorder" --if-not-exists flathub "https://flathub.org/repo/flathub.flatpakrepo"
         flatpak install flathub io.github.seadve.Kooha -y --noninteractive >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
 	echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Install pipewire" ""
-    sleep 0.5
+    sleep 1
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes ppa:pipewire-debian/pipewire-upstream >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install pipewire -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
 	echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1627,12 +1729,12 @@ function fn_app_lintian
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install lintian -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1652,14 +1754,15 @@ function fn_app_makedeb()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         export MAKEDEB_RELEASE='makedeb'
         bash -c "$(wget -qO - 'https://shlink.makedeb.org/install')" >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
+    # arg1      : app name sent to function finish to find associated URL and open
     finish "${1}"
 }
 
@@ -1671,12 +1774,12 @@ function fn_app_members()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install members -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1690,12 +1793,12 @@ function fn_app_mlocate()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install mlocate -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1709,12 +1812,12 @@ function fn_app_neofetch()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install neofetch -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1728,12 +1831,12 @@ function fn_app_nettools()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install net-tools -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1747,12 +1850,12 @@ function fn_app_npm()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install npm -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1766,7 +1869,7 @@ function fn_app_ocsurl()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         app_setup "${1}"
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -1775,7 +1878,7 @@ function fn_app_ocsurl()
         sudo apt-get install ocs-url -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1796,12 +1899,12 @@ function fn_app_pacman_game()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install pacman -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1828,14 +1931,14 @@ function fn_app_pacman_manager()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         app_setup true
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install deb-pacman -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1849,12 +1952,12 @@ function fn_app_reprepro()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install app_reprepro -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1868,12 +1971,12 @@ function fn_app_rpm()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install rpm -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1887,7 +1990,7 @@ function fn_app_seahorse()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
 
         echo
 
@@ -1912,7 +2015,7 @@ function fn_app_seahorse()
 
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1926,12 +2029,12 @@ function fn_app_snapd()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install snapd -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1945,7 +2048,7 @@ function fn_app_surfshark()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
 
         surfshark_url=https://downloads.surfshark.com/linux/debian-install.sh
         surfshark_file=surfshark-install
@@ -1956,7 +2059,7 @@ function fn_app_surfshark()
         sudo bash "./${surfshark_file}" >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -1975,20 +2078,20 @@ function fn_app_swizzin()
     swizzin_url=s5n.sh
     swizzin_file=swizzin.sh
 
-    sleep 0.5
+    sleep 1
     printf '%-57s %-5s' "    |--- Download ${swizzin_url}" ""
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo wget -O "${swizzin_file}" -q "${swizzin_url}"
         sudo chmod +x "${swizzin_file}"
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Adding Zorin Compatibility" ""
 
     # Add Zorin compatibility to install script
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         while IFS='' read -r a; do
             echo "${a//Debian|Ubuntu/Debian|Ubuntu|Zorin}"
         done < "${swizzin_file}" > "${swizzin_file}.t"
@@ -1996,20 +2099,20 @@ function fn_app_swizzin()
         mv "${swizzin_file}"{.t,} >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Killing apt-get" ""
 
     # instances where an issue will cause apt-get to hang and keeps the installation
     # wizard from running again. ensure
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo pkill -9 -f "apt-get update" >> $LOGS_FILE 2>&1
     fi
 
     echo
     sleep 2
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo bash "./${swizzin_file}"
     fi
 
@@ -2024,13 +2127,13 @@ function fn_app_sysload()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes ppa:indicator-multiload/stable-daily >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install indicator-multiload -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2044,7 +2147,7 @@ function fn_app_teamviewer()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install -y libminizip1 -qq >> $LOGS_FILE 2>&1
 
@@ -2054,7 +2157,7 @@ function fn_app_teamviewer()
         sudo apt-get install ${apt_dir_deb}/teamviewer_*.deb -f -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2068,12 +2171,12 @@ function fn_app_tree()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install tree -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2087,7 +2190,7 @@ function fn_app_serv_pihole()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get upgrade -q >> $LOGS_FILE 2>&1
 
@@ -2096,7 +2199,7 @@ function fn_app_serv_pihole()
 
 	echo -e "[ ${STATUS_OK} ]"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
 
         echo
         echo
@@ -2120,7 +2223,7 @@ function fn_twk_filepath()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
 
         # current user
         gsettings set org.gnome.nautilus.preferences always-use-location-entry true >> $LOGS_FILE 2>&1
@@ -2130,7 +2233,7 @@ function fn_twk_filepath()
 
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2144,7 +2247,7 @@ function fn_twk_netplan()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         if [ -z "${netplan_macaddr}" ]; then
             netplan_macaddr=$(cat /sys/class/net/*/address | awk 'NR == 1' )
         fi
@@ -2178,7 +2281,7 @@ EOF
 
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2192,7 +2295,7 @@ function fn_twk_network_hosts()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
 
         echo
 
@@ -2218,7 +2321,7 @@ function fn_twk_network_hosts()
 
     else
 
-        sleep 0.5
+        sleep 1
         echo -e "[ ${STATUS_OK} ]"
 
     fi
@@ -2256,62 +2359,48 @@ function fn_twk_vbox_additions_fix()
 
     echo
     printf '%-57s %-5s' "    |--- Updating packages" ""
-    sleep 0.5
+    sleep 1
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Installing dependencies" ""
-    sleep 0.5
+    sleep 1
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get install gcc make build-essential dkms linux-headers-$(uname -r) -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Remove open-vm-tools*" ""
-    sleep 0.5
+    sleep 1
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get remove open-vm-tools -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     
     # apt-get remove doesnt seem to remove everything related to open-vm, so now we have to hit it
     # with a double shot. this is what fixes it.
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo dpkg -P open-vm-tools-desktop >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo dpkg -P open-vm-tools >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
-    prompt_reboot=$(yad \
-    --image dialog-question \
-    --margins=15 \
-    --borders=10 \
-    --width="350" \
-    --height="100" \
-    --title "Restart Required" \
-    --button="Restart"\!\!"System restarts in 1 minute":1 \
-    --button="Later"\!gtk-quit\!"Restart Later":0 \
-    --text "To complete removal of open-vm-tools, reboot your machine." )
-    RET=$?
-
-    if [ $RET -eq 1 ]; then
-        app_cfg_bPendRestart=true
-    fi
+    app_queue_restart=true
 
     finish
 }
@@ -2324,14 +2413,12 @@ function fn_app_unrar()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install unrar -y -qq >> $LOGS_FILE 2>&1
-
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2343,22 +2430,27 @@ function fn_app_unrar()
 
 function fn_app_vsc_stable()
 {
+    begin "${1}"
+    sleep 1
+
     if ! [ -x "$(command -v snap)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_snapd ${app_snapd}
+        fn_app_snapd "${app_snapd}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo snap install --classic code >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2370,22 +2462,27 @@ function fn_app_vsc_stable()
 
 function fn_app_vsc_insiders()
 {
+    begin "${1}"
+    sleep 1
+
     if ! [ -x "$(command -v snap)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_snapd ${app_snapd}
+        fn_app_snapd "${app_snapd}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo snap install --classic code-insiders >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2399,12 +2496,12 @@ function fn_app_wxhexeditor()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install wxhexeditor -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2418,12 +2515,12 @@ function fn_app_yad()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install yad -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2435,22 +2532,27 @@ function fn_app_yad()
 
 function fn_app_yarn()
 {
+    begin "${1}"
+    sleep 1
+
     if ! [ -x "$(command -v npm)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
         echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_npm}. Installing ...${NORMAL}" >&2
+        sleep 1
 
-        fn_app_npm ${app_npm}
+        fn_app_npm "${app_npm}"
 
-        sleep 0.5
+        begin "Retry: ${1}"
+
+        sleep 1
     fi
 
-    begin "${1}"
-    sleep 0.5
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         npm install --silent --global yarn >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2469,14 +2571,14 @@ function fn_app_zenity()
         begin "${1}"
     fi
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install zenity -y -qq >> $LOGS_FILE 2>&1
     fi
 
     if [ -z "${3}" ]; then
-        sleep 0.5
+        sleep 1
         echo -e "[ ${STATUS_OK} ]"
         finish
     fi
@@ -2490,13 +2592,13 @@ function fn_app_ziet_cron()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo add-apt-repository --yes ppa:blaze/main >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install zeit -y -qq >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2513,7 +2615,7 @@ function fn_app_zorinospro_lo()
 {
     begin "${1}"
 
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         app_setup true
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -2522,107 +2624,11 @@ function fn_app_zorinospro_lo()
         sudo dpkg -i --force-overwrite "/var/cache/apt/archives/zorin-pro-layouts_*.deb" >> $LOGS_FILE 2>&1
     fi
 
-    sleep 0.5
+    sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
-
-##--------------------------------------------------------------------------
-#   ZorinOS Pro Layouts (Old)
-##--------------------------------------------------------------------------
-
-<<comment
-function fn_app_zorinospro_lo()
-{
-    begin "${1}"
-
-    if [ "$app_cfg_bDev_NullRun" = false ]; then
-
-        echo
-
-        printf '%-57s %-5s' "    |--- clean /appearance" ""
-        sleep 0.5
-
-        # clean existing backup folder /zorin_appearance_bk/
-        if [ -d "/usr/lib/python3/dist-packages/zorin_appearance_bk" ]
-        then
-            sudo rm -rf "/usr/lib/python3/dist-packages/zorin_appearance_bk" >> $LOGS_FILE 2>&1
-            echo -e "[ ${STATUS_OK} ]"
-        else
-            echo -e "[ ${STATUS_SKIP} ]"
-        fi
-
-        printf '%-57s %-5s' "    |--- clean /appearance-4.1.egg" ""
-        sleep 0.5
-
-        # clean existing backup folder /zorin_appearance-4.1.egg-info_bk/
-        if [ -d "/usr/lib/python3/dist-packages/zorin_appearance-4.1.egg-info_bk" ]
-        then
-            sudo rm -rf "/usr/lib/python3/dist-packages/zorin_appearance-4.1.egg-info_bk" >> $LOGS_FILE 2>&1
-            echo -e "[ ${STATUS_OK} ]"
-        else
-            echo -e "[ ${STATUS_SKIP} ]"
-        fi
-
-        printf '%-57s %-5s' "    |--- backup /appearance" ""
-        sleep 0.5
-
-        # backup /zorin_appearance/
-        if [ -d "/usr/lib/python3/dist-packages/zorin_appearance" ]
-        then
-            sudo mv -f /usr/lib/python3/dist-packages/zorin_appearance /usr/lib/python3/dist-packages/zorin_appearance_bk >> $LOGS_FILE 2>&1
-            echo -e "[ ${STATUS_OK} ]"
-        else
-            echo -e "[ ${STATUS_MISS} ]"
-        fi
-
-        printf '%-57s %-5s' "    |--- backup /appearance-4.1.egg" ""
-        sleep 0.5
-
-        # backup /zorin_appearance-4.1.egg-info/
-        if [ -d "/usr/lib/python3/dist-packages/zorin_appearance-4.1.egg-info" ]
-        then
-            sudo mv -f /usr/lib/python3/dist-packages/zorin_appearance-4.1.egg-info /usr/lib/python3/dist-packages/zorin_appearance-4.1.egg-info_bk >> $LOGS_FILE 2>&1
-            echo -e "[ ${STATUS_OK} ]"
-        else
-            echo -e "[ ${STATUS_MISS} ]"
-        fi
-
-        # move new /zorin_appearance/
-
-        printf '%-57s %-5s' "    |--- install /appearance" ""
-        sleep 0.5
-
-        if [ -d "$app_dir/libraries/zorin_appearance" ]
-        then
-            sudo cp -rf "$app_dir/libraries/zorin_appearance" "/usr/lib/python3/dist-packages/zorin_appearance" >> $LOGS_FILE 2>&1
-            echo -e "[ ${STATUS_OK} ]"
-        else
-            echo -e "[ ${STATUS_FAIL} ]"
-        fi
-
-        printf '%-57s %-5s' "    |--- install /appearance-4.1.egg" ""
-        sleep 0.5
-
-        # move new /zorin_appearance-4.1.egg-info/
-        if [ -d "$app_dir/libraries/zorin_appearance-4.1.egg-info" ]
-        then
-            sudo cp -rf "$app_dir/libraries/zorin_appearance-4.1.egg-info" "/usr/lib/python3/dist-packages/zorin_appearance-4.1.egg-info" >> $LOGS_FILE 2>&1
-            echo -e "[ ${STATUS_OK} ]"
-        else
-            echo -e "[ ${STATUS_FAIL} ]"
-        fi
-    else
-
-        sleep 0.5
-        echo -e "[ ${STATUS_OK} ]"
-
-    fi
-
-    finish
-}
-comment
 
 ##--------------------------------------------------------------------------
 #   register apps to show in list
@@ -2995,11 +3001,11 @@ function fn_app_all()
     done
 
     # ensure code has caught up
-    sleep 0.5
+    sleep 1
 
     for i in "${arr_install[@]}"
     do
-        assoc_func="${get_functions[$i]}"
+        assoc_func="${app_functions[$i]}"
         $assoc_func "${i}" "${assoc_func}"
     done
 
@@ -3068,26 +3074,6 @@ function show_about()
 function show_menu()
 {
 
-    if ! [ -x "$(command -v yad)" ]; then
-
-        printf "%-57s %-5s\n" "${TIME}      Warning: yad package missing. Attempting to install." | tee -a "${LOGS_FILE}" >/dev/null
-
-        echo
-        echo -e "  ${BOLD}${FUCHSIA} Setting up for the first time ...${NORMAL}" >&2
-        echo
-
-        #   param   str     | App Name
-        #   param   str     | function name
-        #   param   bool    | bSilent
-        fn_app_zenity ${app_zenity} nil true
-
-        if [ -x "$(command -v yad)" ]; then
-            printf "%-57s %-5s\n" "${TIME}      Install successful. Package now available to use." | tee -a "${LOGS_FILE}" >/dev/null
-        fi
-
-        sleep 0.5
-    fi
-
     show_header
 
     # prep array to remove 'All' so we dont get an endless loop
@@ -3100,8 +3086,7 @@ function show_menu()
             fi
         done
     done
-
-    if [ "$app_cfg_bDev" = true ]; then
+    if [ -n "${OPT_DEV_ENABLE}" ]; then
         app_list=("${devs[@]}")
     fi
 
@@ -3113,7 +3098,7 @@ function show_menu()
     unset IFS
 
     while true; do
-        dev=$(yad \
+        objlist=$(yad \
         --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
         --width="${gui_width}" \
         --height="${gui_height}" \
@@ -3131,7 +3116,7 @@ function show_menu()
         --column="${gui_column}" ${app_all} "${apps_sorted[@]}")
         RET=$?
         #echo $RET
-        res="${dev//|}"
+        res="${objlist//|}"
 
         ##--------------------------------------------------------------------------
         #   button > docs
@@ -3145,10 +3130,30 @@ function show_menu()
                 if ! [ -z "${assoc_uri}" ]; then
                     open_url ${assoc_uri}
                 else
-                    query=$(yad --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" --center --width=150 --height=125 --fixed --title "No Docs Available" --borders=10 --button="!gtk-yes!yes:0" --button="!gtk-close!exit:1" --text "The app <span color='#3477eb'><b>${res}</b></span> does not have any provided docs\nor websites to show.\n\nReach out to the developer if you feel this entry should\nhave docs.")
+                    query=$( yad \
+                    --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
+                    --center \
+                    --width=150 \
+                    --height=125 \
+                    --fixed \
+                    --title "No Docs Available" \
+                    --borders=10 \
+                    --button="!gtk-yes!yes:0" \
+                    --button="!gtk-close!exit:1" \
+                    --text "The app <span color='#3477eb'><b>${res}</b></span> does not have any provided docs\nor websites to show.\n\nReach out to the developer if you feel this entry should\nhave docs." )
                 fi
             else
-                query=$(yad --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" --center --width=150 --height=155 --fixed --title "No Selection" --borders=10 --button="!gtk-yes!yes:0" --button="!gtk-close!exit:1" --text "Select an individual app from the list and then click the <span color='#3477eb'><b>App Docs</b></span>\nbutton to view the documentation.\n\nThe option <span color='#3477eb'><b>${app_all}</b></span> is not a valid option. Do you really want ${app_i}\nbrowser windows open?")
+                query=$( yad \
+                --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
+                --center \
+                --width=150 \
+                --height=155 \
+                --fixed \
+                --title "No Selection" \
+                --borders=10 \
+                --button="!gtk-yes!yes:0" \
+                --button="!gtk-close!exit:1" \
+                --text "Select an individual app from the list and then click the <span color='#3477eb'><b>App Docs</b></span>\nbutton to view the documentation.\n\nThe option <span color='#3477eb'><b>${app_all}</b></span> is not a valid option. Do you really want ${app_i}\nbrowser windows open?" )
             fi
             continue
         fi
@@ -3168,7 +3173,7 @@ function show_menu()
         ##--------------------------------------------------------------------------
 
         if [ $RET -eq 5 ]; then
-            ab=$(yad --pname="Test Application" --about  )
+            ab=$( yad --pname="Test Application" --about )
             continue
         fi
 
@@ -3188,7 +3193,14 @@ function show_menu()
         ##--------------------------------------------------------------------------
 
         if [ $RET -eq 0 ]; then
-            answer=$(yad --image dialog-question --title "Install ${res}?" --borders=10 --button="!gtk-yes!yes:0" --button="!gtk-close!exit:1" --text "Are you sure you want to install the app\n\n${res}?")
+            answer=$( yad \
+            --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
+            --image dialog-question \
+            --title "Install ${res}?" \
+            --borders=10 \
+            --button="!gtk-yes!yes:0" \
+            --button="!gtk-close!exit:1" \
+            --text "Are you sure you want to install the app\n\n${res}?" )
             ANSWER=$?
 
             if [ $ANSWER -eq 1 ] || [ $ANSWER -eq 252 ]; then
@@ -3204,30 +3216,72 @@ function show_menu()
             "${res[0]}")
                 printf "%-57s %-15s\n" "${TIME}      User Input: OnClick ......... ${res} (App)" | tee -a "${LOGS_FILE}" >/dev/null
 
-                assoc_func="${get_functions[$res]}"
+                assoc_func="${app_functions[$res]}"
                 $assoc_func "${res}" "${assoc_func}"
 
-                if [ "$app_cfg_bPendRestart" = true ]; then
-                    sleep 0.5
-                    # sudo shutdown -r +1 "System will reboot in 1 minute" >> $LOGS_FILE 2>&1
-                    notify-send -u critical "Restart Pending" "A system restart will occur in 1 minute." >> $LOGS_FILE 2>&1
-                    sleep 0.5
-                    finish
-                    sleep 0.5
-                    #kill -9 $BASHPID 2> /dev/null
+                ##--------------------------------------------------------------------------
+                #   queue: restart
+                ##--------------------------------------------------------------------------
+
+                if [ "$app_queue_restart" = true ]; then
+                    prompt_reboot=$( yad \
+                    --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
+                    --image dialog-question \
+                    --margins=15 \
+                    --borders=10 \
+                    --width="350" \
+                    --height="100" \
+                    --title "Restart Required" \
+                    --button="Restart"\!\!"System restarts in 1 minute":1 \
+                    --button="Later"\!gtk-quit\!"Restart Later":0 \
+                    --text "To complete removal of open-vm-tools, reboot your machine." )
+                    RET=$?
+
+                    if [ $RET -eq 1 ]; then
+                        sleep 1
+                        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                            sudo shutdown -r +1 "System will reboot in 1 minute" >> $LOGS_FILE 2>&1
+                        fi
+                        notify-send -u critical "Restart Pending" "A system restart will occur in 1 minute." >> $LOGS_FILE 2>&1
+                        sleep 1
+                        finish
+                        sleep 1
+                        #kill -9 $BASHPID 2> /dev/null
+                    fi
                 fi
 
-                if [ "$app_cfg_bDev" = true ]; then
+                ##--------------------------------------------------------------------------
+                #   queue: pending web urls
+                ##--------------------------------------------------------------------------
+
+                for i in "${!app_queue_url[@]}"; do
+                    app_url=${app_queue_url[i]}
+                    open_url ${app_url}
+                    sleep 1
+                done
+
+                # clear array
+                app_queue_url=()
+
+                ##--------------------------------------------------------------------------
+                #   developer logs
+                ##--------------------------------------------------------------------------
+
+                if [ -n "${OPT_DEV_ENABLE}" ]; then
                     arr_len=${#app_list[@]}
                     printf "%-42s %-15s" "    |--- ${BOLD}${DEVGREY} Spin PID ${NORMAL}" "${BOLD}${DEV} ${app_pid_spin} ${NORMAL}"
                     printf "\n%-42s %-15s" "    |--- ${BOLD}${DEVGREY} Func ${NORMAL}" "${BOLD}${DEV} ${assoc_func} ${NORMAL}"
                     printf "\n%-42s %-15s" "    |--- ${BOLD}${DEVGREY} Siblings PID ${NORMAL}" "${BOLD}${DEV} ${arr_len} ${NORMAL}"
 
                     echo
-                fi;;
-            *) echo "Ooops! Invalid option.";;
+                fi
+
+                ;;
+            *)
+                echo "Ooops! Invalid option."
+            ;;
         esac
     done
 }
 
-show_menu get_functions
+show_menu app_functions

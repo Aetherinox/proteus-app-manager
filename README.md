@@ -20,17 +20,15 @@
 <br />
 
 - [About](#about)
-- [Packages Included](#packages-included)
-- [Tweaks / Changes](#tweaks--changes)
+- [Packages](#packages)
+- [Patches](#patches)
 - [Usage](#usage)
   - [Configuration](#configuration)
   - [Install](#install)
   - [Prerequisites](#prerequisites)
   - [Logs](#logs)
-- [ZorinOS Pro Features](#zorinos-pro-features)
+- [Command-line Arguments](#command-line-arguments)
 - [Wiki](#wiki)
-- [Notes](#notes)
-  - [Developer Vars](#developer-vars)
 - [Footnotes](#footnotes)
 
 <br />
@@ -40,9 +38,21 @@
 <br />
 
 ## About
-This is a simple application manager which allows you to install a number of programs right from the menu with little interaction. The packages and libraries provided are from personal choice, since these are the things I like to have when I get a new server going. The latest version includes a GUI which allows you to select the programs you wish to install.
+This is an application manager targeted toward `ZorinOS` and distros using `Ubuntu 22.04 LTS`. The Zorin App Manager allows users to install a number of apps, packages, and libraries right from the menu with little interaction. 
+
+This manager features a selection menu which allows you to choose which programs you wish to install onto your device. Any programs that have dependencies will be taken care of automatically with no input from you unless the program requires you to configure it.
+
+<br />
 
 <p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/272117231.gif"></p>
+
+<br />
+
+<p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/272117232.gif"></p>
+
+<br />
+
+<p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/271902111.png"></p>
 
 <br />
 
@@ -50,7 +60,7 @@ This is a simple application manager which allows you to install a number of pro
 
 <br />
 
-## Packages Included
+## Packages
 | App                                                                                         | Descript |
 | ------------------------------------------------------------------------------------------- | -------- |
 | [Alien Package Converter](http://joeyh.name/code/alien/)                              | Converts between the rpm, dpkg, stampede slp, and slackware tgz file formats |
@@ -90,18 +100,17 @@ This is a simple application manager which allows you to install a number of pro
 | [Teamviewer](https://www.teamviewer.com/en-us/download/linux/)                        | Remote desktop application |
 | [Tree](https://packages.ubuntu.com/search?keywords=tree)                              | View files in tree-like ASCII structure  |
 | [Unrar](https://packages.ubuntu.com/search?keywords=unrar)                            | Manage rar files / extraction |
-| [Visual Studio Code (Stable)](https://code.visualstudio.com/)                        | IDE for developers / source-code editor (Stable) |
-| [Visual Studio Code (Insiders)](https://code.visualstudio.com/insiders/)             | IDE for developers / source-code editor (Testing) |
+| [Visual Studio Code (Stable)](https://code.visualstudio.com/)                         | IDE for developers / source-code editor (Stable) |
+| [Visual Studio Code (Insiders)](https://code.visualstudio.com/insiders/)              | IDE for developers / source-code editor (Testing) |
 | [wxHexEditor)](https://github.com/EUA/wxHexEditor)                                    | Hex editor |
 | [YAD (Yet Another Dialog)](https://github.com/v1cont/yad)                             | Create bash shell dialogs. Based on Zenity. |
 | [Yarn](https://github.com/yarnpkg/berry)                                              | Modern package manager |
 | [Zenity Dialogs](https://gitlab.gnome.org/GNOME/zenity)                               | Create bash shell dialogs |
 | [Ziet Cron Manager](https://github.com/loimu/zeit)                                    | Manage crons in browser admin panel  |
-| [ZorinOS Pro: Layouts](#zorinos-pro-layouts)                                          | Professional layouts included in ZorinOS Pro |
 
 <br />
 
-## Tweaks / Changes
+## Patches
 - File Manager displays full path in address bar
 - Netplan Configuration
   - Default network adapter renamed to `eth0`
@@ -109,7 +118,6 @@ This is a simple application manager which allows you to install a number of pro
   - Configures network adapter to use Quad9 DNS servers
 - Update Network /etc/hosts file
 - VBox Additions package disrepency issue with non-Pro releases.
-- ZorinOS Pro Layouts
 
 <br />
 
@@ -172,10 +180,15 @@ When this installer is launched, a `/logs/zorin_[DATE].log` file will be generat
 
 <br />
 
-## ZorinOS Pro Features
-Even though this release includes ZorinOS Pro layouts, there are still reasons to purchase ZorinOS Pro which include:
-- Zorin Installation Support
-- Support developers of ZorinOS
+## Command-line Arguments
+The following options can be appended to the end of the `./setup.sh` command
+
+| Option | Name | Desc |
+| --- | --- | --- |
+| `-t [THEME]` | Theme | <br /> Switches the theme that the interface uses. <br /><br />`Adwaita`, `Adwaita-dark`, `HighContrast`, `HighContrastInverse`, `ZorinBlue-Light` [^3], `ZorinBlue-Dark` [^3] <br /> <br /> |
+| `-s` | Silent | <br /> All logging will be disabled <br /> <br /> |
+| `-d` | Dev Mode | <br /> Specialized list of apps will appear instead of the installable list.<br />Also displays debugging prints. <br /> <br /> |
+| `-n` | Dev: Null Run | <br /> Any of the installable applications selected will do a "fake" / null install. No actual install will take place. <br /> <br /> Only works without `-d` <br /> <br />  |
 
 <br />
 
@@ -191,25 +204,6 @@ For detailed documentation, please visit this repo's [Wiki](https://github.com/A
 ---
 
 <br />
-
-## Notes
-Things to remember about this program
-
-<br />
-
-### Developer Vars
-This program has numerous variables that the general public shouldn't modify. They make development easier instead of keeping multiple modified copies of the code.
-
-| Var | Default | Desc |
-| --- | --- | --- |
-| `app_cfg_bDev` | false | <br /> `True`: Specialized list of apps will appear instead of the installable list.<br />Also displays debugging prints. <br /> <br /> |
-| `app_cfg_bDev_NullRun` | false | <br /> `True`: Any of the installable applications selected will do a "fake" install. No actual install will take place. <br /> <br /> Requires `app_cfg_bDev = false` <br /> <br />  |
-
-<br />
-
----
-
-<br />
 <br />
 <br />
 <br />
@@ -217,3 +211,4 @@ This program has numerous variables that the general public shouldn't modify. Th
 ## Footnotes
 [^1]: This program requires Gnome Extension Manager to be installed first.
 [^2]: If installing any of the Gnome extensions, this core must be installed first. Please note that when installing this app, it may take upwards of 5-10 minutes depending on your machine. The rotating cursor means that it is installing.
+[^3]: Only available if using `ZorinOS`
