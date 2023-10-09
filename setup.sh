@@ -71,6 +71,8 @@ app_file_this=$(basename "$0")
 app_pid_spin=0
 app_pid=$BASHPID
 app_queue_restart=false
+app_queue_restart_id="App Manager"
+app_queue_restart_delay=1
 app_queue_url=()
 app_i=0
 app_cfg_bDev_str=$([ -n "${OPT_DEV_ENABLE}" ] && echo "Enabled" || echo "Disabled" )
@@ -2401,6 +2403,7 @@ function fn_twk_vbox_additions_fix()
     echo -e "[ ${STATUS_OK} ]"
 
     app_queue_restart=true
+    app_queue_restart_id="${1}"
 
     finish
 }
@@ -3195,12 +3198,15 @@ function show_menu()
         if [ $RET -eq 0 ]; then
             answer=$( yad \
             --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-            --image dialog-question \
+            --center \
+            --width=240 \
+            --height=125 \
+            --fixed \
             --title "Install ${res}?" \
             --borders=10 \
             --button="!gtk-yes!yes:0" \
             --button="!gtk-close!exit:1" \
-            --text "Are you sure you want to install the app\n\n${res}?" )
+            --text "Are you sure you want to install the app\n\n<span color='#3477eb'><b>${res}</b></span>?" )
             ANSWER=$?
 
             if [ $ANSWER -eq 1 ] || [ $ANSWER -eq 252 ]; then
@@ -3226,23 +3232,24 @@ function show_menu()
                 if [ "$app_queue_restart" = true ]; then
                     prompt_reboot=$( yad \
                     --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-                    --image dialog-question \
+                    --center \
+                    --width=150 \
+                    --height=125 \
+                    --fixed \
                     --margins=15 \
                     --borders=10 \
-                    --width="350" \
-                    --height="100" \
                     --title "Restart Required" \
-                    --button="Restart"\!\!"System restarts in 1 minute":1 \
+                    --button="Restart"\!\!"System restarts in ${app_queue_restart_delay} minute(s)":1 \
                     --button="Later"\!gtk-quit\!"Restart Later":0 \
-                    --text "To complete removal of open-vm-tools, reboot your machine." )
+                    --text "The app <span color='#3477eb'><b>${app_queue_restart_id}</b></span> has requested a restart.\nYour machine will reboot in <span color='#f41881'><b>${app_queue_restart_delay} minute(s)</b></span>." )
                     RET=$?
 
                     if [ $RET -eq 1 ]; then
                         sleep 1
                         if [ -z "${OPT_DEV_NULLRUN}" ]; then
-                            sudo shutdown -r +1 "System will reboot in 1 minute" >> $LOGS_FILE 2>&1
+                            sudo shutdown -r +${app_queue_restart_delay} "System will reboot in ${app_queue_restart_delay} minute" >> $LOGS_FILE 2>&1
                         fi
-                        notify-send -u critical "Restart Pending" "A system restart will occur in 1 minute." >> $LOGS_FILE 2>&1
+                        notify-send -u critical "Restart Pending" "A system restart will occur in ${app_queue_restart_delay} minute." >> $LOGS_FILE 2>&1
                         sleep 1
                         finish
                         sleep 1
