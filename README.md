@@ -131,7 +131,7 @@ Information on getting started.
 <br />
 
 ### Install
-To use this script, do the following:
+Instructions on how to run this script and what you shouldn't do.
 
 <br />
 
