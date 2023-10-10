@@ -4,9 +4,9 @@ echo
 
 ##--------------------------------------------------------------------------
 #   @author :           aetherinox
-#   @script :           Zorin App Manager
+#   @script :           Proteus App Manager
 #   @when   :           2023-10-09 08:37:31
-#   @url    :           https://github.com/Aetherinox/zorin-app-manager
+#   @url    :           https://github.com/Aetherinox/proteus-app-manager
 #
 #   requires chmod +x setup.sh
 #
@@ -57,11 +57,11 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 ##--------------------------------------------------------------------------
 
 app_repo_dev="Aetherinox"
-app_repo="zorin-app-manager"
-app_repo_apt="zorin-apt-repo"
+app_repo="proteus-app-manager"
+app_repo_apt="proteus-apt-repo"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
 app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
-app_title="Zorin App Manager (${app_repo_dev})"
+app_title="Proteus App Manager (${app_repo_dev})"
 app_ver=("1" "0" "0" "5")
 app_dir=$PWD
 app_dir_hosts="/etc/hosts"
@@ -86,7 +86,7 @@ export YEAR=$(date +'%Y')
 export TIME=$(date '+%H:%M:%S')
 export ARGS=$1
 export LOGS_DIR="$app_dir/logs"
-export LOGS_FILE="$LOGS_DIR/zorin_${DATE}.log"
+export LOGS_FILE="$LOGS_DIR/proteus_${DATE}.log"
 export SECONDS=0
 
 ##--------------------------------------------------------------------------
@@ -103,8 +103,6 @@ gui_desc="Select the app / package you wish to install. Most apps will run as si
 #   distro
 #
 #   returns distro information.
-#   even though this was strictly built for Zorin, I can already foresee
-#   people on other distros using this, so I may as well plan ahead.
 ##--------------------------------------------------------------------------
 
 # freedesktop.org and systemd
@@ -594,13 +592,13 @@ function exit()
 #               sudo rm -rf /etc/apt/sources.list.d/aetherinox*list
 #
 #           gpg ksy stored in:
-#               /usr/share/keyrings/aetherinox-zorin-apt-repo-archive.gpg
+#               /usr/share/keyrings/aetherinox-proteus-apt-repo-archive.gpg
 #               sudo rm -rf /usr/share/keyrings/aetherinox*gpg
 #
 #   as of 1.0.0.3-alpha, deprecated apt-key method removed for adding
 #   gpg key. view readme for new instructions. registered repo now
 #   contains two files
-#       -   trusted gpg key:        aetherinox-zorin-apt-repo-archive.gpg
+#       -   trusted gpg key:        aetherinox-proteus-apt-repo-archive.gpg
 #       -   source .list:           /etc/apt/sources.list.d/aetherinox*list
 #
 #   ${1}    ReqTitle
@@ -646,12 +644,12 @@ function app_setup
     #
     #   sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
 
-    # Missing zorin-apt-repo gpg key
+    # Missing proteus-apt-repo gpg key
     if ! [ -f "/usr/share/keyrings/${app_repo_aptpkg}.gpg" ]; then
         bMissingGPG=true
     fi
 
-    # Missing zorin-apt-repo .list
+    # Missing proteus-apt-repo .list
     if ! [ -f "/etc/apt/sources.list.d/${app_repo_aptpkg}.list" ]; then
         bMissingRepo=true
     fi
@@ -2611,7 +2609,7 @@ function fn_app_ziet_cron()
 #   ZorinOS Pro Layouts
 #
 #   list of layouts provided in ZorinOS Pro
-#   served via zorin-apt-repo
+#   served via proteus-apt-repo
 ##--------------------------------------------------------------------------
 
 function fn_app_zorinospro_lo()
