@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/images/readme/banner.jpg" width="860"></p>
+<p align="center"><img src="docs/images/readme/banner_02.png" width="860"></p>
 <h1 align="center"><b>Proteus App Manager</b></h1>
 
 <div align="center">
