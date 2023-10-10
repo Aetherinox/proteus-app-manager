@@ -7,14 +7,6 @@
 
 </div>
 
-<br />
-<br />
-
-> [!WARNING]
-> This script has been developed for ZorinOS [based on 20.04.6 LTS (Focal Fossa)] and Ubuntu platforms. At present, other distributions are not planned until stability has been reached on its originally planned distros.
-
-<br />
-
 ---
 
 <br />
