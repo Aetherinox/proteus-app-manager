@@ -174,6 +174,8 @@ function opt_usage()
     printf '  %-5s %-40s\n' "Options:" "" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-d, --dev" "dev mode" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-h, --help" "show help menu" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-i, --install" "install app from cli" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "    -i \"members\"" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-n, --nullrun" "dev: null run" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "simulate app installs (no changes)" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-s, --silent" "silent mode which disables logging" 1>&2
@@ -187,6 +189,8 @@ function opt_usage()
     echo
     exit 1
 }
+
+apps_installcli=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -202,7 +206,7 @@ while [ $# -gt 0 ]; do
     -i*|--install*)
             if [[ "$1" != *=* ]]; then shift; fi
             OPT_APP="${1#*=}"
-            echo $OPT_APP
+            apps_installcli+=("${OPT_APP}")
             ;;
 
     -n|--nullrun)
@@ -500,6 +504,52 @@ spin()
             echo -en "\010"
             sleep 0.4
         done
+    done
+}
+
+##--------------------------------------------------------------------------
+#   func > cli question
+#
+#   used for command-line to prompt the user with a question
+##--------------------------------------------------------------------------
+
+cli_question( )
+{
+    local syntax def response
+
+    while true; do
+
+        # end argument determines type of syntax
+        if [ "${2:-}" = "Y" ]; then
+            syntax="Y / n"
+            def=Y
+        elif [ "${2:-}" = "N" ]; then
+            syntax="y / N"
+            def=N
+        else
+            syntax="Y / N"
+            def=
+        fi
+
+        echo -n "$1 [$syntax] "
+
+        read response </dev/tty
+
+        # NULL response uses default
+        if [ -z "$response" ]; then
+            response=$def
+        fi
+
+        # validate response
+        case "$response" in
+            Y|y|yes|YES)
+                return 0
+                ;;
+            N|n|no|NO)
+                return 1
+                ;;
+        esac
+
     done
 }
 
@@ -3339,5 +3389,109 @@ function show_menu()
         esac
     done
 }
+
+##--------------------------------------------------------------------------
+#   Command-line Searching > Search user provided arguments
+#
+#   DESC:       supports executing this script with the options
+#               --install or -i <package-name> in order to install
+#               packages without the gui.
+#   
+##--------------------------------------------------------------------------
+
+if (( ${#apps_installcli[@]} )); then
+    results=()
+    for key in "${!apps_installcli[@]}"
+    do
+
+        search_term="${apps_installcli[$key]}"
+        count=0
+
+        for i in "${!apps[@]}"
+        do
+            app="${apps[$i]}"
+            if [[ "${app}" == *"${search_term}"* ]]
+            then
+                (( count++ ))
+
+                if [ -n "${OPT_DEV_ENABLE}" ]; then
+                    echo "App .................... ${app}"
+                    echo "Search Term ............ ${search_term}"
+                    echo "found";
+
+                    echo
+                    echo
+                fi
+            fi
+        done
+
+        results+=( ["${count}"]="${search_term}" )
+    done
+
+    ##--------------------------------------------------------------------------
+    #   Command-line Searching > Too many results
+    #
+    #   DESC:       obviously we dont want the user using words that will 
+    #               cause the script to install anything it can find.
+    #
+    #               the term "Git" alone would install 3 different packages.
+    #               
+    #               if each search term returns more than 1 result, notify
+    #               the user so that they can re-specify their terms in a
+    #               more detailed string.
+    #   
+    ##--------------------------------------------------------------------------
+
+    bFailSearch=false
+    for key in ${!results[@]}; do
+        key="${key}"                # num of results
+        val="${results[${key}]}"    # str app name
+
+        if [ $key -gt 1 ]; then
+            if [ "$bFailSearch" = false ]; then
+                echo
+                sleep 0.3
+                echo -e "  ${BOLD}${FUCHSIA}Abort: ${NORMAL}Some search terms returned more than 1 result. Try narrowing down your search." >&2
+            fi
+
+            printf '  %-25s %-20s %-20s\n' "     ${BOLD}${YELLOW}${val}${NORMAL}" "${key} matches" "" 1>&2
+
+            bFailSearch=true
+        fi
+    done
+
+    ##--------------------------------------------------------------------------
+    #   search fail > too many results
+    ##--------------------------------------------------------------------------
+
+    if [ "$bFailSearch" = true ]; then
+        printf '  %-25s %-20s %-20s\n\n' "" "" "" 1>&2
+        echo -e "  Press ${BLINK}${YELLOW}[ ENTER ]${NORMAL} to search again" >&2
+        echo
+        read -p ""
+        exit 1
+
+    ##--------------------------------------------------------------------------
+    #   search success > found individual matches
+    ##--------------------------------------------------------------------------
+
+    else
+        printf '  %-25s %-20s %-20s\n\n' "" "" "" 1>&2
+        echo -e "  ${BOLD}${GREEN}Packages Found: ${NORMAL}The following will be installed:"
+        echo
+
+        for key in ${!results[@]}; do
+            key="${key}"                # num of results
+            val="${results[${key}]}"    # str app name
+            echo -e "      ‣ ${BOLD}${LIME_YELLOW}${val}${NORMAL}"
+        done
+        echo
+
+        if cli_question "  Install the above packages?"; then
+            echo "Yes"
+            exit 1
+        fi
+    fi
+fi
 
 show_menu app_functions
