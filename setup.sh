@@ -78,9 +78,13 @@ app_i=0
 app_cfg_bDev_str=$([ -n "${OPT_DEV_ENABLE}" ] && echo "Enabled" || echo "Disabled" )
 
 ##--------------------------------------------------------------------------
-#   vars > logs
+#   exports
+#
+#   GDK_BACKEND     vital for running proteus in Ubuntu 23 which switches
+#                   GNOME from x11 to Wayland as of Ubuntu 21.04 in 2021.
 ##--------------------------------------------------------------------------
 
+export GDK_BACKEND=x11
 export DATE=$(date '+%Y%m%d')
 export YEAR=$(date +'%Y')
 export TIME=$(date '+%H:%M:%S')
@@ -3090,7 +3094,7 @@ function show_header()
 function show_about()
 {
 
-    yad --about \
+    GDK_BACKEND=x11 yad --about \
     --image=./img/Tux.png \
     --website-label="Github" \
     --website="${app_repo_url}" \
@@ -3137,7 +3141,7 @@ function show_menu()
     unset IFS
 
     while true; do
-        objlist=$(yad \
+        objlist=$( GDK_BACKEND=x11 yad \
         --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
         --width="${gui_width}" \
         --height="${gui_height}" \
@@ -3169,7 +3173,7 @@ function show_menu()
                 if ! [ -z "${assoc_uri}" ]; then
                     open_url ${assoc_uri}
                 else
-                    query=$( yad \
+                    query=$( GDK_BACKEND=x11 yad \
                     --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
                     --center \
                     --width=150 \
@@ -3182,7 +3186,7 @@ function show_menu()
                     --text "The app <span color='#3477eb'><b>${res}</b></span> does not have any provided docs\nor websites to show.\n\nReach out to the developer if you feel this entry should\nhave docs." )
                 fi
             else
-                query=$( yad \
+                query=$( GDK_BACKEND=x11 yad \
                 --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
                 --center \
                 --width=150 \
@@ -3212,7 +3216,7 @@ function show_menu()
         ##--------------------------------------------------------------------------
 
         if [ $RET -eq 5 ]; then
-            ab=$( yad --pname="Test Application" --about )
+            ab=$( GDK_BACKEND=x11 yad --pname="Test Application" --about )
             continue
         fi
 
@@ -3232,7 +3236,7 @@ function show_menu()
         ##--------------------------------------------------------------------------
 
         if [ $RET -eq 0 ]; then
-            answer=$( yad \
+            answer=$( GDK_BACKEND=x11 yad \
             --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
             --center \
             --width=240 \
@@ -3266,7 +3270,7 @@ function show_menu()
                 ##--------------------------------------------------------------------------
 
                 if [ "$app_queue_restart" = true ]; then
-                    prompt_reboot=$( yad \
+                    prompt_reboot=$( GDK_BACKEND=x11 yad \
                     --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
                     --center \
                     --width=150 \
