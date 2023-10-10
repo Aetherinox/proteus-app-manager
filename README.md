@@ -53,6 +53,10 @@ This manager features a selection menu which allows you to choose which programs
 
 <br />
 
+<p align="center"><img style="width: 100%;text-align: center;" src="docs/images/readme/272117232.gif"></p>
+
+<br />
+
 ---
 
 <br />
