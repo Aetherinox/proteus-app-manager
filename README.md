@@ -20,6 +20,7 @@
   - [Prerequisites](#prerequisites)
   - [Logs](#logs)
 - [Command-line Arguments](#command-line-arguments)
+  - [Installing with CLI](#installing-with-cli)
 - [Wiki](#wiki)
 - [Footnotes](#footnotes)
 
@@ -187,6 +188,28 @@ The following options can be appended to the end of the `./setup.sh` command
 | `-s`, `--silent` | Silent | <br /> All logging will be disabled <br /> <br /> |
 | `-t`, `--theme [THEME]` | Theme | <br /> Switches the theme that the interface uses. <br /><br />`Adwaita`, `Adwaita-dark`, `HighContrast`, `HighContrastInverse`, `ZorinBlue-Light` [^3], `ZorinBlue-Dark` [^3] <br /> <br /> |
 | `-v`, `--version` | Version | <br /> Version information <br /> <br />  |
+
+<br />
+
+### Installing with CLI
+
+Proteus supports installing apps via the command-line instead of loading the GUI and selecting apps from the list. In order to install apps via command-line, the `-i` or `--install` option must be provided for each app you wish to install.
+
+```bash
+./setup.sh -i curl -i "Github Desktop"
+```
+
+<br />
+
+If you provide a very short generic name, Proeteus will find the first app based on alphabetical order.
+
+<br />
+
+As an example, if you do an install using `./setup.sh -i "gi"` and Proteus doesn't have any packages specifically named `Gi`, then the app will assume you're referring to the package `Git` and ask if you wish to install that.
+
+if you specify `./setup.sh -i "gith"`, the system will assume `Github Desktop` _(unless there's another name that is closer to your query)_.
+
+Upper and lower case characters do not matter.
 
 <br />
 

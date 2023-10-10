@@ -954,7 +954,7 @@ app_ocsurl="ocs-url"
 app_pacman_game="Pacman (Game)"
 app_pacman_manager="Pacman (Package Management)"
 app_pihole="Pi-Hole"
-app_reprepro="reprepro (Apt on Github)"
+app_reprepro="reprepro"
 app_rpm="RPM Package Manager"
 app_seahorse="Seahorse (Passwd &amp; Keys)"
 app_snapd="Snapd"
@@ -3400,18 +3400,24 @@ function show_menu()
 ##--------------------------------------------------------------------------
 
 if (( ${#apps_installcli[@]} )); then
-    results=()
+    declare -A results=()
+    pendinstall=()
+
+    IFS=$'\n' apps_sorted=($(sort <<<"${apps[*]}"))
+    unset IFS
+
     for key in "${!apps_installcli[@]}"
     do
 
+        # array of searched terms
         search_term="${apps_installcli[$key]}"
         count=0
 
+        # array of all apps
         for i in "${!apps[@]}"
         do
-            app="${apps[$i]}"
-            if [[ "${app}" == *"${search_term}"* ]]
-            then
+            app="${apps_sorted[$i]}"
+            if [[ "${app,,}" == *"${search_term,,}"* ]]; then
                 (( count++ ))
 
                 if [ -n "${OPT_DEV_ENABLE}" ]; then
@@ -3422,10 +3428,13 @@ if (( ${#apps_installcli[@]} )); then
                     echo
                     echo
                 fi
+
+                results+=( ["${search_term}"]="${count}" )
+                pendinstall+=("${app}")
+
+                break
             fi
         done
-
-        results+=( ["${count}"]="${search_term}" )
     done
 
     ##--------------------------------------------------------------------------
@@ -3442,56 +3451,38 @@ if (( ${#apps_installcli[@]} )); then
     #   
     ##--------------------------------------------------------------------------
 
-    bFailSearch=false
-    for key in ${!results[@]}; do
-        key="${key}"                # num of results
-        val="${results[${key}]}"    # str app name
-
-        if [ $key -gt 1 ]; then
-            if [ "$bFailSearch" = false ]; then
-                echo
-                sleep 0.3
-                echo -e "  ${BOLD}${FUCHSIA}Abort: ${NORMAL}Some search terms returned more than 1 result. Try narrowing down your search." >&2
-            fi
-
-            printf '  %-25s %-20s %-20s\n' "     ${BOLD}${YELLOW}${val}${NORMAL}" "${key} matches" "" 1>&2
-
-            bFailSearch=true
-        fi
-    done
-
-    ##--------------------------------------------------------------------------
-    #   search fail > too many results
-    ##--------------------------------------------------------------------------
-
-    if [ "$bFailSearch" = true ]; then
-        printf '  %-25s %-20s %-20s\n\n' "" "" "" 1>&2
-        echo -e "  Press ${BLINK}${YELLOW}[ ENTER ]${NORMAL} to search again" >&2
-        echo
-        read -p ""
-        exit 1
-
-    ##--------------------------------------------------------------------------
-    #   search success > found individual matches
-    ##--------------------------------------------------------------------------
-
-    else
+    if (( ${#results[@]} )); then
         printf '  %-25s %-20s %-20s\n\n' "" "" "" 1>&2
         echo -e "  ${BOLD}${GREEN}Packages Found: ${NORMAL}The following will be installed:"
         echo
 
-        for key in ${!results[@]}; do
-            key="${key}"                # num of results
-            val="${results[${key}]}"    # str app name
+        for key in ${!pendinstall[@]}; do
+            key="${key}"
+            val="${pendinstall[${key}]}"
             echo -e "      ‣ ${BOLD}${LIME_YELLOW}${val}${NORMAL}"
         done
+
+        sleep 0.5
         echo
 
         if cli_question "  Install the above packages?"; then
-            echo "Yes"
-            exit 1
+
+            # ensure code has caught up
+            echo
+            sleep 0.5
+
+            for key in "${!pendinstall[@]}"
+            do
+                app_name="${pendinstall[${key}]}"
+                app_func="${app_functions[$app_name]}"
+
+                $app_func "${app_name}" "${app_func}"
+            done
         fi
     fi
+    Logs_Finish
+    exit
+    sleep 0.2
+else
+    show_menu app_functions
 fi
-
-show_menu app_functions
