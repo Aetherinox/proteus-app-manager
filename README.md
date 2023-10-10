@@ -30,7 +30,7 @@
 <br />
 
 ## About
-This is an application manager targeted toward `ZorinOS` and distros using `Ubuntu 22.04 LTS`. The Proteus App Manager allows users to install a number of apps, packages, and libraries right from the menu with little interaction. 
+This is an application manager targeted toward `ZorinOS`, `Ubuntu 20.04 LTS`+. The Proteus App Manager allows users to install a number of apps, packages, and libraries right from the menu with little interaction. 
 
 This manager features a selection menu which allows you to choose which programs you wish to install onto your device. Any programs that have dependencies will be taken care of automatically with no input from you unless the program requires you to configure it.
 
