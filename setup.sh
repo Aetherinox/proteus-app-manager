@@ -847,6 +847,7 @@ bInstall_app_teamviewer=true
 bInstall_app_tree=true
 bInstall_twk_filepath=true
 bInstall_twk_netplan=true
+bInstall_twk_menu_new_textfile=true
 bInstall_twk_network_hosts=true
 bInstall_twk_vbox_additions_fix=true
 bInstall_app_vsc_stable=true
@@ -907,6 +908,7 @@ app_teamviewer="Teamviewer"
 app_tree="tree"
 twk_filepath="Patch: Path in File Explorer"
 twk_netplan="Patch: Netplan Configuration"
+twk_menu_new_textfile="Patch: Add Menu New Text File"
 twk_network_hosts="Patch: Update Net Hosts"
 twk_vbox_additions_fix="Patch: VBox Additions"
 app_unrar="Unrar"
@@ -988,6 +990,7 @@ app_functions=(
     ["$app_tree"]='fn_app_tree'
     ["$twk_filepath"]='fn_twk_filepath'
     ["$twk_netplan"]='fn_twk_netplan'
+    ["$twk_menu_new_textfile"]='fn_twk_menu_new_textfile'
     ["$twk_network_hosts"]='fn_twk_network_hosts'
     ["$twk_vbox_additions_fix"]='fn_twk_vbox_additions_fix'
     ["$app_unrar"]='fn_app_unrar'
@@ -2288,6 +2291,36 @@ EOF
 }
 
 ##--------------------------------------------------------------------------
+#   Tweak: Add 'New Text File' to Context Menu
+#
+#   DESC:       Creates a new template on Ubuntu systems which adds
+#               "New Document" -> "Text File" to the right-click context
+#               menu.
+#
+#               File placed in "~/Templates/Empty\ Document"
+##--------------------------------------------------------------------------
+
+function fn_twk_menu_new_textfile()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        path_template_new="/home/${USER}/Templates/Text File.txt"
+        if [ ! -f "$path_template_new" ]; then
+            echo "ran"
+            touch "$path_template_new"
+        fi
+    else
+
+        sleep 1
+        echo -e "[ ${STATUS_OK} ]"
+
+    fi
+
+    finish
+}
+
+##--------------------------------------------------------------------------
 #   Network host file
 ##--------------------------------------------------------------------------
 
@@ -2856,6 +2889,11 @@ fi
 
 if [ "$bInstall_twk_netplan" = true ]; then
     apps+=("${twk_netplan}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_twk_menu_new_textfile" = true ]; then
+    apps+=("${twk_menu_new_textfile}")
     let app_i=app_i+1
 fi
 
