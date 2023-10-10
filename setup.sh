@@ -1274,12 +1274,15 @@ function fn_app_cdialog()
 ##--------------------------------------------------------------------------
 #   Conky Package
 #
-#   Conky is a system monitor software. It is free software released 
-#   under the terms of the GPL license. Conky is able to monitor many
-#   system variables including CPU, memory, swap, disk space,
-#   temperature, top, upload, download, system messages, and much more.
+#   URL:        https://github.com/brndnmtthws/conky
+#   DESC:       Conky is a system monitor software. It is free 
+#               software released. under the terms of the GPL license. 
+#               Conky is able to monitor many system variables 
+#               including CPU, memory, swap, disk space,
+#               temperature, top, upload, download, system messages, 
+#               and much more.
 #   
-#   It is extremely configurable. Conky is a fork of torsmo. 
+#               It is extremely configurable. Conky is a fork of torsmo. 
 ##--------------------------------------------------------------------------
 
 function fn_app_conky()
@@ -1287,7 +1290,6 @@ function fn_app_conky()
     begin "${1}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-
         sudo add-apt-repository --yes ppa:teejee2008/foss >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install lm-sensors hddtemp -y -qq >> $LOGS_FILE 2>&1
@@ -1295,19 +1297,21 @@ function fn_app_conky()
         yes | sudo sensors-detect >> $LOGS_FILE 2>&1
         sleep 1
         sudo apt-get install conky-all -y -qq >> $LOGS_FILE 2>&1
+    fi
 
-        # detect CPUs
-        get_cpus=$(nproc --all)
+    # detect CPUs
+    get_cpus=$(nproc --all)
 
-        echo -e "[ ${STATUS_OK} ]"
-        printf '%-57s %-5s' "    |--- Creating config.conf" ""
-        sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    printf '%-57s %-5s' "    |--- Creating config.conf" ""
+    sleep 1
 
-        path_conky="/home/${USER}/.config/conky"
-        path_autostart="/home/${USER}/.config/autostart"
-        file_config="conky.conf"
-        file_autostart="conky.desktop"
+    path_conky="/home/${USER}/.config/conky"
+    path_autostart="/home/${USER}/.config/autostart"
+    file_config="conky.conf"
+    file_autostart="conky.desktop"
 
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         if [ ! -d "${path_conky}" ]; then
             mkdir -p "${path_conky}" >> $LOGS_FILE 2>&1
         fi
@@ -1330,20 +1334,24 @@ function fn_app_conky()
 
             mv "${path_conky}/${file_config}"{.t,} >> $LOGS_FILE 2>&1
         fi
+    fi
 
-        echo -e "[ ${STATUS_OK} ]"
-        printf '%-57s %-5s' "    |--- Setting perms" ""
-        sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    printf '%-57s %-5s' "    |--- Setting perms" ""
+    sleep 1
 
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo touch ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
         sudo chgrp ${USER} ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
         sudo chown ${USER} ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
         chmod u+x ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
+    fi
 
-        echo -e "[ ${STATUS_OK} ]"
-        printf '%-57s %-5s' "    |--- Starting conky" ""
-        sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    printf '%-57s %-5s' "    |--- Starting conky" ""
+    sleep 1
 
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
         conky -q -d -c ~/.config/conky/conky.conf >> $LOGS_FILE 2>&1
     fi
 
@@ -1356,10 +1364,12 @@ function fn_app_conky()
 ##--------------------------------------------------------------------------
 #   Conky Manager
 #
-#   Conky Manager is a graphical front-end for managing Conky config 
-#   files. It provides options to start/stop, browse and edit Conky
-#   themes installed on the system. Packages are currently available
-#   in Launchpad for Ubuntu and derivatives (Linux Mint, etc).
+#   URL:        https://github.com/zcot/conky-manager2
+#   DESC:       Conky Manager is a graphical front-end for managing 
+#               Conky config files. It provides options to start/stop,
+#               browse and edit Conky themes installed on the system.
+#               Packages are currently available in Launchpad for 
+#               Ubuntu and derivatives (Linux Mint, etc).
 ##--------------------------------------------------------------------------
 
 function fn_app_conky_mngr()
@@ -1419,9 +1429,11 @@ function fn_app_flatpak()
 ##--------------------------------------------------------------------------
 #   GDebi .deb package manager
 #
-#   A tiny little app that helps you install deb files more effectively
-#   by handling dependencies. Learn how to use Gdebi and make it the
-#   default application for installing deb packages.
+#   URL:        https://pkgs.org/download/gdebi
+#   DESC:       A tiny little app that helps you install deb files more 
+#               effectively by handling dependencies. Learn how to 
+#               use Gdebi and make it the default application for 
+#               installing deb packages.
 ##--------------------------------------------------------------------------
 
 function fn_app_gdebi()
@@ -1563,7 +1575,6 @@ function fn_app_gnome_ext_arcmenu()
         gnome-shell-extension-installer $app_ext_id_arcmenu --yes >> $LOGS_FILE 2>&1
     fi
     
-    # END ------------------------------------
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Restarting Shell" ""
     sleep 3
@@ -1961,7 +1972,7 @@ function fn_app_reprepro()
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install app_reprepro -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install reprepro -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -1997,32 +2008,27 @@ function fn_app_seahorse()
 {
     begin "${1}"
 
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+    echo
 
-        echo
-
-        printf '%-57s %-5s' "    |--- Remove Base" ""
-        sleep 1
-        sudo dpkg -r --force seahorse >> $LOGS_FILE 2>&1
-        echo -e "[ ${STATUS_OK} ]"
-
-        printf '%-57s %-5s' "    |--- Apt Update" ""
-        sleep 1
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        echo -e "[ ${STATUS_OK} ]"
-
-        printf '%-57s %-5s' "    |--- Install seahorse" ""
-        sleep 1
-        sudo apt-get install seahorse -y -qq >> $LOGS_FILE 2>&1
-        echo -e "[ ${STATUS_OK} ]"
-
-        printf '%-57s %-5s' "    |--- Install seahorse-nautilus" ""
-        sleep 1
-        sudo apt-get install seahorse-nautilus -y -qq >> $LOGS_FILE 2>&1
-
-    fi
-
+    printf '%-57s %-5s' "    |--- Remove Base" ""
     sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo dpkg -r --force seahorse >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s %-5s' "    |--- Apt Update" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s %-5s' "    |--- Install seahorse" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get install seahorse seahorse-nautilus -y -qq >> $LOGS_FILE 2>&1
+    fi
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2056,7 +2062,6 @@ function fn_app_surfshark()
     begin "${1}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-
         surfshark_url=https://downloads.surfshark.com/linux/debian-install.sh
         surfshark_file=surfshark-install
 
@@ -2201,7 +2206,7 @@ function fn_app_serv_pihole()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get upgrade -q >> $LOGS_FILE 2>&1
 
-        #curl -sSL https://install.pi-hole.net | sudo PIHOLE_SKIP_OS_CHECK=true bash
+        curl -sSL https://install.pi-hole.net | sudo PIHOLE_SKIP_OS_CHECK=true bash
     fi
 
 	echo -e "[ ${STATUS_OK} ]"
@@ -2311,15 +2316,12 @@ function fn_twk_menu_new_textfile()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         path_template_new="/home/${USER}/Templates/Text File.txt"
         if [ ! -f "$path_template_new" ]; then
-            echo "ran"
             touch "$path_template_new"
         fi
-    else
-
-        sleep 1
-        echo -e "[ ${STATUS_OK} ]"
-
     fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -2332,37 +2334,31 @@ function fn_twk_network_hosts()
 {
     begin "${1}"
 
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+    echo
 
-        echo
-
-        if [ ! -f "$app_dir_hosts" ]; then
-            touch "$app_dir_hosts"
-        fi
-
-        for item in $hosts
-        do
-            id=$(echo "$item"  | sed 's/ *\\t.*//')
-
-            printf '%-57s %-5s' "    |--- + $id" ""
-            sleep 1
-
-            if grep -Fxq "$id" $app_dir_hosts
-            then
-                echo -e "[ ${STATUS_SKIP} ]"
-            else
-                sed -i -e '1i'$item "$app_dir_hosts"
-                echo -e "[ ${STATUS_OK} ]"
-            fi
-        done
-
-    else
-
-        sleep 1
-        echo -e "[ ${STATUS_OK} ]"
-
+    if [ ! -f "$app_dir_hosts" ]; then
+        touch "$app_dir_hosts"
     fi
 
+    for item in $hosts
+    do
+        id=$(echo "$item"  | sed 's/ *\\t.*//')
+
+        printf '%-57s %-5s' "    |--- + $id" ""
+        sleep 1
+
+        if grep -Fxq "$id" $app_dir_hosts
+        then
+            echo -e "[ ${STATUS_SKIP} ]"
+        else
+            if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                sed -i -e '1i'$item "$app_dir_hosts"
+            fi
+            echo -e "[ ${STATUS_OK} ]"
+        fi
+    done
+
+    sleep 1
     finish
 }
 
@@ -2597,9 +2593,13 @@ function fn_app_yarn()
 }
 
 ##--------------------------------------------------------------------------
-#   Zenity Dialogs / GUI
+#   Zenity Dialogs
 #
-#   gives a user the ability to generate custom dialog boxes.
+#   DESC:       gives a user the ability to generate custom dialog boxes.
+#
+#   PARAM:      (str)   App Name
+#   PARAM:      (str)   function name
+#   PARAM:      (bool)  bSilent
 ##--------------------------------------------------------------------------
 
 function fn_app_zenity()
@@ -2624,6 +2624,9 @@ function fn_app_zenity()
 
 ##--------------------------------------------------------------------------
 #   Ziet Cron Manager
+#
+#   PARAM:      (str)   App Name
+#   PARAM:      (str)   function name
 ##--------------------------------------------------------------------------
 
 function fn_app_ziet_cron()
@@ -2645,8 +2648,11 @@ function fn_app_ziet_cron()
 ##--------------------------------------------------------------------------
 #   ZorinOS Pro Layouts
 #
-#   list of layouts provided in ZorinOS Pro
-#   served via proteus-apt-repo
+#   DESC:       list of layouts provided in ZorinOS Pro served via 
+#               proteus-apt-repo
+#
+#   PARAM:      (str)   App Name
+#   PARAM:      (str)   function name
 ##--------------------------------------------------------------------------
 
 function fn_app_zorinospro_lo()
@@ -3009,7 +3015,7 @@ function fn_dev_f()
 ##--------------------------------------------------------------------------
 #   dev menu
 #
-#   used for testing purposes only
+#   DESC:       used for testing purposes only
 ##--------------------------------------------------------------------------
 
 devs+=("${app_dev_a}")
@@ -3022,9 +3028,9 @@ devs+=("${app_dev_f}")
 ##--------------------------------------------------------------------------
 #   All Apps
 #
-#   installs all applications.
-#   needs to be at the end of all other available functions so that an
-#   array of apps can be populated.
+#   DESC:       installs all apps.
+#               needs to be at end of all other functions
+#
 ##--------------------------------------------------------------------------
 
 function fn_app_all()
