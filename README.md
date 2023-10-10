@@ -197,6 +197,7 @@ Proteus supports installing apps via the command-line instead of loading the GUI
 
 ```bash
 ./setup.sh -i curl -i "Github Desktop"
+./setup.sh --install tree -i Reprepro --install "ZorinOS Pro"
 ```
 
 <br />
