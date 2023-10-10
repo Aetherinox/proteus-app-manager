@@ -2371,7 +2371,7 @@ function fn_twk_vbox_additions_fix()
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo apt-get install gcc make build-essential dkms linux-headers-$(uname -r) -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install build-essential make gcc perl dkms linux-headers-$(uname -r) -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
