@@ -62,7 +62,7 @@ app_repo_apt="proteus-apt-repo"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
 app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
 app_title="Proteus App Manager (${app_repo_dev})"
-app_ver=("1" "0" "0" "5")
+app_ver=("1" "0" "0" "6")
 app_dir=$PWD
 app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
@@ -75,7 +75,6 @@ app_queue_restart_id="App Manager"
 app_queue_restart_delay=1
 app_queue_url=()
 app_i=0
-app_cfg_bDev_str=$([ -n "${OPT_DEV_ENABLE}" ] && echo "Enabled" || echo "Disabled" )
 
 ##--------------------------------------------------------------------------
 #   exports
@@ -169,54 +168,59 @@ function opt_usage()
     printf "  ${BLUE}${app_title}${NORMAL}\n" 1>&2
     printf "  ${GRAY}${gui_about}${NORMAL}\n" 1>&2
     echo
-    printf '  %-15s %-40s\n' "Usage:" "${0} [${GREYL}options${NORMAL}]" 1>&2
-    printf '  %-15s %-40s\n\n' "    " "${0} [${GREYL}-h${NORMAL}] [${GREYL}-d${NORMAL}] [${GREYL}-n${NORMAL}] [${GREYL}-s${NORMAL}] [${GREYL}-t THEME${NORMAL}] [${GREYL}-v${NORMAL}]" 1>&2
-    printf '  %-15s %-40s\n' "Options:" "" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "-d" "dev mode" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "-h" "show help menu" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "-n" "dev: null run" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "" "simulate app installs (no changes)" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "-s" "silent mode which disables logging" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "-t" "specify theme to use" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "" "    Adwaita" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "" "    Adwaita-dark" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "" "    HighContrast" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "" "    HighContrastInverse" 1>&2
-    printf '  %-15s %-5s %-40s\n' "    " "-v" "current version of app manager" 1>&2
+    printf '  %-5s %-40s\n' "Usage:" "" 1>&2
+    printf '  %-5s %-40s\n' "    " "${0} [${GREYL}options${NORMAL}]" 1>&2
+    printf '  %-5s %-40s\n\n' "    " "${0} [${GREYL}-h${NORMAL}] [${GREYL}-d${NORMAL}] [${GREYL}-n${NORMAL}] [${GREYL}-s${NORMAL}] [${GREYL}-t THEME${NORMAL}] [${GREYL}-v${NORMAL}]" 1>&2
+    printf '  %-5s %-40s\n' "Options:" "" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-d, --dev" "dev mode" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-h, --help" "show help menu" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-n, --nullrun" "dev: null run" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "simulate app installs (no changes)" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-s, --silent" "silent mode which disables logging" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-t, --theme" "specify theme to use" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "    Adwaita" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "    Adwaita-dark" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "    HighContrast" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "    HighContrastInverse" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-v, --version" "current version of app manager" 1>&2
     echo
     echo
     exit 1
 }
 
-OPTIND=1
-while getopts "dhnst:v" opt; do
-    case ${opt} in
-        d)
-            OPT_DEV_ENABLE=true
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -d|--dev)
+           OPT_DEV_ENABLE=true
             echo -e "  ${FUCHSIA}${BLINK}Devmode Enabled${NORMAL}"
             ;;
 
-        h)
+    -h*|--help*)
             opt_usage
             ;;
 
-        n)
+    -i*|--install*)
+            if [[ "$1" != *=* ]]; then shift; fi
+            OPT_APP="${1#*=}"
+            echo $OPT_APP
+            ;;
+
+    -n|--nullrun)
             OPT_DEV_NULLRUN=true
             echo -e "  ${FUCHSIA}${BLINK}Devnull Enabled${NORMAL}"
-
             ;;
 
-        s)
+    -s|--silent)
             OPT_NOLOG=true
             echo -e "  ${FUCHSIA}${BLINK}Logging Disabled{NORMAL}"
-
             ;;
 
-        t)
-            OPT_THEME=${OPTARG}
+    -t*|--theme*)
+            if [[ "$1" != *=* ]]; then shift; fi
+            OPT_THEME="${1#*=}"
             ;;
-
-        v)
+        
+    -v|--version)
             echo
             echo -e "  ${GREEN}${BOLD}${app_title}${NORMAL} - v$(get_version)${NORMAL}"
             echo -e "  ${LGRAY}${BOLD}${app_repo_url}${NORMAL}"
@@ -224,13 +228,12 @@ while getopts "dhnst:v" opt; do
             echo
             exit 1
             ;;
-
-        *)
+    *)
             opt_usage
             ;;
-    esac
+  esac
+  shift
 done
-shift $((OPTIND-1))
 
 ##--------------------------------------------------------------------------
 #   GTK Theme
@@ -3084,7 +3087,7 @@ function show_header()
     printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}PID ${NORMAL}" "${BOLD}${FUCHSIA} $$ ${NORMAL}"
     printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}USER ${NORMAL}" "${BOLD}${FUCHSIA} ${USER} ${NORMAL}"
     printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}APPS ${NORMAL}" "${BOLD}${FUCHSIA} ${app_i} ${NORMAL}"
-    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}DEV ${NORMAL}" "${BOLD}${FUCHSIA} ${app_cfg_bDev_str} ${NORMAL}"
+    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}DEV ${NORMAL}" "${BOLD}${FUCHSIA} $([ -n "${OPT_DEV_ENABLE}" ] && echo "Enabled" || echo "Disabled" ) ${NORMAL}"
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
     echo
 
