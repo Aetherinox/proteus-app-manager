@@ -21,6 +21,13 @@ echo
 #   tput setf   [1-7]       – Set a foreground color
 ##--------------------------------------------------------------------------
 
+<<comment
+curl=$(curl -s "$url_manifest")
+TITLE=$( jq -r '.name' <<< "${curl}" )
+RELEASE=$( jq -r '.version' <<< "${curl}" )
+URL=$( jq -r '.url' <<< "${curl}" )
+comment
+
 BLACK=$(tput setaf 0)
 RED=$(tput setaf 1)
 GREEN=$(tput setaf 2)
@@ -70,6 +77,7 @@ app_dir_swizzin="$app_dir/libraries/swizzin"
 apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
 app_nodejs_ver=(16 18 20)
+app_php_ver=(php7.3-fpm php7.4-fpm php8.1-fpm php8.2-fpm)
 app_pid_spin=0
 app_pid=$BASHPID
 app_queue_restart=false
@@ -199,6 +207,22 @@ OPT_APPS_CLI=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --php-ver*)
+            if [[ "$1" != *=* ]]; then shift; fi
+            arg="${1#*=}"
+
+            if ! [[ $(echo ${app_php_ver[@]} | fgrep -w $arg) ]]; then
+                php_available=$(printf " %s" "${app_php_ver[@]}")
+
+                echo -e "  ${NORMAL}Bad PHP version provided."
+                echo -e "  ${NORMAL}      Enter One:  ${YELLOW}${php_available}${NORMAL}"
+                echo -e "  ${NORMAL}      Example:    ${LGRAY}./setup.sh -n -i PHP --php-ver 20${NORMAL}"
+                echo
+                exit 1
+            else
+                ARG_PHP_VER+=("${arg}")
+            fi
+            ;;
     --njs-ver*)
             if [[ "$1" != *=* ]]; then shift; fi
             arg="${1#*=}"
@@ -212,7 +236,7 @@ while [ $# -gt 0 ]; do
                 echo
                 exit 1
             else
-                ARG_VERSION+=("${arg}")
+                ARG_NJS_VER+=("${arg}")
             fi
             ;;
 
@@ -909,12 +933,14 @@ bInstall_app_makedeb=true
 bInstall_app_members=true
 bInstall_app_mlocate=true
 bInstall_app_neofetch=true
+bInstall_app_nginx=true
 bInstall_app_nettools=true
 bInstall_app_nodejs=true
 bInstall_app_npm=true
 bInstall_app_ocsurl=true
 bInstall_app_pacman_game=true
 bInstall_app_pacman_manager=true
+bInstall_app_php=true
 bInstall_app_pihole=true
 bInstall_app_reprepro=true
 bInstall_app_rpm=true
@@ -971,12 +997,14 @@ app_makedeb="Makedeb"
 app_members="Members"
 app_mlocate="mlocate"
 app_neofetch="Neofetch"
+app_nginx="Nginx"
 app_nettools="net-tools"
 app_nodejs="NodeJS"
 app_npm="NPM"
 app_ocsurl="ocs-url"
 app_pacman_game="Pacman (Game)"
 app_pacman_manager="Pacman (Package Management)"
+app_php="Php"
 app_pihole="Pi-Hole"
 app_reprepro="Reprepro"
 app_rpm="RPM Package Manager"
@@ -1055,12 +1083,14 @@ app_functions=(
     ["$app_mlocate"]='fn_app_mlocate'
     ["$app_neofetch"]='fn_app_neofetch'
     ["$app_nodejs"]='fn_app_nodejs'
+    ["$app_nginx"]='fn_app_nginx'
     ["$app_nettools"]='fn_app_nettools'
     ["$app_npm"]='fn_app_npm'
     ["$app_ocsurl"]='fn_app_ocsurl'
     ["$app_pacman_game"]='fn_app_pacman_game'
     ["$app_pacman_manager"]='fn_app_pacman_manager'
-    ["$app_pihole"]='fn_app_serv_pihole'
+    ["$app_php"]='fn_app_php'
+    ["$app_pihole"]='fn_app_pihole'
     ["$app_reprepro"]='fn_app_reprepro'
     ["$app_rpm"]='fn_app_rpm'
     ["$app_seahorse"]='fn_app_seahorse'
@@ -1936,7 +1966,7 @@ function fn_app_nodejs()
     #   skip dialog box if user provided nodejs version via CLI
     ##--------------------------------------------------------------------------
 
-    if [ -z "$ARG_VERSION" ]; then
+    if [ -z "$ARG_NJS_VER" ]; then
         objlist=$( GDK_BACKEND=x11 yad \
         --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
         --title="Select NodeJS Version" \
@@ -1952,7 +1982,7 @@ function fn_app_nodejs()
     fi
 
     #   check to see if either the CLI option is set, or the dialog box selection menu
-    local njs_ver2install=$( [ "$njs_sel_ver" ] && echo "$njs_sel_ver" || [ "$ARG_VERSION" ] && echo "$ARG_VERSION" )
+    local njs_ver2install=$( [ "$njs_sel_ver" ] && echo "$njs_sel_ver" || [ "$ARG_NJS_VER" ] && echo "$ARG_NJS_VER" )
 
     sleep 0.5
 
@@ -1989,6 +2019,31 @@ function fn_app_nodejs()
     fi
 
     sleep 1
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   nginx
+##--------------------------------------------------------------------------
+
+function fn_app_nginx()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install nginx -y -qq >> $LOGS_FILE 2>&1
+        sleep 1
+        sudo systemctl start nginx >> $LOGS_FILE 2>&1
+        sudo systemctl enable nginx >> $LOGS_FILE 2>&1
+        sleep 1
+        open_url "http://127.0.0.1"
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -2346,10 +2401,71 @@ function fn_app_tree()
 }
 
 ##--------------------------------------------------------------------------
+#   Php
+##--------------------------------------------------------------------------
+
+function fn_app_php()
+{
+    begin "${1}"
+
+    ##--------------------------------------------------------------------------
+    #   skip dialog box if user provided PHP version via CLI
+    ##--------------------------------------------------------------------------
+
+    if [ -z "$ARG_PHP_VER" ]; then
+        objlist=$( GDK_BACKEND=x11 yad \
+        --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
+        --title="Select PHP Version" \
+        --width=340 \
+        --form \
+        --borders=15 \
+        --text "Select your desired version of PHP\n" \
+        --button="!gtk-yes!yes:0" \
+        --button="!gtk-close!exit:1" \
+        --field="Version     :CB" $(IFS=! ; echo "${app_php_ver[*]}" ) )
+        RET=$?
+        php_sel_ver="${objlist//|}"
+    fi
+
+    #   check to see if either the CLI option is set, or the dialog box selection menu
+    local php_ver2install=$( [ "$php_sel_ver" ] && echo "$php_sel_ver" || [ "$ARG_PHP_VER" ] && echo "$ARG_PHP_VER" )
+
+    sleep 0.5
+
+    if [ -n "$php_ver2install" ]; then
+        echo
+
+        printf '%-57s %-5s' "    |--- Adding ppa:ondrej/php" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo add-apt-repository --yes ppa:ondrej/php >> $LOGS_FILE 2>&1
+            sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+            sudo apt-get install lsb-release ca-certificates apt-transport-https software-properties-common -y -qq >> $LOGS_FILE 2>&1
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+        printf '%-57s %-5s' "    |--- Installing ${php_ver2install}" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+            sudo apt-get install ${php_ver2install} -y -qq >> $LOGS_FILE 2>&1
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+    else
+        echo -e "[ ${STATUS_FAIL} ]"
+    fi
+
+    sleep 1
+
+    finish
+}
+
+##--------------------------------------------------------------------------
 #   Pihole
 ##--------------------------------------------------------------------------
 
-function fn_app_serv_pihole()
+function fn_app_pihole()
 {
     begin "${1}"
 
@@ -2973,6 +3089,11 @@ if [ "$bInstall_app_nodejs" = true ]; then
     let app_i=app_i+1
 fi
 
+if [ "$bInstall_app_nginx" = true ]; then
+    apps+=("${app_nginx}")
+    let app_i=app_i+1
+fi
+
 if [ "$bInstall_app_nettools" = true ]; then
     apps+=("${app_nettools}")
     let app_i=app_i+1
@@ -2995,6 +3116,11 @@ fi
 
 if [ "$bInstall_app_pacman_manager" = true ]; then
     apps+=("${app_pacman_manager}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_php" = true ]; then
+    apps+=("${app_php}")
     let app_i=app_i+1
 fi
 
