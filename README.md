@@ -20,6 +20,8 @@
   - [Prerequisites](#prerequisites)
   - [Logs](#logs)
 - [Command-line Arguments](#command-line-arguments)
+  - [Main](#main)
+  - [Sub Options](#sub-options)
   - [Installing with CLI](#installing-with-cli)
 - [Wiki](#wiki)
 - [Footnotes](#footnotes)
@@ -87,6 +89,7 @@ This manager features a selection menu which allows you to choose which programs
 | [mlocate](https://github.com/msekletar/mlocate)                                       | Find files on your computer  |
 | [neofetch](https://github.com/dylanaraps/neofetch)                                    | Command-line system information tool  |
 | [net-tools](https://packages.ubuntu.com/search?keywords=net-tools)                    | Network management toolkit |
+| [NodeJS](https://nodejs.org/en/download/package-manager)                              | Build scalable network apps  |
 | [NPM](https://npmjs.com/)                                                             | Package installer |
 | [ocs-url](https://opendesktop.org/p/1136805/)                                         | Helper program for items served via ocs:// |
 | [Pacman Package Management](https://gitlab.com/trivoxel/utilities/deb-pacman)         | Emulates the Archlinux Pacman package manager for Debian users who may prefer Pacman over Apt. |
@@ -113,6 +116,9 @@ This manager features a selection menu which allows you to choose which programs
 
 ## Patches
 - File Manager displays full path in address bar
+- Add "`Create New Text File`" to right-click context menu
+  - Already installed in ZorinOS
+  - Missing from Ubuntu, must be done manually
 - Netplan Configuration
   - Default network adapter renamed to `eth0`
   - Automatically assigns static ip address
@@ -187,6 +193,10 @@ When this installer is launched, a `/logs/proteus_[DATE].log` file will be gener
 ## Command-line Arguments
 The following options can be appended to the end of the `./setup.sh` command
 
+<br />
+
+
+### Main
 | Option | Name | Desc |
 | --- | --- | --- |
 | `-d`, `--dev` | Dev Mode | <br /> Specialized list of apps will appear instead of the installable list.<br />Also displays debugging prints. <br /> <br /> |
@@ -196,6 +206,13 @@ The following options can be appended to the end of the `./setup.sh` command
 | `-s`, `--silent` | Silent | <br /> All logging will be disabled <br /> <br /> |
 | `-t`, `--theme [THEME]` | Theme | <br /> Switches the theme that the interface uses. <br /><br />`Adwaita`, `Adwaita-dark`, `HighContrast`, `HighContrastInverse`, `ZorinBlue-Light` [^3], `ZorinBlue-Dark` [^3] <br /> <br /> |
 | `-v`, `--version` | Version | <br /> Version information <br /> <br />  |
+
+<br />
+
+### Sub Options
+| Option | Desc | Options |
+| --- | --- | --- |
+| `--njs-ver` | <br /> Specifies the version of NodeJS to install. <br /> Required when using `-i NodeJS` <br /> <br /> | `16`, `18`, `20` |
 
 <br />
 

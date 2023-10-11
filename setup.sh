@@ -173,11 +173,14 @@ function opt_usage()
     printf '  %-5s %-40s\n' "Usage:" "" 1>&2
     printf '  %-5s %-40s\n' "    " "${0} [${GREYL}options${NORMAL}]" 1>&2
     printf '  %-5s %-40s\n\n' "    " "${0} [${GREYL}-h${NORMAL}] [${GREYL}-d${NORMAL}] [${GREYL}-n${NORMAL}] [${GREYL}-s${NORMAL}] [${GREYL}-t THEME${NORMAL}] [${GREYL}-v${NORMAL}]" 1>&2
+    printf '  %-5s %-40s\n' "    " "${0} [${GREYL}-i \"NodeJS\" --njs-ver 18${NORMAL}]" 1>&2
     printf '  %-5s %-40s\n' "Options:" "" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-d, --dev" "dev mode" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-h, --help" "show help menu" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-i, --install" "install app from cli" 1>&2
-    printf '  %-5s %-18s %-40s\n' "    " "" "    -i \"members\"" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "    ${DEVGREY}-i \"members\"${NORMAL}" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "    --njs-ver" "specify nodejs version to install" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "" "    ${DEVGREY}-i \"NodeJS\" --njs-ver 18${NORMAL}" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-n, --nullrun" "dev: null run" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "simulate app installs (no changes)" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-s, --silent" "silent mode which disables logging" 1>&2
