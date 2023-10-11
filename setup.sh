@@ -63,19 +63,21 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 #   vars > app
 ##--------------------------------------------------------------------------
 
+apt_dir_home="$HOME/bin"
+app_dir_hosts="/etc/hosts"
+app_dir_swizzin="$app_dir/libraries/swizzin"
+apt_dir_deb="/var/cache/apt/archives"
+app_file_this=$(basename "$0")
 app_repo_dev="Aetherinox"
 app_repo="proteus-app-manager"
 app_repo_apt="proteus-apt-repo"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
 app_mnfst="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/manifest.json"
+app_script="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/setup.sh"
 app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
 app_title="Proteus App Manager (${app_repo_dev})"
 app_ver=("1" "0" "0" "6")
 app_dir=$PWD
-app_dir_hosts="/etc/hosts"
-app_dir_swizzin="$app_dir/libraries/swizzin"
-apt_dir_deb="/var/cache/apt/archives"
-app_file_this=$(basename "$0")
 app_nodejs_ver=(16 18 20)
 app_php_ver=(php7.3-fpm php7.4-fpm php8.1-fpm php8.2-fpm)
 app_pid_spin=0
@@ -216,7 +218,7 @@ while [ $# -gt 0 ]; do
 
                 echo -e "  ${NORMAL}Bad PHP version provided."
                 echo -e "  ${NORMAL}      Enter One:  ${YELLOW}${php_available}${NORMAL}"
-                echo -e "  ${NORMAL}      Example:    ${LGRAY}./setup.sh -n -i PHP --php-ver 20${NORMAL}"
+                echo -e "  ${NORMAL}      Example:    ${LGRAY}./setup.sh -n -i php --php-ver 20${NORMAL}"
                 echo
                 exit 1
             else
@@ -650,7 +652,6 @@ function begin()
 #   this func supports opening a url at the end of the installation
 #   however the command needs to have
 #       finish "${1}"
-#
 ##--------------------------------------------------------------------------
 
 function finish()
@@ -678,6 +679,25 @@ function exit()
 {
     finish
     clear
+}
+
+##--------------------------------------------------------------------------
+#   func > env path (add)
+#
+#   creates a new file inside /etc/profile.d/ which includes the new
+#   proteus bin folder.
+##--------------------------------------------------------------------------
+
+function envpath_add()
+{
+    local file_env=/etc/profile.d/proteus.sh
+    if [ "$2" = "force" ] || ! echo $PATH | $(which egrep) -q "(^|:)$1($|:)" ; then
+        if [ "$2" = "after" ] ; then
+            echo 'export PATH="$PATH:'$1'"' | sudo tee $file_env > /dev/null
+        else
+            echo 'export PATH="'$1':$PATH"' | sudo tee $file_env > /dev/null
+        fi
+    fi
 }
 
 ##--------------------------------------------------------------------------
@@ -715,13 +735,13 @@ function app_setup
 
     clear
 
-    ReqTitle=${1}
-    bMissingCurl=false
-    bMissingWget=false
-    bMissingNotify=false
-    bMissingYad=false
-    bMissingGPG=false
-    bMissingRepo=false
+    local ReqTitle=${1}
+    local bMissingCurl=false
+    local bMissingWget=false
+    local bMissingNotify=false
+    local bMissingYad=false
+    local bMissingGPG=false
+    local bMissingRepo=false
 
     # require curl
     if ! [ -x "$(command -v curl)" ]; then
@@ -743,16 +763,21 @@ function app_setup
         bMissingYad=true
     fi
 
-    #   NOTE:   apt-key has been deprecated
+    ##--------------------------------------------------------------------------
+    #   Missing proteus-apt-repo gpg key
     #
-    #   sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
+    #   NOTE:   apt-key has been deprecated
+    #           sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
+    ##--------------------------------------------------------------------------
 
-    # Missing proteus-apt-repo gpg key
     if ! [ -f "/usr/share/keyrings/${app_repo_aptpkg}.gpg" ]; then
         bMissingGPG=true
     fi
 
-    # Missing proteus-apt-repo .list
+    ##--------------------------------------------------------------------------
+    #   Missing proteus-apt-repo .list
+    ##--------------------------------------------------------------------------
+
     if ! [ -f "/etc/apt/sources.list.d/${app_repo_aptpkg}.list" ]; then
         bMissingRepo=true
     fi
@@ -772,6 +797,10 @@ function app_setup
         fi
     fi
 
+    ##--------------------------------------------------------------------------
+    #   missing curl
+    ##--------------------------------------------------------------------------
+
     if [ "$bMissingCurl" = true ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing curl package" | tee -a "${LOGS_FILE}" >/dev/null
 
@@ -782,6 +811,10 @@ function app_setup
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
+
+    ##--------------------------------------------------------------------------
+    #   missing wget
+    ##--------------------------------------------------------------------------
 
     if [ "$bMissingWget" = true ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing wget package" | tee -a "${LOGS_FILE}" >/dev/null
@@ -794,6 +827,10 @@ function app_setup
         echo -e "[ ${STATUS_OK} ]"
     fi
 
+    ##--------------------------------------------------------------------------
+    #   missing notify
+    ##--------------------------------------------------------------------------
+
     if [ "$bMissingNotify" = true ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing notify-send package" | tee -a "${LOGS_FILE}" >/dev/null
 
@@ -804,6 +841,10 @@ function app_setup
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
+
+    ##--------------------------------------------------------------------------
+    #   missing yad
+    ##--------------------------------------------------------------------------
 
     if [ "$bMissingYad" = true ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing yad package" | tee -a "${LOGS_FILE}" >/dev/null
@@ -816,6 +857,10 @@ function app_setup
         echo -e "[ ${STATUS_OK} ]"
     fi
 
+    ##--------------------------------------------------------------------------
+    #   missing gpg
+    ##--------------------------------------------------------------------------
+
     if [ "$bMissingGPG" = true ]; then
         printf "%-57s %-5s\n" "${TIME}      Adding ${app_repo_dev} GPG key: [https://github.com/${app_repo_dev}.gpg]" | tee -a "${LOGS_FILE}" >/dev/null
 
@@ -825,6 +870,10 @@ function app_setup
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
+
+    ##--------------------------------------------------------------------------
+    #   missing proteus apt repo
+    ##--------------------------------------------------------------------------
 
     if [ "$bMissingRepo" = true ]; then
         printf "%-57s %-5s\n" "${TIME}      Registering ${app_repo_apt}: https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master" | tee -a "${LOGS_FILE}" >/dev/null
@@ -843,6 +892,31 @@ function app_setup
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
+
+    ##--------------------------------------------------------------------------
+    #   install app manager proteus file in /HOME/USER/bin/proteus
+    ##--------------------------------------------------------------------------
+
+    local file_proteus="${apt_dir_home}/proteus"
+
+    if ! [ -f "$file_proteus" ]; then
+        printf "%-57s %-5s\n" "${TIME}      Installing App Manager" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf '%-57s %-5s' "    |--- Installing App Manager" ""
+        sleep 0.5
+        sudo wget -O "${apt_dir_home}/proteus" -q "$app_script" >> $LOGS_FILE 2>&1
+        sudo chgrp ${USER} ${file_proteus} >> $LOGS_FILE 2>&1
+        sudo chown ${USER} ${file_proteus} >> $LOGS_FILE 2>&1
+        sudo chmod u+x ${file_proteus} >> $LOGS_FILE 2>&1
+        sleep 0.5
+        echo -e "[ ${STATUS_OK} ]"
+    fi
+
+    ##--------------------------------------------------------------------------
+    #   add env path /HOME/USER/bin/
+    ##--------------------------------------------------------------------------
+
+    envpath_add $HOME/bin
 
     if [ -n "$ReqTitle" ]; then
         title "Retry: ${1}"
@@ -932,6 +1006,7 @@ bInstall_app_lintian=true
 bInstall_app_makedeb=true
 bInstall_app_members=true
 bInstall_app_mlocate=true
+bInstall_app_mysql=true
 bInstall_app_neofetch=true
 bInstall_app_nginx=true
 bInstall_app_nettools=true
@@ -996,6 +1071,7 @@ app_lintian="Lintian"
 app_makedeb="Makedeb"
 app_members="Members"
 app_mlocate="mlocate"
+app_mysql="MySQL"
 app_neofetch="Neofetch"
 app_nginx="Nginx"
 app_nettools="net-tools"
@@ -1081,6 +1157,7 @@ app_functions=(
     ["$app_makedeb"]='fn_app_makedeb'
     ["$app_members"]='fn_app_members'
     ["$app_mlocate"]='fn_app_mlocate'
+    ["$app_mysql"]='fn_app_mysql'
     ["$app_neofetch"]='fn_app_neofetch'
     ["$app_nodejs"]='fn_app_nodejs'
     ["$app_nginx"]='fn_app_nginx'
@@ -1452,7 +1529,7 @@ function fn_app_conky()
         sudo touch ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
         sudo chgrp ${USER} ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
         sudo chown ${USER} ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
-        chmod u+x ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
+        sudo chmod u+x ${path_autostart}/${file_autostart} >> $LOGS_FILE 2>&1
     fi
 
     echo -e "[ ${STATUS_OK} ]"
@@ -1922,6 +1999,25 @@ function fn_app_mlocate()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install mlocate -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   MySQL
+##--------------------------------------------------------------------------
+
+function fn_app_mysql()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install mysql-server -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -2449,6 +2545,7 @@ function fn_app_php()
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo apt-get update -y -q >> $LOGS_FILE 2>&1
             sudo apt-get install ${php_ver2install} -y -qq >> $LOGS_FILE 2>&1
+            sudo apt-get install openssl php-bcmath php-bz2 php-cgi php-cli php-fpm php-gmagick php-gd php-imagick php-lua php-markdown php-parsedown php-pclzip php-psr php-sqlite3 php-text-captcha php-text-wiki php-tidy php-xml php-yaml php-zip php-oauth php-curl php-json php-mbstring php-mysql php-tokenizer php-xml php-zip -y -qq >> $LOGS_FILE 2>&1
         fi
         echo -e "[ ${STATUS_OK} ]"
 
@@ -2459,6 +2556,16 @@ function fn_app_php()
     sleep 1
 
     finish
+}
+
+##--------------------------------------------------------------------------
+#   PhpMyAdmin
+##--------------------------------------------------------------------------
+
+function fn_app_phpmyadmin()
+{
+
+    echo "phpmyadmin"
 }
 
 ##--------------------------------------------------------------------------
@@ -3076,6 +3183,11 @@ fi
 
 if [ "$bInstall_app_mlocate" = true ]; then
     apps+=("${app_mlocate}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_mysql" = true ]; then
+    apps+=("${app_mysql}")
     let app_i=app_i+1
 fi
 
