@@ -60,6 +60,7 @@ app_repo_dev="Aetherinox"
 app_repo="proteus-app-manager"
 app_repo_apt="proteus-apt-repo"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
+app_mnfst="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/manifest.json"
 app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
 app_title="Proteus App Manager (${app_repo_dev})"
 app_ver=("1" "0" "0" "6")
@@ -68,6 +69,7 @@ app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
 apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
+app_nodejs_ver=(16 18 20)
 app_pid_spin=0
 app_pid=$BASHPID
 app_queue_restart=false
@@ -190,10 +192,27 @@ function opt_usage()
     exit 1
 }
 
-apps_installcli=()
+OPT_APPS_CLI=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --njs-ver*)
+            if [[ "$1" != *=* ]]; then shift; fi
+            arg="${1#*=}"
+
+            if ! [[ $(echo ${app_nodejs_ver[@]} | fgrep -w $arg) ]]; then
+                njs_available=$(printf " %s" "${app_nodejs_ver[@]}")
+
+                echo -e "  ${NORMAL}Bad NodeJS version provided."
+                echo -e "  ${NORMAL}      Enter One:  ${YELLOW}${njs_available}${NORMAL}"
+                echo -e "  ${NORMAL}      Example:    ${LGRAY}./setup.sh -n -i NodeJS --njs-ver 20${NORMAL}"
+                echo
+                exit 1
+            else
+                ARG_VERSION+=("${arg}")
+            fi
+            ;;
+
     -d|--dev)
            OPT_DEV_ENABLE=true
             echo -e "  ${FUCHSIA}${BLINK}Devmode Enabled${NORMAL}"
@@ -206,7 +225,7 @@ while [ $# -gt 0 ]; do
     -i*|--install*)
             if [[ "$1" != *=* ]]; then shift; fi
             OPT_APP="${1#*=}"
-            apps_installcli+=("${OPT_APP}")
+            OPT_APPS_CLI+=("${OPT_APP}")
             ;;
 
     -n|--nullrun)
@@ -888,6 +907,7 @@ bInstall_app_members=true
 bInstall_app_mlocate=true
 bInstall_app_neofetch=true
 bInstall_app_nettools=true
+bInstall_app_nodejs=true
 bInstall_app_npm=true
 bInstall_app_ocsurl=true
 bInstall_app_pacman_game=true
@@ -949,6 +969,7 @@ app_members="Members"
 app_mlocate="mlocate"
 app_neofetch="Neofetch"
 app_nettools="net-tools"
+app_nodejs="NodeJS"
 app_npm="NPM"
 app_ocsurl="ocs-url"
 app_pacman_game="Pacman (Game)"
@@ -1030,6 +1051,7 @@ app_functions=(
     ["$app_members"]='fn_app_members'
     ["$app_mlocate"]='fn_app_mlocate'
     ["$app_neofetch"]='fn_app_neofetch'
+    ["$app_nodejs"]='fn_app_nodejs'
     ["$app_nettools"]='fn_app_nettools'
     ["$app_npm"]='fn_app_npm'
     ["$app_ocsurl"]='fn_app_ocsurl'
@@ -1353,16 +1375,16 @@ function fn_app_conky()
     fi
 
     # detect CPUs
-    get_cpus=$(nproc --all)
+    local get_cpus=$(nproc --all)
 
     echo -e "[ ${STATUS_OK} ]"
     printf '%-57s %-5s' "    |--- Creating config.conf" ""
     sleep 1
 
-    path_conky="/home/${USER}/.config/conky"
-    path_autostart="/home/${USER}/.config/autostart"
-    file_config="conky.conf"
-    file_autostart="conky.desktop"
+    local path_conky="/home/${USER}/.config/conky"
+    local path_autostart="/home/${USER}/.config/autostart"
+    local file_config="conky.conf"
+    local file_autostart="conky.desktop"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         if [ ! -d "${path_conky}" ]; then
@@ -1895,6 +1917,80 @@ function fn_app_neofetch()
 }
 
 ##--------------------------------------------------------------------------
+#   NodeJS
+#
+#   DESC:       Allows users to install a newer version of NodeJS.
+#
+#               Currently, the options are v16, v18, and v20
+##--------------------------------------------------------------------------
+
+function fn_app_nodejs()
+{
+    begin "${1}"
+    sleep 0.5
+
+    ##--------------------------------------------------------------------------
+    #   skip dialog box if user provided nodejs version via CLI
+    ##--------------------------------------------------------------------------
+
+    if [ -z "$ARG_VERSION" ]; then
+        objlist=$( GDK_BACKEND=x11 yad \
+        --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
+        --title="Select NodeJS Version" \
+        --width=340 \
+        --form \
+        --borders=15 \
+        --text "Select your desired version of NodeJS\n" \
+        --button="!gtk-yes!yes:0" \
+        --button="!gtk-close!exit:1" \
+        --field="Version     :CB" $(IFS=! ; echo "${app_nodejs_ver[*]}" ) )
+        RET=$?
+        njs_sel_ver="${objlist//|}"
+    fi
+
+    #   check to see if either the CLI option is set, or the dialog box selection menu
+    local njs_ver2install=$( [ "$njs_sel_ver" ] && echo "$njs_sel_ver" || [ "$ARG_VERSION" ] && echo "$ARG_VERSION" )
+
+    sleep 0.5
+
+    if [ -n "$njs_ver2install" ]; then
+        export NODE_MAJOR=${njs_ver2install}
+
+        echo
+
+        printf '%-57s %-5s' "    |--- Downloading GPG Key" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo mkdir -p /etc/apt/keyrings
+            curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+        printf '%-57s %-5s' "    |--- Adding Repo Source" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+        printf '%-57s %-5s' "    |--- Installing ${1} v${NODE_MAJOR}.0" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+            sudo apt-get install nodejs -y -qq >> $LOGS_FILE 2>&1
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+    else
+        echo -e "[ ${STATUS_FAIL} ]"
+    fi
+
+    sleep 1
+
+    finish
+}
+
+##--------------------------------------------------------------------------
 #   net-tools
 ##--------------------------------------------------------------------------
 
@@ -2115,12 +2211,11 @@ function fn_app_surfshark()
     begin "${1}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        surfshark_url=https://downloads.surfshark.com/linux/debian-install.sh
-        surfshark_file=surfshark-install
+        local surfshark_url=https://downloads.surfshark.com/linux/debian-install.sh
+        local surfshark_file=surfshark-install
 
         sudo wget -O "${surfshark_file}" -q "${surfshark_url}"
         sudo chmod +x "${surfshark_file}" >> $LOGS_FILE 2>&1
-
         sudo bash "./${surfshark_file}" >> $LOGS_FILE 2>&1
     fi
 
@@ -2140,8 +2235,8 @@ function fn_app_swizzin()
 
     echo
 
-    swizzin_url=s5n.sh
-    swizzin_file=swizzin.sh
+    local swizzin_url=s5n.sh
+    local swizzin_file=swizzin.sh
 
     sleep 1
     printf '%-57s %-5s' "    |--- Download ${swizzin_url}" ""
@@ -2870,6 +2965,11 @@ if [ "$bInstall_app_neofetch" = true ]; then
     let app_i=app_i+1
 fi
 
+if [ "$bInstall_app_nodejs" = true ]; then
+    apps+=("${app_nodejs}")
+    let app_i=app_i+1
+fi
+
 if [ "$bInstall_app_nettools" = true ]; then
     apps+=("${app_nettools}")
     let app_i=app_i+1
@@ -3305,7 +3405,7 @@ function show_menu()
             --borders=10 \
             --button="!gtk-yes!yes:0" \
             --button="!gtk-close!exit:1" \
-            --text "Are you sure you want to install the app\n\n<span color='#3477eb'><b>${res}</b></span>?" )
+            --text "Are you sure you want to install the app\n\n<span color='#3477eb'><b>${res}</b></span>" )
             ANSWER=$?
 
             if [ $ANSWER -eq 1 ] || [ $ANSWER -eq 252 ]; then
@@ -3399,18 +3499,18 @@ function show_menu()
 #   
 ##--------------------------------------------------------------------------
 
-if (( ${#apps_installcli[@]} )); then
+if (( ${#OPT_APPS_CLI[@]} )); then
     declare -A results=()
     pendinstall=()
 
     IFS=$'\n' apps_sorted=($(sort <<<"${apps[*]}"))
     unset IFS
 
-    for key in "${!apps_installcli[@]}"
+    for key in "${!OPT_APPS_CLI[@]}"
     do
 
         # array of searched terms
-        search_term="${apps_installcli[$key]}"
+        search_term="${OPT_APPS_CLI[$key]}"
         count=0
 
         # array of all apps
