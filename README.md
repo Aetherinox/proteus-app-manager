@@ -165,6 +165,8 @@ Finally, run the script
 ./setup.sh
 ```
 
+After the script is ran for the first time, you may need to sign out of your user account and sign back in. This is because a new file will be installed to `/home/USER/bin/proteus`. This file allows you to execute proteus from anywhere within terminal. In order for this to work, you must log out of the user and log back in after Proteus was started the first time. Then you'll be able to use it anywhere.
+
 <br />
 
 ### Configuration
