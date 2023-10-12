@@ -84,8 +84,6 @@ app_nodejs_ver=(16 18 20)
 app_php_ver=(php7.3-fpm php7.4-fpm php8.1-fpm php8.2-fpm)
 app_pid_spin=0
 app_pid=$BASHPID
-app_queue_restart=false
-app_queue_restart_id="App Manager"
 app_queue_restart_delay=1
 app_queue_url=()
 app_i=0
@@ -766,12 +764,9 @@ app_update()
     echo -e "[ ${STATUS_OK} ]"
 
     echo
-    echo
 
     sleep 2
-
     echo -e "  ${BOLD}${GREEN}Update Complete!${NORMAL}" >&2
-
     sleep 2
 
     finish
@@ -2111,9 +2106,18 @@ function fn_app_mysql()
         sudo apt-get install mysql-server -y -qq >> $LOGS_FILE 2>&1
     fi
 
+    echo -e "[ ${STATUS_OK} ]"
     sleep 1
+    printf '%-57s %-5s' "    |--- Starting MySQL Pwd Setup" ""
+    sleep 3
     echo -e "[ ${STATUS_OK} ]"
 
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sleep 0.5
+        app_queue_trapcmd='sudo mysql_secure_installation'
+    fi
+
+    sleep 1
     finish
 }
 
@@ -2907,7 +2911,6 @@ function fn_twk_vbox_additions_fix()
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
-    app_queue_restart=true
     app_queue_restart_id="${1}"
 
     finish
@@ -3774,7 +3777,7 @@ function show_menu()
                 #   queue: restart
                 ##--------------------------------------------------------------------------
 
-                if [ "$app_queue_restart" = true ]; then
+                if [ -n "$app_queue_restart_id" ]; then
                     prompt_reboot=$( GDK_BACKEND=x11 yad \
                     --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
                     --center \
@@ -3800,6 +3803,14 @@ function show_menu()
                         sleep 1
                         #kill -9 $BASHPID 2> /dev/null
                     fi
+                fi
+
+                if [ -n "$app_queue_trapcmd" ]; then
+                    Logs_Finish
+                    trap "${app_queue_trapcmd}" 0
+                    exit
+                    sleep 0.2
+                    break
                 fi
 
                 ##--------------------------------------------------------------------------
@@ -3927,7 +3938,7 @@ if (( ${#OPT_APPS_CLI[@]} )); then
         fi
     fi
     Logs_Finish
-    exit
+    exit 0
     sleep 0.2
 else
     show_menu app_functions
