@@ -68,15 +68,17 @@ app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
 apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
+app_file_proteus="${apt_dir_home}/proteus"
 app_repo_dev="Aetherinox"
 app_repo="proteus-app-manager"
 app_repo_apt="proteus-apt-repo"
+app_repo_branch="main"
 app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
-app_mnfst="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/manifest.json"
-app_script="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/main/setup.sh"
+app_mnfst="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/${app_repo_branch}/manifest.json"
+app_script="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/BRANCH/setup.sh"
 app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
 app_title="Proteus App Manager (${app_repo_dev})"
-app_ver=("1" "0" "0" "6")
+app_ver=("1" "0" "0" "7")
 app_dir=$PWD
 app_nodejs_ver=(16 18 20)
 app_php_ver=(php7.3-fpm php7.4-fpm php8.1-fpm php8.2-fpm)
@@ -199,6 +201,8 @@ function opt_usage()
     printf '  %-5s %-18s %-40s\n' "    " "" "    Adwaita-dark" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "    HighContrast" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "    HighContrastInverse" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-u, --update" "update ${app_file_proteus} executable" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "    --branch" "branch to update from" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-v, --version" "current version of app manager" 1>&2
     echo
     echo
@@ -243,12 +247,23 @@ while [ $# -gt 0 ]; do
             ;;
 
     -d|--dev)
-           OPT_DEV_ENABLE=true
+            OPT_DEV_ENABLE=true
             echo -e "  ${FUCHSIA}${BLINK}Devmode Enabled${NORMAL}"
             ;;
 
     -h*|--help*)
             opt_usage
+            ;;
+
+    -b*|--branch*)
+            if [[ "$1" != *=* ]]; then shift; fi
+            OPT_BRANCH="${1#*=}"
+            if [ -z "${OPT_BRANCH}" ]; then
+                echo -e "  ${NORMAL}Must specify a valid branch"
+                echo -e "  ${NORMAL}      Default:  ${YELLOW}${app_repo_branch}${NORMAL}"
+
+                exit 1
+            fi
             ;;
 
     -i*|--install*)
@@ -272,6 +287,10 @@ while [ $# -gt 0 ]; do
             OPT_THEME="${1#*=}"
             ;;
         
+    -u|--update)
+            OPT_UPDATE=true
+            ;;
+
     -v|--version)
             echo
             echo -e "  ${GREEN}${BOLD}${app_title}${NORMAL} - v$(get_version)${NORMAL}"
@@ -314,6 +333,12 @@ if [ -z "${OPT_THEME}" ]; then
 fi
 
 export GTK_THEME="${OPT_THEME}"
+
+##--------------------------------------------------------------------------
+#   vars > active repo branch
+##--------------------------------------------------------------------------
+
+app_repo_branch_sel=$( [[ -n "$OPT_BRANCH" ]] && echo "$OPT_BRANCH" || echo "$app_repo_branch"  )
 
 ##--------------------------------------------------------------------------
 #   vars > /etc/hosts
@@ -701,6 +726,69 @@ function envpath_add()
 }
 
 ##--------------------------------------------------------------------------
+#   func > app update
+#
+#   updates the /home/USER/bin/proteus file which allows proteus to be
+#   ran from anywhere.
+##--------------------------------------------------------------------------
+
+app_update()
+{
+    local repo_branch=$([ "${1}" ] && echo "${1}" || echo "${app_repo_branch}" )
+    local branch_uri="${app_script/BRANCH/"$repo_branch"}"
+    local IsSilent=${2}
+
+    begin "Updating from branch [${repo_branch}]"
+
+    sleep 1
+    echo
+
+    printf '%-57s %-5s' "    |--- Downloading update" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo wget -O "${app_file_proteus}" -q "$branch_uri" >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s %-5s' "    |--- Set ownership to ${USER}" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo chgrp ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
+        sudo chown ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s %-5s' "    |--- Set perms to u+x" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo chmod u+x ${app_file_proteus} >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    echo
+    echo
+
+    sleep 2
+
+    echo -e "  ${BOLD}${GREEN}Update Complete!${NORMAL}" >&2
+
+    sleep 2
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   func > app update
+#
+#   updates the /home/USER/bin/proteus file which allows proteus to be
+#   ran from anywhere.
+##--------------------------------------------------------------------------
+
+if [ "$OPT_UPDATE" = true ]; then
+    app_update ${app_repo_branch_sel}
+fi
+
+##--------------------------------------------------------------------------
 #   func > first time setup
 #
 #   this is the default func executed when script is launched to make sure
@@ -880,7 +968,7 @@ function app_setup
 
         printf '%-57s %-5s' "    |--- Registering ${app_repo_apt}" ""
         sleep 0.5
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/${app_repo_aptpkg}.gpg] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/${app_repo_aptpkg}.list >> $LOGS_FILE 2>&1
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/${app_repo_aptpkg}.gpg] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master $(lsb_release -cs) ${app_repo_branch}" | sudo tee /etc/apt/sources.list.d/${app_repo_aptpkg}.list >> $LOGS_FILE 2>&1
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
 
@@ -897,17 +985,17 @@ function app_setup
     #   install app manager proteus file in /HOME/USER/bin/proteus
     ##--------------------------------------------------------------------------
 
-    local file_proteus="${apt_dir_home}/proteus"
-
-    if ! [ -f "$file_proteus" ]; then
+    if ! [ -f "$app_file_proteus" ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing App Manager" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Installing App Manager" ""
         sleep 0.5
-        sudo wget -O "${apt_dir_home}/proteus" -q "$app_script" >> $LOGS_FILE 2>&1
-        sudo chgrp ${USER} ${file_proteus} >> $LOGS_FILE 2>&1
-        sudo chown ${USER} ${file_proteus} >> $LOGS_FILE 2>&1
-        sudo chmod u+x ${file_proteus} >> $LOGS_FILE 2>&1
+
+        local branch_uri="${app_script/BRANCH/"$app_repo_branch_sel"}"
+        sudo wget -O "${app_file_proteus}" -q "$branch_uri" >> $LOGS_FILE 2>&1
+        sudo chgrp ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
+        sudo chown ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
+        sudo chmod u+x ${app_file_proteus} >> $LOGS_FILE 2>&1
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -1016,6 +1104,7 @@ bInstall_app_ocsurl=true
 bInstall_app_pacman_game=true
 bInstall_app_pacman_manager=true
 bInstall_app_php=true
+bInstall_app_phpmyadmin=true
 bInstall_app_pihole=true
 bInstall_app_reprepro=true
 bInstall_app_rpm=true
@@ -1081,6 +1170,7 @@ app_ocsurl="ocs-url"
 app_pacman_game="Pacman (Game)"
 app_pacman_manager="Pacman (Package Management)"
 app_php="Php"
+app_phpmyadmin="PhpMyAdmin"
 app_pihole="Pi-Hole"
 app_reprepro="Reprepro"
 app_rpm="RPM Package Manager"
@@ -1167,6 +1257,7 @@ app_functions=(
     ["$app_pacman_game"]='fn_app_pacman_game'
     ["$app_pacman_manager"]='fn_app_pacman_manager'
     ["$app_php"]='fn_app_php'
+    ["$app_phpnyadmin"]='fn_app_phpnyadmin'
     ["$app_pihole"]='fn_app_pihole'
     ["$app_reprepro"]='fn_app_reprepro'
     ["$app_rpm"]='fn_app_rpm'
@@ -2564,8 +2655,17 @@ function fn_app_php()
 
 function fn_app_phpmyadmin()
 {
+    begin "${1}"
 
-    echo "phpmyadmin"
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install phpmyadmin
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
 }
 
 ##--------------------------------------------------------------------------
@@ -3233,6 +3333,11 @@ fi
 
 if [ "$bInstall_app_php" = true ]; then
     apps+=("${app_php}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_phpmyadmin" = true ]; then
+    apps+=("${app_phpmyadmin}")
     let app_i=app_i+1
 fi
 
