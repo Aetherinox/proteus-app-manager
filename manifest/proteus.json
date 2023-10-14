@@ -1,0 +1,7 @@
+{
+	"name":             "Proteus App Manager",
+    "version":          "1.0.0.7",
+	"author":           "Aetherinox",
+	"description":      "An installation manager developed specifically for ZorinOS 16 / Ubuntu 20.04 LTS and newer.",
+    "url":              "https://github.com/Aetherinox/proteus-app-manager"
+}
