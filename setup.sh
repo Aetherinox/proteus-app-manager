@@ -64,21 +64,22 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 ##--------------------------------------------------------------------------
 
 apt_dir_home="$HOME/bin"
+app_dir_dl="$apt_dir_home/downloads"
 app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
 apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
 app_file_proteus="${apt_dir_home}/proteus"
-app_repo_dev="Aetherinox"
-app_repo="proteus-app-manager"
-app_repo_apt="proteus-apt-repo"
-app_repo_branch="main"
-app_repo_url="https://github.com/${app_repo_dev}/${app_repo}"
-app_mnfst="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/${app_repo_branch}/manifest.json"
-app_script="https://raw.githubusercontent.com/${app_repo_dev}/${app_repo}/BRANCH/setup.sh"
-app_repo_aptpkg="aetherinox-${app_repo_apt}-archive"
-app_title="Proteus App Manager (${app_repo_dev})"
+app_repo_author="Aetherinox"
+app_title="Proteus App Manager (${app_repo_author})"
 app_ver=("1" "0" "0" "7")
+app_repo="proteus-app-manager"
+app_repo_branch="main"
+app_repo_apt="proteus-apt-repo"
+app_repo_apt_pkg="aetherinox-${app_repo_apt}-archive"
+app_repo_url="https://github.com/${app_repo_author}/${app_repo}"
+app_mnfst="https://raw.githubusercontent.com/${app_repo_author}/${app_repo}/${app_repo_branch}/manifest.json"
+app_script="https://raw.githubusercontent.com/${app_repo_author}/${app_repo}/BRANCH/setup.sh"
 app_dir=$PWD
 app_nodejs_ver=(16 18 20)
 app_php_ver=(php7.3-fpm php7.4-fpm php8.1-fpm php8.2-fpm)
@@ -162,6 +163,18 @@ function get_version()
     ver_join=${app_ver[@]}
     ver_str=${ver_join// /.}
     echo ${ver_str}
+}
+
+##--------------------------------------------------------------------------
+#   func > version > compare greater than
+#
+#   this function compares two versions and determines if an update may
+#   be available. or the user is running a lesser version of a program.
+##--------------------------------------------------------------------------
+
+function get_version_compare_gt()
+{
+    test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1";
 }
 
 ##--------------------------------------------------------------------------
@@ -602,6 +615,7 @@ cli_question( )
             def=
         fi
 
+        #printf '%-60s %13s %-5s' "    $1 " "${YELLOW}[$syntax]${NORMAL}" ""
         echo -n "$1 [$syntax] "
 
         read response </dev/tty
@@ -819,12 +833,18 @@ function app_setup
     clear
 
     local ReqTitle=${1}
+    local bMissingWhip=false
     local bMissingCurl=false
     local bMissingWget=false
     local bMissingNotify=false
     local bMissingYad=false
     local bMissingGPG=false
     local bMissingRepo=false
+
+    # require whiptail
+    if ! [ -x "$(command -v whiptail)" ]; then
+        bMissingWhip=true
+    fi
 
     # require curl
     if ! [ -x "$(command -v curl)" ]; then
@@ -850,10 +870,10 @@ function app_setup
     #   Missing proteus-apt-repo gpg key
     #
     #   NOTE:   apt-key has been deprecated
-    #           sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
+    #           sudo add-apt-repository -y "deb [arch=amd64] https://raw.githubusercontent.com/${app_repo_author}/${app_repo_apt}/master focal main" >> $LOGS_FILE 2>&1
     ##--------------------------------------------------------------------------
 
-    if ! [ -f "/usr/share/keyrings/${app_repo_aptpkg}.gpg" ]; then
+    if ! [ -f "/usr/share/keyrings/${app_repo_apt_pkg}.gpg" ]; then
         bMissingGPG=true
     fi
 
@@ -861,18 +881,18 @@ function app_setup
     #   Missing proteus-apt-repo .list
     ##--------------------------------------------------------------------------
 
-    if ! [ -f "/etc/apt/sources.list.d/${app_repo_aptpkg}.list" ]; then
+    if ! [ -f "/etc/apt/sources.list.d/${app_repo_apt_pkg}.list" ]; then
         bMissingRepo=true
     fi
 
     # Check if contains title
     # If so, called from another function
     if [ -n "$ReqTitle" ]; then
-        if [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
+        if [ "$bMissingWhip" = true ] || [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             echo -e "[ ${STATUS_HALT} ]"
         fi
     else
-        if [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ]; then
+        if [ "$bMissingWhip" = true ] || [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             echo
             title "First Time Setup ..."
             echo
@@ -881,16 +901,39 @@ function app_setup
     fi
 
     ##--------------------------------------------------------------------------
+    #   missing whiptail
+    ##--------------------------------------------------------------------------
+
+    if [ "$bMissingWhip" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
+        printf "%-57s %-5s\n" "${TIME}      Installing whiptail package" | tee -a "${LOGS_FILE}" >/dev/null
+
+        printf '%-57s %-5s' "    |--- Adding whiptail package" ""
+        sleep 0.5
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install whiptail -y -qq >> /dev/null 2>&1
+        fi
+
+        sleep 0.5
+        echo -e "[ ${STATUS_OK} ]"
+    fi
+
+    ##--------------------------------------------------------------------------
     #   missing curl
     ##--------------------------------------------------------------------------
 
-    if [ "$bMissingCurl" = true ]; then
+    if [ "$bMissingCurl" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing curl package" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Adding curl package" ""
         sleep 0.5
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install curl -y -qq >> /dev/null 2>&1
+    
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install curl -y -qq >> /dev/null 2>&1
+        fi
+    
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -899,13 +942,17 @@ function app_setup
     #   missing wget
     ##--------------------------------------------------------------------------
 
-    if [ "$bMissingWget" = true ]; then
+    if [ "$bMissingWget" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing wget package" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Adding wget package" ""
         sleep 0.5
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install wget -y -qq >> /dev/null 2>&1
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install wget -y -qq >> /dev/null 2>&1
+        fi
+
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -914,13 +961,17 @@ function app_setup
     #   missing notify
     ##--------------------------------------------------------------------------
 
-    if [ "$bMissingNotify" = true ]; then
+    if [ "$bMissingNotify" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing notify-send package" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Adding notify-send package" ""
         sleep 0.5
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install libnotify-bin notify-osd -y -qq >> /dev/null 2>&1
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install libnotify-bin notify-osd -y -qq >> /dev/null 2>&1
+        fi
+
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -929,13 +980,17 @@ function app_setup
     #   missing yad
     ##--------------------------------------------------------------------------
 
-    if [ "$bMissingYad" = true ]; then
+    if [ "$bMissingYad" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing yad package" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Adding yad package" ""
         sleep 0.5
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install yad -y -qq >> /dev/null 2>&1
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install yad -y -qq >> /dev/null 2>&1
+        fi
+
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -944,12 +999,16 @@ function app_setup
     #   missing gpg
     ##--------------------------------------------------------------------------
 
-    if [ "$bMissingGPG" = true ]; then
-        printf "%-57s %-5s\n" "${TIME}      Adding ${app_repo_dev} GPG key: [https://github.com/${app_repo_dev}.gpg]" | tee -a "${LOGS_FILE}" >/dev/null
+    if [ "$bMissingGPG" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
+        printf "%-57s %-5s\n" "${TIME}      Adding ${app_repo_author} GPG key: [https://github.com/${app_repo_author}.gpg]" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Adding github.com/${app_repo_dev}.gpg" ""
+        printf '%-57s %-5s' "    |--- Adding github.com/${app_repo_author}.gpg" ""
         sleep 0.5
-        sudo wget -qO - "https://github.com/${app_repo_dev}.gpg" | sudo gpg --batch --yes --dearmor -o "/usr/share/keyrings/${app_repo_aptpkg}.gpg" >> $LOGS_FILE 2>&1
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo wget -qO - "https://github.com/${app_repo_author}.gpg" | sudo gpg --batch --yes --dearmor -o "/usr/share/keyrings/${app_repo_apt_pkg}.gpg" >/dev/null
+        fi
+
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -958,12 +1017,16 @@ function app_setup
     #   missing proteus apt repo
     ##--------------------------------------------------------------------------
 
-    if [ "$bMissingRepo" = true ]; then
-        printf "%-57s %-5s\n" "${TIME}      Registering ${app_repo_apt}: https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master" | tee -a "${LOGS_FILE}" >/dev/null
+    if [ "$bMissingRepo" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
+        printf "%-57s %-5s\n" "${TIME}      Registering ${app_repo_apt}: https://raw.githubusercontent.com/${app_repo_author}/${app_repo_apt}/master" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Registering ${app_repo_apt}" ""
         sleep 0.5
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/${app_repo_aptpkg}.gpg] https://raw.githubusercontent.com/${app_repo_dev}/${app_repo_apt}/master $(lsb_release -cs) ${app_repo_branch}" | sudo tee /etc/apt/sources.list.d/${app_repo_aptpkg}.list >> $LOGS_FILE 2>&1
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/${app_repo_apt_pkg}.gpg] https://raw.githubusercontent.com/${app_repo_author}/${app_repo_apt}/master $(lsb_release -cs) ${app_repo_branch}" | sudo tee /etc/apt/sources.list.d/${app_repo_apt_pkg}.list >/dev/null
+        fi
+
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
 
@@ -971,7 +1034,11 @@ function app_setup
 
         printf '%-57s %-5s' "    |--- Updating repo list" ""
         sleep 0.5
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >/dev/null
+        fi
+
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -980,17 +1047,20 @@ function app_setup
     #   install app manager proteus file in /HOME/USER/bin/proteus
     ##--------------------------------------------------------------------------
 
-    if ! [ -f "$app_file_proteus" ]; then
+    if ! [ -f "$app_file_proteus" ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s %-5s\n" "${TIME}      Installing App Manager" | tee -a "${LOGS_FILE}" >/dev/null
 
         printf '%-57s %-5s' "    |--- Installing App Manager" ""
         sleep 0.5
 
-        local branch_uri="${app_script/BRANCH/"$app_repo_branch_sel"}"
-        sudo wget -O "${app_file_proteus}" -q "$branch_uri" >> $LOGS_FILE 2>&1
-        sudo chgrp ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
-        sudo chown ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
-        sudo chmod u+x ${app_file_proteus} >> $LOGS_FILE 2>&1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            local branch_uri="${app_script/BRANCH/"$app_repo_branch_sel"}"
+            sudo wget -O "${app_file_proteus}" -q "$branch_uri" >> $LOGS_FILE 2>&1
+            sudo chgrp ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
+            sudo chown ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
+            sudo chmod u+x ${app_file_proteus} >> $LOGS_FILE 2>&1
+        fi
+
         sleep 0.5
         echo -e "[ ${STATUS_OK} ]"
     fi
@@ -2655,6 +2725,9 @@ function fn_app_php()
 
 ##--------------------------------------------------------------------------
 #   PhpMyAdmin
+#
+#   DESC:       w/o added PPA:      PhpMyAdmin 4.x
+#               w/ added PPA:       PhpMyAdmin 5.2
 ##--------------------------------------------------------------------------
 
 function fn_app_phpmyadmin()
@@ -2662,8 +2735,113 @@ function fn_app_phpmyadmin()
     begin "${1}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo add-apt-repository --yes ppa:phpmyadmin/ppa >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install phpmyadmin
+    fi
+
+    if [ -x "$( command -v php )" ]; then
+        php_curr=$( php -v | head -n 1 | tail -n 1 | cut -d " " -f 2 | cut -c 1-3 )
+        php_targ=8.0.0
+
+        ##--------------------------------------------------------------------------
+        #   check if user is running PHP v8.x && PhpMyAdmin 5.x
+        #
+        #   DESC:       Currently, there is a bug in PhpMyAdmin which affects
+        #               Phpmyadmin 5.x and PHP v8.x which returns an error on
+        #               the front page of PhpMyAdmin
+        #                   >   Unknown named parameter $$dbi
+        #
+        #               ContainerBuilder.php needs opened and one line of text
+        #               replaced.
+        #
+        #               [ FIND ]
+        #                   $service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs($arguments);
+        #
+        #               [ REPLACE WITH ]
+        #                   $service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs(array_values($arguments));
+        ##--------------------------------------------------------------------------
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            if get_version_compare_gt $php_curr $php_targ; then
+                file_edit_target="/usr/share/php/Symfony/Component/DependencyInjection/ContainerBuilder.php"
+                if [ -f "$file_edit_target" ]; then
+                    sed -i '/$service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs($arguments);/c\$service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs(array_values($arguments));' $file_target
+                fi
+            fi
+        fi
+    fi
+
+    echo -e "[ ${STATUS_OK} ]"
+    echo
+
+    printf '%-57s %-5s' "    |--- Installing php-code-lts-u2f-php-server" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install php-code-lts-u2f-php-server -y -qq >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s %-5s' "    |--- Installing php-bacon-qr-code" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install php-bacon-qr-code -y -qq >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    # require unzip to extract the themes
+    if ! [ -x "$(command -v unzip)" ]; then
+        sudo apt-get update -y -q >> /dev/null 2>&1
+        sudo apt-get install unzip -y -qq >> /dev/null 2>&1
+    fi
+
+    sleep 1
+    printf '%-57s %-5s' "    |--- Installing Themes" ""
+    sleep 1
+
+    # List of available themes to download for phpmyadmin
+    # right now we'll use phpMyAdmin 5 themes for support
+
+    arr_themes=()
+    arr_themes+=("https://files.phpmyadmin.net/themes/blueberry/1.1.0/blueberry-1.1.0.zip")
+    arr_themes+=("https://files.phpmyadmin.net/themes/boodark/1.0.0/boodark-1.0.0.zip")
+    arr_themes+=("https://files.phpmyadmin.net/themes/darkwolf/5.2/darkwolf-5.2.zip")
+    app_dir_pma_themes="/usr/share/phpmyadmin/themes"
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+
+        # loop each theme, download and unzip to /usr/share/phpmyadmin/
+        for i in "${!arr_themes[@]}"; do
+
+            # theme url from array
+            val=${arr_themes[i]}
+
+            # strip url of zip down to filename (delete everything before last forward slash)
+            file_zipname="${val##*/}"
+
+            # download
+            sudo wget -P "${app_dir_dl}" -q "${val}" >> $LOGS_FILE 2>&1
+
+            sleep 1
+
+            # unzip to /usr/share/phpmyadmin/themes
+            sudo unzip -o -u -qq -d "${app_dir_pma_themes}" "${app_dir_dl}/${file_zipname}"
+
+        done
+
+        #   set permissions for files in downloads folder
+        sudo chgrp -R ${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
+        sudo chown -R ${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
+        sudo chmod -R 0741 ${app_dir_dl} >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s %-5s' "    |--- Installing php-lts-u2f-server" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> /dev/null 2>&1
+        sudo apt-get install php-code-lts-u2f-php-server -y -qq >> /dev/null 2>&1
     fi
 
     sleep 1
@@ -3599,22 +3777,6 @@ function show_header()
     echo
 }
 
-function show_about()
-{
-
-    GDK_BACKEND=x11 yad --about \
-    --image=./img/Tux.png \
-    --website-label="Github" \
-    --website="${app_repo_url}" \
-    --authors="${app_repo_dev}" \
-    --license="MIT" \
-    --comments="An installation manager developed specifically for ZorinOS / Ubuntu 20.04 LTS. " \
-    --copyright="Copyright (c) ${YEAR} ${app_repo_dev}" \
-    --pversion="v$(get_version)" \
-    --pname="Test Application"
-
-}
-
 ##--------------------------------------------------------------------------
 #   Selection Menu
 #
@@ -3937,9 +4099,11 @@ if (( ${#OPT_APPS_CLI[@]} )); then
             done
         fi
     fi
+
     Logs_Finish
     exit 0
     sleep 0.2
+
 else
     show_menu app_functions
 fi
