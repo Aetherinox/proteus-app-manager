@@ -21,17 +21,11 @@ echo
 #   tput setf   [1-7]       – Set a foreground color
 ##--------------------------------------------------------------------------
 
-<<comment
-curl=$(curl -s "$url_manifest")
-TITLE=$( jq -r '.name' <<< "${curl}" )
-RELEASE=$( jq -r '.version' <<< "${curl}" )
-URL=$( jq -r '.url' <<< "${curl}" )
-comment
-
 BLACK=$(tput setaf 0)
 RED=$(tput setaf 1)
+ORANGE=$(tput setaf 208)
 GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
+YELLOW=$(tput setaf 156)
 LIME_YELLOW=$(tput setaf 190)
 POWDER_BLUE=$(tput setaf 153)
 BLUE=$(tput setaf 4)
@@ -88,6 +82,16 @@ app_pid=$BASHPID
 app_queue_restart_delay=1
 app_queue_url=()
 app_i=0
+
+#   --------------------------------------------------------------
+#   vars > define passwd file
+#
+#   generated passwords will be stored in the app bin folder
+#   and the perms on the file being severely restricted.
+#   --------------------------------------------------------------
+
+app_dir_bin_pwd="${apt_dir_home}/pwd"
+app_file_bin_pwd="${app_dir_bin_pwd}/mysql.pwd"
 
 ##--------------------------------------------------------------------------
 #   exports
@@ -158,7 +162,7 @@ fi
 #               1.2.4.0
 ##--------------------------------------------------------------------------
 
-function get_version()
+get_version()
 {
     ver_join=${app_ver[@]}
     ver_str=${ver_join// /.}
@@ -172,7 +176,7 @@ function get_version()
 #   be available. or the user is running a lesser version of a program.
 ##--------------------------------------------------------------------------
 
-function get_version_compare_gt()
+get_version_compare_gt()
 {
     test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1";
 }
@@ -187,7 +191,7 @@ function get_version_compare_gt()
 #       -t      theme
 ##--------------------------------------------------------------------------
 
-function opt_usage()
+opt_usage()
 {
     echo
     printf "  ${BLUE}${app_title}${NORMAL}\n" 1>&2
@@ -469,7 +473,7 @@ devs=()
 #   func > logs > begin
 ##--------------------------------------------------------------------------
 
-function Logs_Begin()
+Logs_Begin()
 {
     if [ $OPT_NOLOG ] ; then
         echo
@@ -518,7 +522,7 @@ function Logs_Begin()
 #   func > logs > finish
 ##--------------------------------------------------------------------------
 
-function Logs_Finish()
+Logs_Finish()
 {
     if [ ${PIPE_OPENED} ] ; then
         exec 1<&3
@@ -573,6 +577,32 @@ else
 fi
 
 ##--------------------------------------------------------------------------
+#   header > new
+##--------------------------------------------------------------------------
+
+show_header_new()
+{
+    local reason=$([ "${1}" ] && echo "${1}" || echo "Not Specified" )
+
+    clear
+
+    sleep 0.3
+
+    echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
+    echo -e "  Your last action was cancelled. Please select another option"
+    echo -e "  "
+    echo -e "  ${BLUE}REASON:${NORMAL}"
+    echo -e "  ${YELLOW}${reason}"${NORMAL}
+    echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
+    echo
+
+    sleep 0.3
+
+    echo -e "  ${BOLD}${NORMAL}Waiting on selection ..." >&2
+    echo
+}
+
+##--------------------------------------------------------------------------
 #   func > spinner animation
 ##--------------------------------------------------------------------------
 
@@ -588,6 +618,80 @@ spin()
             echo -en "\010"
             sleep 0.4
         done
+    done
+}
+
+##--------------------------------------------------------------------------
+#   func > spinner > halt
+##--------------------------------------------------------------------------
+
+spinner_halt()
+{
+    if ps -p $app_pid_spin > /dev/null
+    then
+        kill -9 $app_pid_spin 2> /dev/null
+        printf "\n%-57s %-5s\n" "${TIME}      KILL Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
+    fi
+}
+
+##--------------------------------------------------------------------------
+#   func > cli selection menu
+##--------------------------------------------------------------------------
+
+cli_options()
+{
+    opts_show()
+    {
+        local it=$( echo $1 )
+        for i in ${!CHOICES[*]}; do
+            if [[ "$i" == "$it" ]]; then
+                tput rev
+                printf '\e[1;33m'
+                printf '%4d. \e[1m\e[33m %s\t\e[0m\n' $i "${LIME_YELLOW}  ${CHOICES[$i]}  "
+                tput sgr0
+            else
+                printf '\e[1;33m'
+                printf '%4d. \e[1m\e[33m %s\t\e[0m\n' $i "${LIME_YELLOW}  ${CHOICES[$i]}  "
+            fi
+            tput cuf 2
+        done
+    }
+
+    tput civis
+    it=0
+    tput cuf 2
+
+    opts_show $it
+
+    while true; do
+        read -rsn1 key
+        local escaped_char=$( printf "\u1b" )
+        if [[ $key == $escaped_char ]]; then
+            read -rsn2 key
+        fi
+
+        tput cuu ${#CHOICES[@]} && tput ed
+        tput sc
+
+        case $key in
+            '[A' | '[C' )
+                it=$(($it-1));;
+            '[D' | '[B')
+                it=$(($it+1));;
+            '' )
+                return $it && exit;;
+        esac
+
+        local min_len=0
+        local farr_len=$(( ${#CHOICES[@]}-1))
+        if [[ "$it" -lt "$min_len" ]]; then
+            it=$(( ${#CHOICES[@]}-1 ))
+        elif [[ "$it" -gt "$farr_len"  ]]; then
+            it=0
+        fi
+
+        opts_show $it
+
     done
 }
 
@@ -645,7 +749,7 @@ cli_question( )
 #   way to ensure a browser gets opened.
 ##--------------------------------------------------------------------------
 
-function open_url()
+open_url()
 {
    local URL="$1"
    xdg-open $URL || firefox $URL || sensible-browser $URL || x-www-browser $URL || gnome-open $URL
@@ -655,7 +759,7 @@ function open_url()
 #   func > cmd title
 ##--------------------------------------------------------------------------
 
-function title()
+title()
 {
     printf '%-57s %-5s' "  ${1}" ""
     sleep 0.3
@@ -665,7 +769,7 @@ function title()
 #   func > begin action
 ##--------------------------------------------------------------------------
 
-function begin()
+begin()
 {
     # start spinner
     spin &
@@ -691,15 +795,11 @@ function begin()
 #       finish "${1}"
 ##--------------------------------------------------------------------------
 
-function finish()
+finish()
 {
     arg1=${1}
 
-    if ps -p $app_pid_spin > /dev/null
-    then
-        kill -9 $app_pid_spin 2> /dev/null
-        printf "\n%-57s %-5s\n" "${TIME}      KILL Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
-    fi
+    spinner_halt
 
     # if arg1 not empty
     if ! [ -z "${arg1}" ]; then
@@ -712,7 +812,7 @@ function finish()
 #   func > exit action
 ##--------------------------------------------------------------------------
 
-function exit()
+exit()
 {
     finish
     clear
@@ -725,7 +825,7 @@ function exit()
 #   proteus bin folder.
 ##--------------------------------------------------------------------------
 
-function envpath_add()
+envpath_add()
 {
     local file_env=/etc/profile.d/proteus.sh
     if [ "$2" = "force" ] || ! echo $PATH | $(which egrep) -q "(^|:)$1($|:)" ; then
@@ -827,7 +927,7 @@ fi
 #               a prerequisite
 ##--------------------------------------------------------------------------
 
-function app_setup
+app_setup()
 {
 
     clear
@@ -1054,6 +1154,8 @@ function app_setup
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            mkdir -p "$apt_dir_home"
+
             local branch_uri="${app_script/BRANCH/"$app_repo_branch_sel"}"
             sudo wget -O "${app_file_proteus}" -q "$branch_uri" >> $LOGS_FILE 2>&1
             sudo chgrp ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
@@ -1094,7 +1196,7 @@ app_setup
 #           will not be detected as installed.
 ##--------------------------------------------------------------------------
 
-function notify-send()
+notify-send()
 {
     # func name
     fn_name=${FUNCNAME[0]}
@@ -1145,6 +1247,8 @@ bInstall_app_colorpicker_snapd=true
 bInstall_app_conky=true
 bInstall_app_conky_mngr=true
 bInstall_app_curl=true
+bInstall_app_debian_goodies=true
+bInstall_app_debget=true
 bInstall_app_flatpak=true
 bInstall_app_gdebi=true
 bInstall_app_git=true
@@ -1211,6 +1315,8 @@ app_colorpicker_snapd="Color Picker (using Snapd)"
 app_conky="Conky"
 app_conky_mngr="Conky Manager"
 app_curl="curl"
+app_debian_goodies="Debian Goodies"
+app_debget="deb-get"
 app_flatpak="Flatpak"
 app_gdebi="GDebi"
 app_git="Git"
@@ -1298,6 +1404,8 @@ app_functions=(
     ["$app_conky"]='fn_app_conky'
     ["$app_conky_mngr"]='fn_app_conky_mngr'
     ["$app_curl"]='fn_app_curl'
+    ["$app_debian_goodies"]='fn_debian_goodies'
+    ["$app_debget"]='fn_app_debget'
     ["$app_flatpak"]='fn_app_flatpak'
     ["$app_gdebi"]='fn_app_gdebi'
     ["$app_git"]='fn_app_git'
@@ -1383,7 +1491,7 @@ get_docs_uri=(
 #   preferred package format and install it. It also supports LSB packages.
 ##--------------------------------------------------------------------------
 
-function fn_app_alien()
+fn_app_alien()
 {
     begin "${1}"
 
@@ -1402,7 +1510,7 @@ function fn_app_alien()
 #   App Image Launcher
 ##--------------------------------------------------------------------------
 
-function fn_app_appimage()
+fn_app_appimage()
 {
     begin "${1}"
 
@@ -1429,7 +1537,7 @@ function fn_app_appimage()
 #   
 ##--------------------------------------------------------------------------
 
-function fn_app_app_outlet()
+fn_app_app_outlet()
 {
     begin "${1}"
 
@@ -1450,7 +1558,7 @@ function fn_app_app_outlet()
 #   Blender (using Flatpak)
 ##--------------------------------------------------------------------------
 
-function fn_app_blender_flatpak()
+fn_app_blender_flatpak()
 {
     begin "${1}"
     sleep 1
@@ -1458,7 +1566,7 @@ function fn_app_blender_flatpak()
     if ! [ -x "$(command -v flatpak)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_flatpak "${app_flatpak}"
@@ -1483,7 +1591,7 @@ function fn_app_blender_flatpak()
 #   Blender (using Snapd)
 ##--------------------------------------------------------------------------
 
-function fn_app_blender_snapd()
+fn_app_blender_snapd()
 {
     begin "${1}"
     sleep 1
@@ -1491,7 +1599,7 @@ function fn_app_blender_snapd()
     if ! [ -x "$(command -v snap)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_snapd "${app_snapd}"
@@ -1516,7 +1624,7 @@ function fn_app_blender_snapd()
 #   Browser: Chrome
 ##--------------------------------------------------------------------------
 
-function fn_app_browser_chrome()
+fn_app_browser_chrome()
 {
     begin "${1}"
 
@@ -1545,7 +1653,7 @@ function fn_app_browser_chrome()
 #   
 ##--------------------------------------------------------------------------
 
-function fn_app_browser_tor()
+fn_app_browser_tor()
 {
     begin "${1}"
 
@@ -1564,7 +1672,7 @@ function fn_app_browser_tor()
 #   Color Picker
 ##--------------------------------------------------------------------------
 
-function fn_app_colorpicker_snapd()
+fn_app_colorpicker_snapd()
 {
     begin "${1}"
     sleep 1
@@ -1572,7 +1680,7 @@ function fn_app_colorpicker_snapd()
     if ! [ -x "$(command -v snap)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_snapd "${app_snapd}"
@@ -1596,7 +1704,7 @@ function fn_app_colorpicker_snapd()
 #   cdialog (ComeOn Dialog)
 ##--------------------------------------------------------------------------
 
-function fn_app_cdialog()
+fn_app_cdialog()
 {
     begin "${1}"
 
@@ -1626,7 +1734,7 @@ function fn_app_cdialog()
 #               It is extremely configurable. Conky is a fork of torsmo. 
 ##--------------------------------------------------------------------------
 
-function fn_app_conky()
+fn_app_conky()
 {
     begin "${1}"
 
@@ -1713,7 +1821,7 @@ function fn_app_conky()
 #               Ubuntu and derivatives (Linux Mint, etc).
 ##--------------------------------------------------------------------------
 
-function fn_app_conky_mngr()
+fn_app_conky_mngr()
 {
     begin "${1}"
 
@@ -1733,7 +1841,72 @@ function fn_app_conky_mngr()
 #   curl
 ##--------------------------------------------------------------------------
 
-function fn_app_curl()
+fn_app_curl()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install curl -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Debian Goodies
+#
+#   DESC:       includes tools such as downloading an apt .deb file
+#               dman, debman, debmany, and debget
+#
+#               this package is different from the package deb-get
+#
+#               debman -p debian-goodies debman
+#                   read man page from package debman
+#               debman -p debian-goodies=0.79 debman
+#                   read man page for specific verison
+#               debman -f debian-goodies_0.79_all.deb dman
+#                   read local deb files
+##--------------------------------------------------------------------------
+
+fn_app_debian_goodies()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install curl -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Deb Get
+#
+#   URL:        https://github.com/wimpysworld/deb-get
+#   DESC:       apt-get functionality for .debs published in 
+#               3rd party repositories or via direct download
+#
+#               deb-get search <package-name>
+#                   search for app / download .deb
+#               deb-get purge <package-name>
+#                   delete package
+#               deb-get install <package-name>
+#                   install package
+#               deb-get reinstall packagename
+#                   reinstall package
+#               deb-get update
+#               deb-get upgrade
+##--------------------------------------------------------------------------
+
+fn_app_debget()
 {
     begin "${1}"
 
@@ -1752,7 +1925,7 @@ function fn_app_curl()
 #   Flatpak
 ##--------------------------------------------------------------------------
 
-function fn_app_flatpak()
+fn_app_flatpak()
 {
     begin "${1}"
 
@@ -1777,7 +1950,7 @@ function fn_app_flatpak()
 #               installing deb packages.
 ##--------------------------------------------------------------------------
 
-function fn_app_gdebi()
+fn_app_gdebi()
 {
     begin "${1}"
 
@@ -1797,7 +1970,7 @@ function fn_app_gdebi()
 #   Git
 ##--------------------------------------------------------------------------
 
-function fn_app_git()
+fn_app_git()
 {
     begin "${1}"
 
@@ -1816,7 +1989,7 @@ function fn_app_git()
 #   Github Desktop
 ##--------------------------------------------------------------------------
 
-function fn_app_github_desktop()
+fn_app_github_desktop()
 {
     begin "${1}"
 
@@ -1837,7 +2010,7 @@ function fn_app_github_desktop()
 #   Gnome Extension Manager
 ##--------------------------------------------------------------------------
 
-function fn_app_gnome_ext_core()
+fn_app_gnome_ext_core()
 {
     begin "${1}"
     sleep 1
@@ -1845,7 +2018,7 @@ function fn_app_gnome_ext_core()
     if ! [ -x "$(command -v flatpak)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_flatpak "${app_flatpak}"
@@ -1894,7 +2067,7 @@ function fn_app_gnome_ext_core()
 #       - gnome-extensions uninstall "arcmenu@arcmenu.com"
 ##--------------------------------------------------------------------------
 
-function fn_app_gnome_ext_arcmenu()
+fn_app_gnome_ext_arcmenu()
 {
     begin "${1}"
     sleep 1
@@ -1902,7 +2075,7 @@ function fn_app_gnome_ext_arcmenu()
     if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_gnome_ext_core "${app_gnome_ext_core}"
@@ -1942,7 +2115,7 @@ function fn_app_gnome_ext_arcmenu()
 #   Internet Speed Monitor
 ##--------------------------------------------------------------------------
 
-function fn_app_gnome_ext_ism()
+fn_app_gnome_ext_ism()
 {
     begin "${1}"
     sleep 1
@@ -1950,7 +2123,7 @@ function fn_app_gnome_ext_ism()
     if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_gnome_ext_core "${app_gnome_ext_core}"
@@ -1995,7 +2168,7 @@ function fn_app_gnome_ext_ism()
 #   Gnome Tweaks Tool
 ##--------------------------------------------------------------------------
 
-function fn_app_gnome_tweaks()
+fn_app_gnome_tweaks()
 {
     begin "${1}"
 
@@ -2014,7 +2187,7 @@ function fn_app_gnome_tweaks()
 #   gPick (Color Picker)
 ##--------------------------------------------------------------------------
 
-function fn_app_gpick()
+fn_app_gpick()
 {
     begin "${1}"
 
@@ -2033,7 +2206,7 @@ function fn_app_gpick()
 #   Kooha (Screen Recorder)
 ##--------------------------------------------------------------------------
 
-function fn_app_kooha()
+fn_app_kooha()
 {
     begin "${1}"
     sleep 1
@@ -2041,7 +2214,7 @@ function fn_app_kooha()
     if ! [ -x "$(command -v flatpak)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_flatpak "${app_flatpak}"
@@ -2084,7 +2257,7 @@ function fn_app_kooha()
 #                   lintian package-name.deb --no-tag-display-limit
 ##--------------------------------------------------------------------------
 
-function fn_app_lintian
+fn_app_lintian()
 {
     begin "${1}"
 
@@ -2109,7 +2282,7 @@ function fn_app_lintian
 #               flexibility of standard Debian packaging tools.
 ##--------------------------------------------------------------------------
 
-function fn_app_makedeb()
+fn_app_makedeb()
 {
     begin "${1}"
 
@@ -2129,7 +2302,7 @@ function fn_app_makedeb()
 #   Member Package > Group Management
 ##--------------------------------------------------------------------------
 
-function fn_app_members()
+fn_app_members()
 {
     begin "${1}"
 
@@ -2148,7 +2321,7 @@ function fn_app_members()
 #   mlocate
 ##--------------------------------------------------------------------------
 
-function fn_app_mlocate()
+fn_app_mlocate()
 {
     begin "${1}"
 
@@ -2167,24 +2340,384 @@ function fn_app_mlocate()
 #   MySQL
 ##--------------------------------------------------------------------------
 
-function fn_app_mysql()
+fn_app_mysql()
 {
+
+    local dbPasswdUpdated=2
+
+    if [ -n "${3}" ]; then
+        clear
+        sleep 1
+        echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
+        echo -e "  ${ORANGE}Error${WHITE}"
+        echo -e "  "
+        echo -e "  ${WHITE}${3}${NORMAL}"
+        echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
+        echo
+        echo
+    fi
+
+    #   --------------------------------------------------------------
+    #   mysql already installed
+    #
+    #   TODO:       Add repair / additional instructions for 
+    #               already existing installs of mysql
+    #   --------------------------------------------------------------
+
+    #   orig:       if [[ $? != 127 ]] && [ -z "${OPT_DEV_NULLRUN}" ]; then
+    #   dev:        if [[ $? != 127 ]] && [ -n "${OPT_DEV_NULLRUN}" ]; then
+
+
+    #   --------------------------------------------------------------
+    #   check mysql for existing password
+    #   --------------------------------------------------------------
+
+    mysql -u root -e "USE mysql;" 2>/dev/null
+    local bFirstDB_OK=$?
+
+    #   existing database password detected
+    if [ "$bFirstDB_OK" -eq 1 ]; then
+        sleep 1
+        echo
+        echo -e "  ${BRIGHT}${FUCHSIA}MySQL  ${WHITE}has detected an existing password on your database.${NORMAL}"
+        echo -e "  ${BRIGHT}${FUCHSIA}       ${WHITE}Please provide it below.${NORMAL}"
+        echo
+        printf "  Enter Password: ${LGRAY}█${NORMAL}"
+        IFS= read -rs pwd_mysql_root < /dev/tty
+        clear
+        sleep 1
+
+        local pwd_mysql_old=$pwd_mysql_root
+
+        #   check database existing password
+        if [ -n "$pwd_mysql_root" ]; then
+            mysql -u root -p$pwd_mysql_root -e "USE mysql;" 2>/dev/null
+            res=$?
+
+            #   existing mysql password doesnt match
+            if [ $res -ne 0 ]; then
+                fn_app_mysql "${1}" ${FUNCNAME[0]} "Incorrect password provided, try again."
+
+            #   existing mysql password match
+            else
+                echo
+                echo
+                echo -e "  ${BRIGHT}${GREEN}Connection Success${NORMAL}"
+                echo -e "  ${BRIGHT}${WHITE}A connection has been established with your MySQL${NORMAL}"
+                echo -e "  ${BRIGHT}${WHITE}database. Continuing ...${NORMAL}"
+                echo
+                echo
+
+                if cli_question "  Would you like to change the password?"; then
+
+                    echo
+                    printf "  Enter Password: ${LGRAY}█${NORMAL}"
+                    IFS= read -rs pwd_mysql_root < /dev/tty
+                    clear
+                    sleep 1
+
+                    if [[ ${#pwd_mysql_root} -lt 2 ]]; then
+                        fn_app_mysql "${1}" ${FUNCNAME[0]} "Password must be longer than 1 character."
+                    fi
+
+                    export pwd_mysql_root
+
+                    echo
+                    printf '%-57s %-5s' "    |--- Updating Root Password" ""
+
+                    sleep 1
+                    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                        sudo mysql -u root -p$pwd_mysql_old -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$pwd_mysql_root'; FLUSH PRIVILEGES;" 2>/dev/null
+                        dbPasswdUpdated=$?
+                    fi
+                    echo -e "[ ${STATUS_OK} ]"
+
+                    sleep 1
+
+                    #   assign mysql password to new var
+                    #   edit existing variable to append -p to the front of the password
+                    #   if a password exists
+                    #   mysql requires -p <pass> in order to connect.
+
+                    if [ -n "$pwd_mysql_root" ]; then
+                        mysql -u root -p$pwd_mysql_root -e "USE mysql;" 2>/dev/null
+                        res=$?
+                    else
+                        mysql -u root -e "USE mysql;" 2>/dev/null
+                        res=$?
+                    fi
+
+                    if [ $res -ne 0 ]; then
+                        fn_app_mysql "${1}" ${FUNCNAME[0]} "Error occured changing your mysql password, try again."
+                    fi
+
+                    sleep 1
+
+                    #   create passwd file in /bin/
+                    if [ -n "${pwd_mysql_root}" ]; then
+                        mkdir -p "$app_dir_bin_pwd"
+                        touch "$app_file_bin_pwd"
+
+                        echo "$pwd_mysql_root" | tee "$app_file_bin_pwd" >/dev/null
+
+                        sudo chown ${USER}:${USER} ${app_file_bin_pwd} >> $LOGS_FILE 2>&1
+                        sudo chmod 600 ${app_file_bin_pwd} >> $LOGS_FILE 2>&1
+                    fi
+
+
+                    finish
+                    clear
+                    sleep 1
+
+                    echo
+                    echo
+                    echo -e "  ${BRIGHT}${WHITE}MySQL root password was successfully changed.${NORMAL}"
+                    echo -e "  ${BRIGHT}${WHITE}Ensure you write your MySQL root password down${NORMAL}"
+                    echo -e "  ${BRIGHT}${WHITE}and keep it safe.${NORMAL}"
+                    echo
+                    echo -e "  ${BRIGHT}${WHITE}DELETE the file below once you have your password stored.${NORMAL}"
+                    echo
+                    echo -e "  ${BRIGHT}${FUCHSIA}ROOT PASSWORD     ${YELLOW}${pwd_mysql_root}${NORMAL}"
+                    echo -e "  ${BRIGHT}${FUCHSIA}ROOT PWD FILE     ${YELLOW}${app_file_bin_pwd}${NORMAL}"
+                    echo
+                    echo -e "  ${BRIGHT}${BLINK}${GREYL}WRITE IT DOWN!!${NORMAL}"
+                    echo
+                    echo
+
+                    return
+                    break 2
+
+                    sleep 1
+                fi
+
+            fi
+
+        #   user pressed enter or left password blank
+        else
+            fn_app_mysql "${1}" ${FUNCNAME[0]} "Must supply your existing MySQL password to continue"
+        fi
+
+    fi
+
     begin "${1}"
 
+    echo
+
+    #   --------------------------------------------------------------
+    #   install password generation package > pwgen
+    #   --------------------------------------------------------------
+
+    if ! [ -x "$(command -v pwgen)" ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
+        printf '%-57s %-5s' "    |--- Installing Pwgen" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install pwgen -y -qq >> /dev/null 2>&1
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+        sleep 1
+    fi
+
+    #   --------------------------------------------------------------
+    #   install mysql
+    #   --------------------------------------------------------------
+
+    printf '%-57s %-5s' "    |--- Installing MySQL-Server" ""
+    sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install mysql-server -y -qq >> $LOGS_FILE 2>&1
     fi
-
     echo -e "[ ${STATUS_OK} ]"
+
     sleep 1
-    printf '%-57s %-5s' "    |--- Starting MySQL Pwd Setup" ""
-    sleep 3
-    echo -e "[ ${STATUS_OK} ]"
 
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sleep 0.5
-        app_queue_trapcmd='sudo mysql_secure_installation'
+    #   --------------------------------------------------------------
+    #   generate passwords with pwgen installed earlier
+    #
+    #   pwgen docs:     https://manpages.ubuntu.com/manpages/trusty/man1/pwgen.1.html
+    #   --------------------------------------------------------------
+
+    if [ -x "$(command -v pwgen)" ] && [ -z "${pwd_mysql_root}" ]; then
+        printf '%-57s %-5s' "    |--- Generating Root Password" ""
+        sleep 1
+        pwd_mysql_root=$( pwgen 20 1 );
+        echo -e "[ ${STATUS_OK} ]"
+    fi
+
+    #   --------------------------------------------------------------
+    #   user
+    #   --------------------------------------------------------------
+
+    if [[ "${bGenerateMysqlPwd_User}" == "true" ]]; then
+        pwd_mysql_user=$( pwgen 20 1 );
+    fi
+
+    sleep 1
+    clear
+
+    #   --------------------------------------------------------------
+    #   ensure mysql is installed and prompt the user for which type
+    #   of setup they wish to run.
+    #   --------------------------------------------------------------
+
+    mysql --version >> $LOGS_FILE 2>&1
+    if [[ $? != 127 ]]; then
+
+        spinner_halt
+        sleep 1
+
+        echo
+        echo
+        echo -e "  ${BRIGHT}${FUCHSIA}ATTENTION  ${WHITE}Would you like to run the standard mysql_secure_installation${NORMAL}"
+        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}or use Proteus for configuring MySQL?${NORMAL}"
+        echo
+        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}Proteus method chooses the best security options.${NORMAL}"
+        echo
+        echo
+            export CHOICES=( "Use Proteus Setup" "Use MySQL mysql_secure_installation" )
+            cli_options
+            case $? in
+                0 )
+                    bChoiceProteus=true
+                ;;
+                1 )
+                    bChoiceSqlSecure=true
+                ;;
+            esac
+    fi
+
+    #   --------------------------------------------------------------
+    #   Choice:     MySQL Secure Option (mysql_secure_installation)
+    #   --------------------------------------------------------------
+
+    if [ -n "${bChoiceSqlSecure}" ]; then
+        echo
+        sleep 1
+        printf '%-57s %-5s' "    |--- Starting mysql_secure_installation" ""
+        sleep 1
+        echo -e "[ ${STATUS_OK} ]"
+
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sleep 0.5
+            app_queue_trapcmd='sudo mysql_secure_installation'
+        fi
+    fi
+
+    #   --------------------------------------------------------------
+    #   Choice:     Proteus
+    #   --------------------------------------------------------------
+
+    if [ -n "${bChoiceProteus}" ]; then
+        echo
+        sleep 1
+        printf '%-57s %-5s' "    |--- Starting MySQL Proteus Setup" ""
+        sleep 1
+        echo -e "[ ${STATUS_OK} ]"
+
+        #   --------------------------------------------------------------
+        #   mysql password generated
+        #   --------------------------------------------------------------
+
+        if [ -n "${pwd_mysql_root}" ]; then
+            sleep 0.5
+            printf '%-57s %-5s' "    |--- Adding Root Password" ""
+            sleep 1
+            if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$pwd_mysql_root'; FLUSH PRIVILEGES;" 2>/dev/null
+                dbPasswdUpdated=$?
+            fi
+            echo -e "[ ${STATUS_OK} ]"
+
+        #   --------------------------------------------------------------
+        #   mysql password not generated
+        #   --------------------------------------------------------------
+
+        else
+            spinner_halt
+            sleep 1
+            echo
+            echo -e "  ${BRIGHT}${FUCHSIA}MySQL  ${WHITE}could not find a password to use for your database${NORMAL}"
+        fi
+
+        sleep 1
+
+        #   assign mysql password to new var
+        #   edit existing variable to append -p to the front of the password
+        #   if a password exists
+        #   mysql requires -p <pass> in order to connect.
+
+        if [ -n "$pwd_mysql_root" ]; then
+            mysql -u root -p$pwd_mysql_root -e "USE mysql;" 2>/dev/null
+            res=$?
+        else
+            mysql -u root -e "USE mysql;" 2>/dev/null
+            res=$?
+        fi
+
+        if [ $res -ne 0 ]; then
+            echo
+            echo
+            echo -e "  ${BRIGHT}${ORANGE}Error Occured${NORMAL}"
+            echo -e "  ${BRIGHT}${WHITE}Could not connect to database with password supplied.${NORMAL}"
+            echo -e "  ${BRIGHT}${WHITE}This appears be an internal issue.${NORMAL}"
+            echo
+            echo
+        fi
+
+        sleep 1
+
+        #   create passwd file in /bin/
+        if [ -n "${pwd_mysql_root}" ]; then
+            mkdir -p "$app_dir_bin_pwd"
+            touch "$app_file_bin_pwd"
+
+            echo "$pwd_mysql_root" | tee "$app_file_bin_pwd" >/dev/null
+
+            sudo chown ${USER}:${USER} ${app_file_bin_pwd} >> $LOGS_FILE 2>&1
+            sudo chmod 600 ${app_file_bin_pwd} >> $LOGS_FILE 2>&1
+        fi
+
+        sleep 1
+
+        mysql --version >> $LOGS_FILE 2>&1
+        if [[ $? != 127 ]] || [ -x "$(command -v mysql)" ]; then
+
+            clear
+            spinner_halt
+            sleep 1
+
+            echo
+            echo
+            echo -e "  ${BRIGHT}${WHITE}MySQL has been successfully installed on your system. A root password${NORMAL}"
+            echo -e "  ${BRIGHT}${WHITE}was also configured. Ensure you write your MySQL root password down${NORMAL}"
+            echo -e "  ${BRIGHT}${WHITE}and keep it safe.${NORMAL}"
+            echo
+            echo -e "  ${BRIGHT}${WHITE}DELETE the file below once you have your password stored.${NORMAL}"
+            echo
+            echo -e "  ${BRIGHT}${FUCHSIA}ROOT PASSWORD     ${YELLOW}${pwd_mysql_root}${NORMAL}"
+            echo -e "  ${BRIGHT}${FUCHSIA}ROOT PWD FILE     ${YELLOW}${app_file_bin_pwd}${NORMAL}"
+            echo
+            echo -e "  ${BRIGHT}${BLINK}${GREYL}WRITE IT DOWN!!${NORMAL}"
+            echo
+            echo
+
+        else
+
+            clear
+            spinner_halt
+            sleep 1
+
+            echo
+            echo
+            echo -e "  ${BRIGHT}${ORANGE}Error Occured${NORMAL}"
+            echo -e "  ${BRIGHT}${WHITE}Proteus cannot locate MySQL on your system. An unexpected error may have occured${NORMAL}"
+            echo -e "  ${BRIGHT}${WHITE}and requires manual attention from the administrator.${NORMAL}"
+            echo
+            echo
+
+        fi
+
     fi
 
     sleep 1
@@ -2195,7 +2728,7 @@ function fn_app_mysql()
 #   neofetch
 ##--------------------------------------------------------------------------
 
-function fn_app_neofetch()
+fn_app_neofetch()
 {
     begin "${1}"
 
@@ -2218,7 +2751,7 @@ function fn_app_neofetch()
 #               Currently, the options are v16, v18, and v20
 ##--------------------------------------------------------------------------
 
-function fn_app_nodejs()
+fn_app_nodejs()
 {
     begin "${1}"
     sleep 0.5
@@ -2288,7 +2821,7 @@ function fn_app_nodejs()
 #   nginx
 ##--------------------------------------------------------------------------
 
-function fn_app_nginx()
+fn_app_nginx()
 {
     begin "${1}"
 
@@ -2313,7 +2846,7 @@ function fn_app_nginx()
 #   net-tools
 ##--------------------------------------------------------------------------
 
-function fn_app_nettools()
+fn_app_nettools()
 {
     begin "${1}"
 
@@ -2332,7 +2865,7 @@ function fn_app_nettools()
 #   npm
 ##--------------------------------------------------------------------------
 
-function fn_app_npm()
+fn_app_npm()
 {
     begin "${1}"
 
@@ -2351,7 +2884,7 @@ function fn_app_npm()
 #   ocs-url
 ##--------------------------------------------------------------------------
 
-function fn_app_ocsurl()
+fn_app_ocsurl()
 {
     begin "${1}"
 
@@ -2381,7 +2914,7 @@ function fn_app_ocsurl()
 #   An X gives just points, but a little pacman gives an extra life.
 ##--------------------------------------------------------------------------
 
-function fn_app_pacman_game()
+fn_app_pacman_game()
 {
     begin "${1}"
 
@@ -2413,7 +2946,7 @@ function fn_app_pacman_game()
 #   NOTE:       https://gitlab.com/trivoxel/utilities/deb-pacman
 ##--------------------------------------------------------------------------
 
-function fn_app_pacman_manager()
+fn_app_pacman_manager()
 {
     begin "${1}"
 
@@ -2434,7 +2967,7 @@ function fn_app_pacman_manager()
 #   reprepro
 ##--------------------------------------------------------------------------
 
-function fn_app_reprepro()
+fn_app_reprepro()
 {
     begin "${1}"
 
@@ -2453,7 +2986,7 @@ function fn_app_reprepro()
 #   RPM Package Manager
 ##--------------------------------------------------------------------------
 
-function fn_app_rpm()
+fn_app_rpm()
 {
     begin "${1}"
 
@@ -2472,7 +3005,7 @@ function fn_app_rpm()
 #   Seahorse Passwords and Keys
 ##--------------------------------------------------------------------------
 
-function fn_app_seahorse()
+fn_app_seahorse()
 {
     begin "${1}"
 
@@ -2506,7 +3039,7 @@ function fn_app_seahorse()
 #   Cache Sudo Password
 ##--------------------------------------------------------------------------
 
-function fn_app_snapd()
+fn_app_snapd()
 {
     begin "${1}"
 
@@ -2525,7 +3058,7 @@ function fn_app_snapd()
 #   Surfshark VPN
 ##--------------------------------------------------------------------------
 
-function fn_app_surfshark()
+fn_app_surfshark()
 {
     begin "${1}"
 
@@ -2548,7 +3081,7 @@ function fn_app_surfshark()
 #   Swizzin
 ##--------------------------------------------------------------------------
 
-function fn_app_swizzin()
+fn_app_swizzin()
 {
     begin "${1}"
 
@@ -2602,7 +3135,7 @@ function fn_app_swizzin()
 #   System Load Indicator
 ##--------------------------------------------------------------------------
 
-function fn_app_sysload()
+fn_app_sysload()
 {
     begin "${1}"
 
@@ -2622,7 +3155,7 @@ function fn_app_sysload()
 #   Teamviewer
 ##--------------------------------------------------------------------------
 
-function fn_app_teamviewer()
+fn_app_teamviewer()
 {
     begin "${1}"
 
@@ -2646,7 +3179,7 @@ function fn_app_teamviewer()
 #   tree
 ##--------------------------------------------------------------------------
 
-function fn_app_tree()
+fn_app_tree()
 {
     begin "${1}"
 
@@ -2663,9 +3196,15 @@ function fn_app_tree()
 
 ##--------------------------------------------------------------------------
 #   Php
+#
+#   Developer has choosen to only support LTS versions of Ubuntu.
+#   This means Ubuntu Focal and Jammy.
+#
+#   Ubuntu Lunar can get PHP installed, but it requires some edits
+#   to the source list file.
 ##--------------------------------------------------------------------------
 
-function fn_app_php()
+fn_app_php()
 {
     begin "${1}"
 
@@ -2708,9 +3247,13 @@ function fn_app_php()
         printf '%-57s %-5s' "    |--- Installing ${php_ver2install}" ""
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            #   remove -fpm from the end if exists
+            local php_filter="-fpm"
+            local php_lib=${php_ver2install/%$php_filter}
+
             sudo apt-get update -y -q >> $LOGS_FILE 2>&1
             sudo apt-get install ${php_ver2install} -y -qq >> $LOGS_FILE 2>&1
-            sudo apt-get install openssl php-bcmath php-bz2 php-cgi php-cli php-fpm php-gmagick php-gd php-imagick php-lua php-markdown php-parsedown php-pclzip php-psr php-sqlite3 php-text-captcha php-text-wiki php-tidy php-xml php-yaml php-zip php-oauth php-curl php-json php-mbstring php-mysql php-tokenizer php-xml php-zip -y -qq >> $LOGS_FILE 2>&1
+            sudo apt-get install ${php_ver2install} ${php_lib}-{cli,zip,fpm,common,mysql,zip,gd,mbstring,curl,xml,bcmath,imagick,bz2,gnupg}
         fi
         echo -e "[ ${STATUS_OK} ]"
 
@@ -2728,123 +3271,229 @@ function fn_app_php()
 #
 #   DESC:       w/o added PPA:      PhpMyAdmin 4.x
 #               w/ added PPA:       PhpMyAdmin 5.2
+#
+#               originally we utilized the PPA to install phpMyAdmin,
+#               however, by using the PPA, it limits the user's ability
+#               to install plugins like 2FA. So from now on, manually
+#               download and set things up.
+#
+#               the manual download includes U2F / Bacon-QR.
 ##--------------------------------------------------------------------------
 
-function fn_app_phpmyadmin()
+fn_app_phpmyadmin()
 {
     begin "${1}"
-
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo add-apt-repository --yes ppa:phpmyadmin/ppa >> $LOGS_FILE 2>&1
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install phpmyadmin
-    fi
-
-    if [ -x "$( command -v php )" ]; then
-        php_curr=$( php -v | head -n 1 | tail -n 1 | cut -d " " -f 2 | cut -c 1-3 )
-        php_targ=8.0.0
-
-        ##--------------------------------------------------------------------------
-        #   check if user is running PHP v8.x && PhpMyAdmin 5.x
-        #
-        #   DESC:       Currently, there is a bug in PhpMyAdmin which affects
-        #               Phpmyadmin 5.x and PHP v8.x which returns an error on
-        #               the front page of PhpMyAdmin
-        #                   >   Unknown named parameter $$dbi
-        #
-        #               ContainerBuilder.php needs opened and one line of text
-        #               replaced.
-        #
-        #               [ FIND ]
-        #                   $service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs($arguments);
-        #
-        #               [ REPLACE WITH ]
-        #                   $service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs(array_values($arguments));
-        ##--------------------------------------------------------------------------
-
-        if [ -z "${OPT_DEV_NULLRUN}" ]; then
-            if get_version_compare_gt $php_curr $php_targ; then
-                file_edit_target="/usr/share/php/Symfony/Component/DependencyInjection/ContainerBuilder.php"
-                if [ -f "$file_edit_target" ]; then
-                    sed -i '/$service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs($arguments);/c\$service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs(array_values($arguments));' $file_target
-                fi
-            fi
-        fi
-    fi
-
-    echo -e "[ ${STATUS_OK} ]"
     echo
 
-    printf '%-57s %-5s' "    |--- Installing php-code-lts-u2f-php-server" ""
-    sleep 1
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install php-code-lts-u2f-php-server -y -qq >> $LOGS_FILE 2>&1
-    fi
-    echo -e "[ ${STATUS_OK} ]"
+    local pma_uri_zip="https://phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip"
+    local pma_uri_tar="https://phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz"
+    local pma_dir_install="/usr/share/phpmyadmin"
+    local pma_dir_themes="${pma_dir_install}/themes"
+    local pma_dir_var="/var/lib/phpmyadmin"
+    local pma_dir_tmp="${pma_dir_var}/tmp"
+    local pma_dir_cfg="/etc/phpmyadmin"
+    local pma_fil_zip="${pma_uri_zip##*/}"
 
-    printf '%-57s %-5s' "    |--- Installing php-bacon-qr-code" ""
-    sleep 1
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install php-bacon-qr-code -y -qq >> $LOGS_FILE 2>&1
-    fi
-    echo -e "[ ${STATUS_OK} ]"
+    #   --------------------------------------------------------------
+    #   password generation package
+    #   --------------------------------------------------------------
 
-    # require unzip to extract the themes
+    if ! [ -x "$(command -v pwgen)" ]; then
+        printf '%-57s %-5s' "    |--- Installing Pwgen" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install pwgen -y -qq >> /dev/null 2>&1
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+    fi
+
+    #   --------------------------------------------------------------
+    #   require unzip to extract the themes
+    #   wish they came in .tar but ya know, "consistency"
+    #   might as well extract phpmyadmin with zip as well
+    #   --------------------------------------------------------------
+
     if ! [ -x "$(command -v unzip)" ]; then
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install unzip -y -qq >> /dev/null 2>&1
+        printf '%-57s %-5s' "    |--- Installing Unzip" ""
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt-get update -y -q >> /dev/null 2>&1
+            sudo apt-get install unzip -y -qq >> /dev/null 2>&1
+        fi
+        echo -e "[ ${STATUS_OK} ]"
     fi
 
-    sleep 1
-    printf '%-57s %-5s' "    |--- Installing Themes" ""
-    sleep 1
+    #   --------------------------------------------------------------
+    #   phpMyAdmin already installed
+    #   --------------------------------------------------------------
 
-    # List of available themes to download for phpmyadmin
-    # right now we'll use phpMyAdmin 5 themes for support
+    if [[ -d ${pma_dir_install} ]]; then
+        echo
+        echo
+        echo -e "  ${BRIGHT}${FUCHSIA}ATTENTION  ${WHITE}phpMyAdmin already installed: ${pma_dir_install}${NORMAL}"
+        echo
+        echo
+            export CHOICES=( "Uninstall phpMyAdmin" "Abort" )
+            cli_options
+            case $? in
+                0 )
+                    sudo rm -r ${pma_dir_install}
+                ;;
+                1 )
+                    finish
+                    show_header_new "Aborted phpMyAdmin Install"
+                    return
+                    sleep 0.2
+                ;;
+            esac
+    fi
 
-    arr_themes=()
-    arr_themes+=("https://files.phpmyadmin.net/themes/blueberry/1.1.0/blueberry-1.1.0.zip")
-    arr_themes+=("https://files.phpmyadmin.net/themes/boodark/1.0.0/boodark-1.0.0.zip")
-    arr_themes+=("https://files.phpmyadmin.net/themes/darkwolf/5.2/darkwolf-5.2.zip")
-    app_dir_pma_themes="/usr/share/phpmyadmin/themes"
+    if [ -z "${pwd_mysql_root}" ]; then
+        echo
+        echo -e "  ${BRIGHT}${FUCHSIA}ATTENTION  ${WHITE}Please provide your MySQL root password${NORMAL}"
+        echo
+        read -p -s 'Password: ' password
+        echo $password
+        sleep 5
+    fi
+
+    #   --------------------------------------------------------------
+    #   generate passwords with pwgen installed earlier
+    #   --------------------------------------------------------------
+
+    pwd_mysql_root=$( pwgen -c -y -s 20 1 );
+    local pwd_pma_ctrlpass=$( pwgen -c -y 20 1 );
+    local pwd_pma_blowfish_secret=$( pwgen -c -y 20 1 );
+    if [[ "${bGenerateMysqlPwd_User}" == "true" ]]; then
+        pwd_mysql_user=$( pwgen -c -y 20 1 );
+    fi
+
+    #   --------------------------------------------------------------
+    #   download pma zip file
+    #   --------------------------------------------------------------
+
+    printf '%-57s %-5s' "    |--- Downloading ${pma_fil_zip}" ""
+    sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-
-        # loop each theme, download and unzip to /usr/share/phpmyadmin/
-        for i in "${!arr_themes[@]}"; do
-
-            # theme url from array
-            val=${arr_themes[i]}
-
-            # strip url of zip down to filename (delete everything before last forward slash)
-            file_zipname="${val##*/}"
-
-            # download
-            sudo wget -P "${app_dir_dl}" -q "${val}" >> $LOGS_FILE 2>&1
-
-            sleep 1
-
-            # unzip to /usr/share/phpmyadmin/themes
-            sudo unzip -o -u -qq -d "${app_dir_pma_themes}" "${app_dir_dl}/${file_zipname}"
-
-        done
-
-        #   set permissions for files in downloads folder
-        sudo chgrp -R ${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
-        sudo chown -R ${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
-        sudo chmod -R 0741 ${app_dir_dl} >> $LOGS_FILE 2>&1
+        sudo wget -P "${app_dir_dl}" -q "${pma_uri_zip}" >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
 
-    printf '%-57s %-5s' "    |--- Installing php-lts-u2f-server" ""
+    #   --------------------------------------------------------------
+    #   create pma folder structure
+    #   
+    #       pma_uri_zip         https://phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip
+    #       pma_uri_tar         https://phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz
+    #       pma_dir_install     /usr/share/phpmyadmin
+    #       pma_dir_themes      /usr/share/phpmyadmin/themes
+    #       pma_dir_var         /var/lib/phpmyadmin
+    #       pma_dir_tmp         /var/lib/phpmyadmin/tmp
+    #       pma_dir_cfg         /etc/phpmyadmin
+    #       pma_fil_zip         phpMyAdmin-latest-all-languages.zip
+    #   --------------------------------------------------------------
+
+    printf '%-57s %-5s' "    |--- Creating pma structure" ""
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo apt-get update -y -q >> /dev/null 2>&1
-        sudo apt-get install php-code-lts-u2f-php-server -y -qq >> /dev/null 2>&1
+        sudo mkdir -p "${pma_dir_install}" >> $LOGS_FILE 2>&1
+        sudo mkdir -p "${pma_dir_tmp}" >> $LOGS_FILE 2>&1
+        sudo mkdir -p "${pma_dir_cfg}" >> $LOGS_FILE 2>&1
+        sudo chown -R www-data:www-data ${pma_dir_var}
     fi
+    echo -e "[ ${STATUS_OK} ]"
 
+    printf '%-57s %-5s' "    |--- Extracting pma" ""
     sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+
+        #   --------------------------------------------------------------
+        #   error: /home/${USER}/bin/phpMyAdmin*.zip missing
+        #   --------------------------------------------------------------
+
+        if ! [ -f ${app_dir_dl}/phpMyAdmin*.zip ]; then
+            echo -e "[ ${STATUS_FAIL} ]"
+        fi
+
+        #   --------------------------------------------------------------
+        #   unzip phpMyAdmin*.zip
+        #   send to "$HOME/bin/downloads"
+        #   change owner to root && user to sudoer
+        #   --------------------------------------------------------------
+
+        sudo unzip -o -u -qq ${app_dir_dl}/phpMyAdmin*.zip -d "${app_dir_dl}"
+        sudo chown -R root:${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
+        sudo chmod -R 0741 ${app_dir_dl} >> $LOGS_FILE 2>&1
+
+        #   --------------------------------------------------------------
+        #   error: /usr/share/phpmyadmin missing after trying to create earlier
+        #   --------------------------------------------------------------
+
+        if ! [ -f ${pma_dir_install} ]; then
+            echo -e "[ ${STATUS_FAIL} ]"
+        fi
+
+        #   --------------------------------------------------------------
+        #   yes we could cut the commands up
+        #   move extracted phpmyadmin folder to /usr/share/phpmyadmin
+        #   --------------------------------------------------------------
+
+        sudo rm ${app_dir_dl}/phpMyAdmin*.zip
+        sudo mv ${app_dir_dl}/phpMyAdmin-* ${app_dir_dl}/phpmyadmin
+        sudo mv ${app_dir_dl}/phpmyadmin ${pma_dir_install}
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    #   --------------------------------------------------------------
+    #   create config.inc.php
+    #
+    #       copy        /usr/share/phpmyadmin/config.sample.inc.php =>
+    #                   /etc/phpmyadmin/config.inc.php
+    #
+    #       define      blowfish secret for auth cookies
+    #       define      all pma config options
+    #       add         $cfg['TempDir'] = '/var/lib/phpmyadmin/tmp';
+    #       chmod       www-data:www-data "/var/lib/phpmyadmin"
+    #   --------------------------------------------------------------
+
+    printf '%-57s %-5s' "    |--- Creating config.inc.php" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo cp ${pma_dir_install}/config.sample.inc.php  ${pma_dir_cfg}/config.inc.php
+
+        sudo sed -i 's/\$cfg\[\x27blowfish_secret\x27\] = \x27\x27\; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\//\$cfg\[\x27blowfish_secret\x27\] = \x27'${pwd_pma_blowfish_secret}'\x27\; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\//' ${pma_dir_cfg}/config.inc.php
+
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27controluser\x27\] \= \x27pma\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27controluser\x27\] \= \x27pma\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27controlpass\x27\] = \x27pmapass\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27controlpass\x27\] = \x27'${pwd_pma_ctrlpass}'\x27\;/' ${pma_dir_cfg}/config.inc.php
+
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27pmadb\x27\] \= \x27phpmyadmin\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27pmadb\x27\] \= \x27phpmyadmin\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27bookmarktable\x27\] \= \x27pma__bookmark\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27bookmarktable\x27\] \= \x27pma__bookmark\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27relation\x27\] \= \x27pma__relation\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27relation\x27\] \= \x27pma__relation\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27table_info\x27\] \= \x27pma__table_info\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27table_info\x27\] \= \x27pma__table_info\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27table_coords\x27\] \= \x27pma__table_coords\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27table_coords\x27\] \= \x27pma__table_coords\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27pdf_pages\x27\] \= \x27pma__pdf_pages\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27pdf_pages\x27\] \= \x27pma__pdf_pages\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27column_info\x27\] \= \x27pma__column_info\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27column_info\x27\] \= \x27pma__column_info\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27history\x27\] \= \x27pma__history\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27history\x27\] \= \x27pma__history\x27\;/' ${pma_dir_cfg}/config.inc.php
+
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27table_uiprefs\x27\] \= \x27pma__table_uiprefs\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27table_uiprefs\x27\] \= \x27pma__table_uiprefs\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27tracking\x27\] \= \x27pma__tracking\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27tracking\x27\] \= \x27pma__tracking\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27userconfig\x27\] \= \x27pma__userconfig\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27userconfig\x27\] \= \x27pma__userconfig\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27recent\x27\] \= \x27pma__recent\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27recent\x27\] \= \x27pma__recent\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27favorite\x27\] \= \x27pma__favorite\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27favorite\x27\] \= \x27pma__favorite\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27users\x27\] \= \x27pma__users\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27users\x27\] \= \x27pma__users\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27usergroups\x27\] \= \x27pma__usergroups\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27usergroups\x27\] \= \x27pma__usergroups\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27navigationhiding\x27\] \= \x27pma__navigationhiding\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27navigationhiding\x27\] \= \x27pma__navigationhiding\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27savedsearches\x27\] \= \x27pma__savedsearches\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27savedsearches\x27\] \= \x27pma__savedsearches\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27central_columns\x27\] \= \x27pma__central_columns\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27central_columns\x27\] \= \x27pma__central_columns\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27designer_settings\x27\] \= \x27pma__designer_settings\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27designer_settings\x27\] \= \x27pma__designer_settings\x27\;/' ${pma_dir_cfg}/config.inc.php
+        sudo sed -i 's/\/\/ \$cfg\[\x27Servers\x27\]\[\$i\]\[\x27export_templates\x27\] \= \x27pma__export_templates\x27\;/\$cfg\[\x27Servers\x27\]\[\$i\]\[\x27export_templates\x27\] \= \x27pma__export_templates\x27\;/' ${pma_dir_cfg}/config.inc.php
+
+        #   ADD TempDir Path
+        sudo sed -i '/cfg\[\x27SaveDir\x27\]/a\\$cfg[\x27TempDir\x27] = \x27'${pma_dir_tmp}'\x27\;' ${pma_dir_cfg}/config.inc.php
+
+        #   permissions on var folder
+        sudo chown -R www-data:www-data ${pma_dir_var}
+    fi
     echo -e "[ ${STATUS_OK} ]"
 
     finish
@@ -2854,7 +3503,7 @@ function fn_app_phpmyadmin()
 #   Pihole
 ##--------------------------------------------------------------------------
 
-function fn_app_pihole()
+fn_app_pihole()
 {
     begin "${1}"
 
@@ -2887,7 +3536,7 @@ function fn_app_pihole()
 #   Tweaks > File Paths in File Browser
 ##--------------------------------------------------------------------------
 
-function fn_twk_filepath()
+fn_twk_filepath()
 {
     begin "${1}"
 
@@ -2911,7 +3560,7 @@ function fn_twk_filepath()
 #   Netplan configuration
 ##--------------------------------------------------------------------------
 
-function fn_twk_netplan()
+fn_twk_netplan()
 {
     begin "${1}"
 
@@ -2965,7 +3614,7 @@ EOF
 #               File placed in "~/Templates/Empty\ Document"
 ##--------------------------------------------------------------------------
 
-function fn_twk_menu_new_textfile()
+fn_twk_menu_new_textfile()
 {
     begin "${1}"
 
@@ -2986,7 +3635,7 @@ function fn_twk_menu_new_textfile()
 #   Network host file
 ##--------------------------------------------------------------------------
 
-function fn_twk_network_hosts()
+fn_twk_network_hosts()
 {
     begin "${1}"
 
@@ -3042,7 +3691,7 @@ function fn_twk_network_hosts()
 #   without issue, and without the massive delay on startup.
 ##--------------------------------------------------------------------------
 
-function fn_twk_vbox_additions_fix()
+fn_twk_vbox_additions_fix()
 {
     begin "${1}"
 
@@ -3098,7 +3747,7 @@ function fn_twk_vbox_additions_fix()
 #   unrar
 ##--------------------------------------------------------------------------
 
-function fn_app_unrar()
+fn_app_unrar()
 {
     begin "${1}"
 
@@ -3117,7 +3766,7 @@ function fn_app_unrar()
 #   Visual Studio Code ( Stable )
 ##--------------------------------------------------------------------------
 
-function fn_app_vsc_stable()
+fn_app_vsc_stable()
 {
     begin "${1}"
     sleep 1
@@ -3125,7 +3774,7 @@ function fn_app_vsc_stable()
     if ! [ -x "$(command -v snap)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_snapd "${app_snapd}"
@@ -3149,7 +3798,7 @@ function fn_app_vsc_stable()
 #   Visual Studio Code ( Insiders )
 ##--------------------------------------------------------------------------
 
-function fn_app_vsc_insiders()
+fn_app_vsc_insiders()
 {
     begin "${1}"
     sleep 1
@@ -3157,7 +3806,7 @@ function fn_app_vsc_insiders()
     if ! [ -x "$(command -v snap)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_snapd}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_snapd "${app_snapd}"
@@ -3181,7 +3830,7 @@ function fn_app_vsc_insiders()
 #   wxhexeditor
 ##--------------------------------------------------------------------------
 
-function fn_app_wxhexeditor()
+fn_app_wxhexeditor()
 {
     begin "${1}"
 
@@ -3200,7 +3849,7 @@ function fn_app_wxhexeditor()
 #   YAD (Yet another dialog)
 ##--------------------------------------------------------------------------
 
-function fn_app_yad()
+fn_app_yad()
 {
     begin "${1}"
 
@@ -3219,7 +3868,7 @@ function fn_app_yad()
 #   yarn
 ##--------------------------------------------------------------------------
 
-function fn_app_yarn()
+fn_app_yarn()
 {
     begin "${1}"
     sleep 1
@@ -3227,7 +3876,7 @@ function fn_app_yarn()
     if ! [ -x "$(command -v npm)" ]; then
         echo -e "[ ${STATUS_HALT} ]"
         sleep 1
-        echo -e "  ${BOLD}${RED}Error:${NORMAL}${GREYL} Missing ${app_npm}. Installing ...${NORMAL}" >&2
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_npm}. Installing ...${NORMAL}" >&2
         sleep 1
 
         fn_app_npm "${app_npm}"
@@ -3257,7 +3906,7 @@ function fn_app_yarn()
 #   PARAM:      (bool)  bSilent
 ##--------------------------------------------------------------------------
 
-function fn_app_zenity()
+fn_app_zenity()
 {
 
     if [ -z "${3}" ]; then
@@ -3284,7 +3933,7 @@ function fn_app_zenity()
 #   PARAM:      (str)   function name
 ##--------------------------------------------------------------------------
 
-function fn_app_ziet_cron()
+fn_app_ziet_cron()
 {
     begin "${1}"
 
@@ -3310,7 +3959,7 @@ function fn_app_ziet_cron()
 #   PARAM:      (str)   function name
 ##--------------------------------------------------------------------------
 
-function fn_app_zorinospro_lo()
+fn_app_zorinospro_lo()
 {
     begin "${1}"
 
@@ -3394,6 +4043,16 @@ fi
 
 if [ "$bInstall_app_curl" = true ]; then
     apps+=("${app_curl}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_debian_goodies" = true ]; then
+    apps+=("${app_debian_goodies}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_debget" = true ]; then
+    apps+=("${app_debget}")
     let app_i=app_i+1
 fi
 
@@ -3646,7 +4305,7 @@ fi
 #   dev functions
 ##--------------------------------------------------------------------------
 
-function fn_dev_a()
+fn_dev_a()
 {
     begin "${1}"
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -3654,7 +4313,7 @@ function fn_dev_a()
     finish
 }
 
-function fn_dev_b()
+fn_dev_b()
 {
     begin "${1}"
         sudo apt-get upgrade -q >> $LOGS_FILE 2>&1
@@ -3662,7 +4321,7 @@ function fn_dev_b()
     finish
 }
 
-function fn_dev_c()
+fn_dev_c()
 {
     begin "${1}"
         sudo flatpak repair --system >> $LOGS_FILE 2>&1
@@ -3670,7 +4329,7 @@ function fn_dev_c()
     finish
 }
 
-function fn_dev_d()
+fn_dev_d()
 {
     begin "${1}"
         sudo snap refresh >> $LOGS_FILE 2>&1
@@ -3678,14 +4337,14 @@ function fn_dev_d()
     finish
 }
 
-function fn_dev_e()
+fn_dev_e()
 {
     begin "${1}"
 	    echo -e "[ ${STATUS_OK} ]"
     finish
 }
 
-function fn_dev_f()
+fn_dev_f()
 {
     begin "${1}"
 	    echo -e "[ ${STATUS_OK} ]"
@@ -3713,7 +4372,7 @@ devs+=("${app_dev_f}")
 #
 ##--------------------------------------------------------------------------
 
-function fn_app_all()
+fn_app_all()
 {
     begin "${app_all}"
     echo
@@ -3745,7 +4404,7 @@ function fn_app_all()
 #   header
 ##--------------------------------------------------------------------------
 
-function show_header()
+show_header()
 {
     clear
 
@@ -3754,17 +4413,32 @@ function show_header()
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
     echo -e " ${GREEN}${BOLD} ${app_title} - v$(get_version)${NORMAL}${MAGENTA}"
     echo
-    echo -e "  This wizard will install some of the basic every-day software that will"
-    echo -e "  be needed for this server to operate. It will also apply some OS mods"
-    echo -e "  for a better overall experience."
+    echo -e "  This manager allows you to install a large number of libraries"
+    echo -e "  and apps on your device. It also includes an array of patches &"
+    echo -e "  mods to change how the OS works. Select from the list below."
     echo
-    echo -e "  Some of these programs and libraries may take up to 10 minutes to"
-    echo -e "  install, please do not force close the installer."
+    echo -e "  Some of these programs and libraries may take several minutes to"
+    echo -e "  install; do not force kill this wizard."
     echo
-    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}PID ${NORMAL}" "${BOLD}${FUCHSIA} $$ ${NORMAL}"
-    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}USER ${NORMAL}" "${BOLD}${FUCHSIA} ${USER} ${NORMAL}"
-    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}APPS ${NORMAL}" "${BOLD}${FUCHSIA} ${app_i} ${NORMAL}"
-    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}DEV ${NORMAL}" "${BOLD}${FUCHSIA} $([ -n "${OPT_DEV_ENABLE}" ] && echo "Enabled" || echo "Disabled" ) ${NORMAL}"
+
+    if [ -n "${OPT_DEV_NULLRUN}" ]; then
+        printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}PID ${NORMAL}" "${BOLD}${FUCHSIA} $$ ${NORMAL}"
+        printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}USER ${NORMAL}" "${BOLD}${FUCHSIA} ${USER} ${NORMAL}"
+        printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}APPS ${NORMAL}" "${BOLD}${FUCHSIA} ${app_i} ${NORMAL}"
+        printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}DEV ${NORMAL}" "${BOLD}${FUCHSIA} $([ -n "${OPT_DEV_ENABLE}" ] && echo "Enabled" || echo "Disabled" ) ${NORMAL}"
+        echo
+    fi
+
+    if [ -n "$(ls -A "${app_dir_bin_pwd}" 2>/dev/null)" ]; then
+        echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
+        echo
+        echo -e " ${BLINK}${ORANGE}${BOLD} WARNING ${WHITE} ! ${ORANGE} WARNING ${WHITE} ! ${ORANGE} WARNING ${WHITE} ! ${ORANGE} WARNING ${WHITE} ! ${ORANGE} WARNING ${WHITE} ! ${ORANGE} WARNING${NORMAL}"
+        echo
+        echo -e "  ${YELLOW}${BOLD}${app_dir_bin_pwd}${NORMAL} CONTAINS SENSITIVE FILES!"
+        echo -e "  DELETE THE FILES IN THE ABOVE FOLDER TO SILENCE THIS MESSAGE."
+        echo
+    fi
+
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
     echo
 
@@ -3784,7 +4458,7 @@ function show_header()
 #   this may not be fully integrated yet.
 ##--------------------------------------------------------------------------
 
-function show_menu()
+show_menu()
 {
 
     show_header
