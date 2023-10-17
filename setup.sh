@@ -3288,6 +3288,17 @@ fn_app_phpmyadmin()
     local pma_dir_cfg="/etc/phpmyadmin"
     local pma_fil_zip="${pma_uri_zip##*/}"
 
+    if [ -x "$(command -v mysql)" ]; then
+        echo
+        echo -e "  ${BRIGHT}${ORANGE}WARNING  ${WHITE}MySQL not installed..${NORMAL}"
+        echo -e "  ${BRIGHT}${WHITE}Please run the MySQL installer first before installing phpMyAdmin.${NORMAL}"
+        echo
+
+        finish
+        show_header_comment "MySQL not installed on your system. Install MySQL before you run\n  the phpMyAdmin installation."
+        return
+    fi
+
     #   --------------------------------------------------------------
     #   password generation package
     #   --------------------------------------------------------------
@@ -3343,20 +3354,37 @@ fn_app_phpmyadmin()
             esac
     fi
 
-    if [ -z "${pwd_mysql_root}" ]; then
+    #   --------------------------------------------------------------
+    #   check mysql database connection
+    #   --------------------------------------------------------------
+
+    mysql -u root -e "USE mysql;" 2>/dev/null
+    local bFirstDB_OK=$?
+
+    #   database checked for no password and failed
+    #   database has password which is needed by user
+
+    if [ "$bFirstDB_OK" -ne 0 ]; then
         echo
-        echo -e "  ${BRIGHT}${FUCHSIA}ATTENTION  ${WHITE}Please provide your MySQL root password${NORMAL}"
+        echo -e "  ${BRIGHT}${FUCHSIA}phpMyAdmin  ${WHITE}needs you to provide your MySQL database password.${NORMAL}"
+        echo -e "  ${BRIGHT}${FUCHSIA}            ${WHITE}Please enter it below.${NORMAL}"
         echo
-        read -p -s 'Password: ' password
-        echo $password
-        sleep 5
+        printf "  Enter Password: ${LGRAY}█${NORMAL}"
+        IFS= read -rs pwd_mysql_root < /dev/tty
+
+        export pwd_mysql_root
+
+        clear
+    fi
+
+    if [ -n "$pwd_mysql_root" ]; then
+        mysql -u root -p$pwd_mysql_root -e "USE mysql;" 2>/dev/null
     fi
 
     #   --------------------------------------------------------------
     #   generate passwords with pwgen installed earlier
     #   --------------------------------------------------------------
 
-    pwd_mysql_root=$( pwgen -c -y -s 20 1 );
     local pwd_pma_ctrlpass=$( pwgen -c -y 20 1 );
     local pwd_pma_blowfish_secret=$( pwgen -c -y 20 1 );
     if [[ "${bGenerateMysqlPwd_User}" == "true" ]]; then
