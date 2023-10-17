@@ -2343,6 +2343,9 @@ fn_app_mysql()
 {
 
     local dbPasswdUpdated=2
+    if [ -z "${i_pwd_try}" ]; then
+        i_pwd_try=0
+    fi
 
     #   --------------------------------------------------------------
     #   report back errors
@@ -2355,7 +2358,6 @@ fn_app_mysql()
         echo -e "  "
         echo -e "  ${WHITE}${3}${NORMAL}"
         echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
-        echo
         echo
     fi
 
@@ -2395,7 +2397,46 @@ fn_app_mysql()
             #   --------------------------------------------------------------
         
             if [ $res -ne 0 ]; then
-                fn_app_mysql "${1}" ${FUNCNAME[0]} "Incorrect password provided, try again."
+    
+                (( i_pwd_try++ ))
+
+                #   --------------------------------------------------------------
+                #   excessive password retries activated
+                #   --------------------------------------------------------------
+
+                if [ "$i_pwd_try" -ge "3" ]; then
+
+                    echo
+                    echo
+                    echo -e "  ${BRIGHT}${ORANGE}Excessive Password Failures${NORMAL}"
+                    echo -e "  ${BRIGHT}${WHITE}You have attempted ${YELLOW}$i_pwd_try${WHITE} failed password attempts.${NORMAL}"
+                    echo -e "  ${BRIGHT}${WHITE}Would you like to perform an emergency password reset on root?${NORMAL}"
+                    echo
+                    echo
+
+                    #   --------------------------------------------------------------
+                    #   user choice to passwd reset
+                    #   --------------------------------------------------------------
+
+                    if cli_question "  Perform Reset? "; then
+                            echo "password reset"
+                        return
+
+                    #   --------------------------------------------------------------
+                    #   user choice to deny passwd reset
+                    #   --------------------------------------------------------------
+
+                    else
+                        fn_app_mysql "${1}" ${FUNCNAME[0]} "You denied password reset. Try your password again."
+                    fi
+
+                #   --------------------------------------------------------------
+                #   still has more retries left
+                #   --------------------------------------------------------------
+
+                else
+                    fn_app_mysql "${1}" ${FUNCNAME[0]} "Incorrect password provided, try again."
+                fi
 
             #   --------------------------------------------------------------
             #   existing mysql password match
