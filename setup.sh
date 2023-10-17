@@ -2345,6 +2345,10 @@ fn_app_mysql()
 
     local dbPasswdUpdated=2
 
+    #   --------------------------------------------------------------
+    #   report back errors
+    #   --------------------------------------------------------------
+
     if [ -n "${3}" ]; then
         clear
         echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
@@ -2357,24 +2361,16 @@ fn_app_mysql()
     fi
 
     #   --------------------------------------------------------------
-    #   mysql already installed
-    #
-    #   TODO:       Add repair / additional instructions for 
-    #               already existing installs of mysql
-    #   --------------------------------------------------------------
-
-    #   orig:       if [[ $? != 127 ]] && [ -z "${OPT_DEV_NULLRUN}" ]; then
-    #   dev:        if [[ $? != 127 ]] && [ -n "${OPT_DEV_NULLRUN}" ]; then
-
-
-    #   --------------------------------------------------------------
     #   check mysql for existing password
     #   --------------------------------------------------------------
 
     mysql -u root -e "USE mysql;" 2>/dev/null
     local bFirstDB_OK=$?
 
+    #   --------------------------------------------------------------
     #   existing database password detected
+    #   --------------------------------------------------------------
+
     if [ "$bFirstDB_OK" -eq 1 ]; then
         echo
         echo -e "  ${BRIGHT}${FUCHSIA}MySQL  ${WHITE}has detected an existing password on your database.${NORMAL}"
@@ -2385,19 +2381,29 @@ fn_app_mysql()
 
         clear
 
-        local pwd_mysql_old=$pwd_mysql_root
-
+        #   --------------------------------------------------------------
         #   check database existing password
+        #   --------------------------------------------------------------
+
         if [ -n "$pwd_mysql_root" ]; then
             mysql -u root -p$pwd_mysql_root -e "USE mysql;" 2>/dev/null
             res=$?
 
+            #   --------------------------------------------------------------
             #   existing mysql password doesnt match
+            #   --------------------------------------------------------------
+        
             if [ $res -ne 0 ]; then
                 fn_app_mysql "${1}" ${FUNCNAME[0]} "Incorrect password provided, try again."
 
+            #   --------------------------------------------------------------
             #   existing mysql password match
+            #   --------------------------------------------------------------
+
             else
+
+                local pwd_mysql_old=$pwd_mysql_root
+
                 echo
                 echo
                 echo -e "  ${BRIGHT}${GREEN}Connection Success${NORMAL}"
@@ -2481,7 +2487,10 @@ fn_app_mysql()
 
             fi
 
+        #   --------------------------------------------------------------
         #   user pressed enter or left password blank
+        #   --------------------------------------------------------------
+    
         else
             fn_app_mysql "${1}" ${FUNCNAME[0]} "Must supply your existing MySQL password to continue"
         fi
@@ -2518,7 +2527,6 @@ fn_app_mysql()
         sudo apt-get install mysql-server -y -qq >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
-
     sleep 1
 
     #   --------------------------------------------------------------
@@ -2532,6 +2540,7 @@ fn_app_mysql()
         sleep 1
         pwd_mysql_root=$( pwgen 20 1 );
         echo -e "[ ${STATUS_OK} ]"
+        sleep 1
     fi
 
     #   --------------------------------------------------------------
@@ -2542,7 +2551,6 @@ fn_app_mysql()
         pwd_mysql_user=$( pwgen 20 1 );
     fi
 
-    sleep 1
     clear
 
     #   --------------------------------------------------------------
@@ -2554,6 +2562,7 @@ fn_app_mysql()
     if [[ $? != 127 ]]; then
 
         spinner_halt
+        clear
         sleep 1
 
         echo
@@ -2609,7 +2618,7 @@ fn_app_mysql()
         #   --------------------------------------------------------------
 
         if [ -n "${pwd_mysql_root}" ]; then
-            sleep 0.5
+            sleep 1
             printf '%-57s %-5s' "    |--- Adding Root Password" ""
             sleep 1
             if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -2654,8 +2663,6 @@ fn_app_mysql()
             echo
         fi
 
-        sleep 1
-
         #   create passwd file in /bin/
         if [ -n "${pwd_mysql_root}" ]; then
             mkdir -p "$app_dir_bin_pwd"
@@ -2667,13 +2674,11 @@ fn_app_mysql()
             sudo chmod 600 ${app_file_bin_pwd} >> $LOGS_FILE 2>&1
         fi
 
-        sleep 1
-
         mysql --version >> $LOGS_FILE 2>&1
         if [[ $? != 127 ]] || [ -x "$(command -v mysql)" ]; then
 
-            clear
             spinner_halt
+            clear
             sleep 1
 
             echo
@@ -2693,8 +2698,8 @@ fn_app_mysql()
 
         else
 
-            clear
             spinner_halt
+            clear
             sleep 1
 
             echo
