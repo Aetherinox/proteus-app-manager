@@ -577,10 +577,10 @@ else
 fi
 
 ##--------------------------------------------------------------------------
-#   header > new
+#   header > with comment
 ##--------------------------------------------------------------------------
 
-show_header_new()
+show_header_comment()
 {
     local reason=$([ "${1}" ] && echo "${1}" || echo "Not Specified" )
 
@@ -589,10 +589,9 @@ show_header_new()
     sleep 0.3
 
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
-    echo -e "  Your last action was cancelled. Please select another option"
-    echo -e "  "
-    echo -e "  ${BLUE}REASON:${NORMAL}"
     echo -e "  ${YELLOW}${reason}"${NORMAL}
+    echo -e "  "
+    echo -e "  ${WHITE}Please select another option.${NORMAL}"
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
     echo
 
@@ -2379,6 +2378,8 @@ fn_app_mysql()
         printf "  Enter Password: ${LGRAY}█${NORMAL}"
         IFS= read -rs pwd_mysql_root < /dev/tty
 
+        export pwd_mysql_root
+
         clear
 
         #   --------------------------------------------------------------
@@ -2418,7 +2419,6 @@ fn_app_mysql()
                     printf "  Enter Password: ${LGRAY}█${NORMAL}"
                     IFS= read -rs pwd_mysql_root < /dev/tty
                     clear
-                    sleep 1
 
                     if [[ ${#pwd_mysql_root} -lt 2 ]]; then
                         fn_app_mysql "${1}" ${FUNCNAME[0]} "Password must be longer than 1 character."
@@ -2428,7 +2428,6 @@ fn_app_mysql()
 
                     echo
                     printf '%-57s %-5s' "    |--- Updating Root Password" ""
-
                     if [ -z "${OPT_DEV_NULLRUN}" ]; then
                         sudo mysql -u root -p$pwd_mysql_old -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$pwd_mysql_root'; FLUSH PRIVILEGES;" 2>/dev/null
                         dbPasswdUpdated=$?
@@ -2482,7 +2481,10 @@ fn_app_mysql()
                     echo
 
                     return
-                    sleep 1
+                else
+                    show_header_comment "MySQL existing password was not changed."
+                    return
+                    echo "run"
                 fi
 
             fi
@@ -2522,7 +2524,7 @@ fn_app_mysql()
 
     printf '%-57s %-5s' "    |--- Installing MySQL-Server" ""
     sleep 1
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+    if ! [ -x "$(command -v mysql)" ] && [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install mysql-server -y -qq >> $LOGS_FILE 2>&1
     fi
@@ -2550,8 +2552,6 @@ fn_app_mysql()
     if [[ "${bGenerateMysqlPwd_User}" == "true" ]]; then
         pwd_mysql_user=$( pwgen 20 1 );
     fi
-
-    clear
 
     #   --------------------------------------------------------------
     #   ensure mysql is installed and prompt the user for which type
