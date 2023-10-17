@@ -3336,7 +3336,7 @@ fn_app_phpmyadmin()
                 ;;
                 1 )
                     finish
-                    show_header_new "Aborted phpMyAdmin Install"
+                    show_header_comment "Aborted phpMyAdmin Install"
                     return
                     sleep 0.2
                 ;;
