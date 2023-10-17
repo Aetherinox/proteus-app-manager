@@ -2347,7 +2347,6 @@ fn_app_mysql()
 
     if [ -n "${3}" ]; then
         clear
-        sleep 1
         echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
         echo -e "  ${ORANGE}Error${WHITE}"
         echo -e "  "
@@ -2377,15 +2376,14 @@ fn_app_mysql()
 
     #   existing database password detected
     if [ "$bFirstDB_OK" -eq 1 ]; then
-        sleep 1
         echo
         echo -e "  ${BRIGHT}${FUCHSIA}MySQL  ${WHITE}has detected an existing password on your database.${NORMAL}"
         echo -e "  ${BRIGHT}${FUCHSIA}       ${WHITE}Please provide it below.${NORMAL}"
         echo
         printf "  Enter Password: ${LGRAY}█${NORMAL}"
         IFS= read -rs pwd_mysql_root < /dev/tty
+
         clear
-        sleep 1
 
         local pwd_mysql_old=$pwd_mysql_root
 
@@ -2425,14 +2423,11 @@ fn_app_mysql()
                     echo
                     printf '%-57s %-5s' "    |--- Updating Root Password" ""
 
-                    sleep 1
                     if [ -z "${OPT_DEV_NULLRUN}" ]; then
                         sudo mysql -u root -p$pwd_mysql_old -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$pwd_mysql_root'; FLUSH PRIVILEGES;" 2>/dev/null
                         dbPasswdUpdated=$?
                     fi
                     echo -e "[ ${STATUS_OK} ]"
-
-                    sleep 1
 
                     #   assign mysql password to new var
                     #   edit existing variable to append -p to the front of the password
@@ -2451,8 +2446,6 @@ fn_app_mysql()
                         fn_app_mysql "${1}" ${FUNCNAME[0]} "Error occured changing your mysql password, try again."
                     fi
 
-                    sleep 1
-
                     #   create passwd file in /bin/
                     if [ -n "${pwd_mysql_root}" ]; then
                         mkdir -p "$app_dir_bin_pwd"
@@ -2464,10 +2457,8 @@ fn_app_mysql()
                         sudo chmod 600 ${app_file_bin_pwd} >> $LOGS_FILE 2>&1
                     fi
 
-
                     finish
                     clear
-                    sleep 1
 
                     echo
                     echo
@@ -2485,8 +2476,6 @@ fn_app_mysql()
                     echo
 
                     return
-                    break 2
-
                     sleep 1
                 fi
 
