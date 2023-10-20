@@ -181,7 +181,7 @@ If you make a selection that requires a prerequisite package, that package will 
 <br />
 
 ### Logs
-When this installer is launched, a `/logs/proteus_[DATE].log` file will be generated in the same location as the setup script. Most apps will be installed silently / unattended. If you wish to check the status of a task, view the `proteus_[DATE].log` file. 
+When this installer is launched, a `/logs/proteus-[DATE].log` file will be generated in the same location as the setup script. Most apps will be installed silently / unattended. If you wish to check the status of a task, view the `proteus-[DATE].log` file. 
 
 > [!NOTE]
 > If you create an Issue / Bug report on Github, you will be asked to copy/paste your logs. Ensure you do this so that your issue can be reviewed in full and not delayed.
