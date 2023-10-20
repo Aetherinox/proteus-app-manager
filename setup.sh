@@ -57,13 +57,13 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 #   vars > app
 ##--------------------------------------------------------------------------
 
-apt_dir_home="$HOME/bin"
-app_dir_dl="$apt_dir_home/downloads"
+app_dir_home="$HOME/bin"
+app_dir_dl="$app_dir_home/downloads"
 app_dir_hosts="/etc/hosts"
 app_dir_swizzin="$app_dir/libraries/swizzin"
 apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
-app_file_proteus="${apt_dir_home}/proteus"
+app_file_proteus="${app_dir_home}/proteus"
 app_repo_author="Aetherinox"
 app_title="Proteus App Manager (${app_repo_author})"
 app_ver=("1" "0" "0" "7")
@@ -83,6 +83,13 @@ app_queue_restart_delay=1
 app_queue_url=()
 app_i=0
 
+##--------------------------------------------------------------------------
+#   vars > system
+##--------------------------------------------------------------------------
+
+sys_arch=$(dpkg --print-architecture)
+sys_code=$(lsb_release -cs)
+
 #   --------------------------------------------------------------
 #   vars > define passwd file
 #
@@ -90,7 +97,7 @@ app_i=0
 #   and the perms on the file being severely restricted.
 #   --------------------------------------------------------------
 
-app_dir_bin_pwd="${apt_dir_home}/pwd"
+app_dir_bin_pwd="${app_dir_home}/pwd"
 app_file_bin_pwd="${app_dir_bin_pwd}/mysql.pwd"
 
 ##--------------------------------------------------------------------------
@@ -468,6 +475,36 @@ netplan_macaddr=$(cat /sys/class/net/$netplan_adapt_old/address 2> /dev/null )
 
 apps=()
 devs=()
+
+##--------------------------------------------------------------------------
+#   line > comment
+#
+#   comment REGEX FILE [COMMENT-MARK]
+#   comment "skip-grant-tables" "/etc/mysql/my.cnf"
+##--------------------------------------------------------------------------
+
+line_comment()
+{
+    local regx="${1:?}"
+    local targ="${2:?}"
+    local mark="${3:-#}"
+    sudo sed -ri "s:^([ ]*)($regx):\\1$mark\\2:" "$targ"
+}
+
+##--------------------------------------------------------------------------
+#   line > uncomment
+#
+#   uncomment REGEX FILE [COMMENT-MARK]
+#   uncomment "skip-grant-tables" "/etc/mysql/my.cnf"
+##--------------------------------------------------------------------------
+
+line_uncomment()
+{
+    local regx="${1:?}"
+    local targ="${2:?}"
+    local mark="${3:-#}"
+    sudo sed -ri "s:^([ ]*)[$mark]+[ ]?([ ]*$regx):\\1\\2:" "$targ"
+}
 
 ##--------------------------------------------------------------------------
 #   func > logs > begin
@@ -1153,7 +1190,7 @@ app_setup()
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
-            mkdir -p "$apt_dir_home"
+            mkdir -p "$app_dir_home"
 
             local branch_uri="${app_script/BRANCH/"$app_repo_branch_sel"}"
             sudo wget -O "${app_file_proteus}" -q "$branch_uri" >> $LOGS_FILE 2>&1
@@ -2030,6 +2067,11 @@ fn_app_gnome_ext_core()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo flatpak repair --system >> $LOGS_FILE 2>&1
         flatpak install flathub com.mattjakeman.ExtensionManager -y --noninteractive >> $LOGS_FILE 2>&1
+    fi
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt install gnome-shell-extension-manager -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -3285,6 +3327,9 @@ fn_app_php()
             #   remove -fpm from the end if exists
             local php_filter="-fpm"
             local php_lib=${php_ver2install/%$php_filter}
+
+            #   full list
+            #   php8.2-{amqp,apcu,ast,bcmath,bz2,cgi,cli,common,curl,dba,decimal,dev,ds,enchant,excimer,fpm,gd,gearman,gmagick,gmp,gnupg,grpc,http,igbinary,imagick,imap,inotify,interbase,intl,ldap,libvirt-php,lz4,mailparse,maxminddb,mbstring,mcrypt,memcache,memcached,mongodb,msgpack,mysql,oauth,odbc,opcache,pcov,pgsql,phpdbg,pinba,propro,protobuf,ps,pspell,psr,raphf,rdkafka,readline,redis,rrd,smbclient,snmp,soap,solr,sqlite3,ssh2,stomp,swoole,sybase,tideways,tidy,uopz,uploadprogress,uuid,vips,xdebug,xhprof,xml,xmlrpc,xsl,yac,yaml,zip,zmq,zstd}
 
             sudo apt-get update -y -q >> $LOGS_FILE 2>&1
             sudo apt-get install ${php_ver2install} -y -qq >> $LOGS_FILE 2>&1
