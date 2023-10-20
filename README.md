@@ -215,7 +215,7 @@ The following options can be appended to the end of the `./proteus.sh` command
 | `-h`, `--help` | Help | <br /> Display command help <br /> <br /> |
 | `-i`, `--install` | Install | <br /> Installs one or multiple apps via command-line instead of launching the gui.<br /><br /> e.g.: `./proteus.sh -i curl -i "Github Desktop"`<br /> <br /> |
 | `-n`, `--nullrun` | Dev: Null Run | <br /> Any of the installable applications selected will do a "fake" / null install. No actual install will take place. <br /> <br /> Only works without `-d` <br /> <br />  |
-| `-q`, `--quiet` | Silent | <br /> All logging will be disabled <br /> <br /> |
+| `-q`, `--quiet` | Quiet | <br /> All logging will be disabled <br /> <br /> |
 | `-s`, `--setup` | Setup | <br /> Install all Proteus prerequisites / dependencies <br /> <br /> |
 | `-t`, `--theme [THEME]` | Theme | <br /> Switches the theme that the interface uses. <br /><br />`Adwaita`, `Adwaita-dark`, `HighContrast`, `HighContrastInverse`, `ZorinBlue-Light` [^3], `ZorinBlue-Dark` [^3] <br /> <br /> |
 | `-v`, `--version` | Version | <br /> Version information <br /> <br />  |
