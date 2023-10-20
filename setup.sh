@@ -583,8 +583,6 @@ Logs_Finish()
 
     printf "%-57s %-15s\n" "${TIME}      User Input: OnClick ......... Exit App" | tee -a "${LOGS_FILE}" >/dev/null
     printf "%-57s %-15s\n\n\n\n" "${TIME}      ${elapsed}" | tee -a "${LOGS_FILE}" >/dev/null
-
-    sudo pkill -9 -f ".$LOGS_FILE." >> $LOGS_FILE 2>&1
 }
 
 ##--------------------------------------------------------------------------
