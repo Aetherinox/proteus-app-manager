@@ -68,13 +68,18 @@ This manager features a selection menu which allows you to choose which programs
 | ------------------------------------------------------------------------------------------- | -------- |
 | [Alien Package Converter](http://joeyh.name/code/alien/)                              | Converts between the rpm, dpkg, stampede slp, and slackware tgz file formats |
 | [AppImage Launcher](https://github.com/TheAssassin/AppImageLauncher)                  | Manage `.appimage` files in one place         |
+| [App Outlet Manager](https://github.com/AppOutlet/AppOutlet)                          | Search / download applications that runs on most Linux distributions         |
 | [Blender (Flatpak)](https://flathub.org/apps/org.blender.Blender)                     | Free / Open-source 3D creation suite          |
 | [Blender (Snap)](https://snapcraft.io/blender)                                        | Free / Open-source 3D creation suite          |
+| [Browser: Google Chrome](https://www.google.com/chrome/?platform=linux)               | Browser by Google          |
+| [Browser: Tor](https://community.torproject.org/relay/setup/bridge/debian-ubuntu/)    | Browser built around privacy          |
 | [cdialog (Comeon Dialog)](https://launchpad.net/~eugenesan/+archive/ubuntu/ppa)       | Create bash shell dialogs                     |
 | [Color Picker (Snapd)](https://snapcraft.io/color-picker)                             | Advanced color-picker                         |
 | [Conky](https://github.com/brndnmtthws/conky)                                         | System monitor software                       |
 | [Conky Manager](https://github.com/zcot/conky-manager2)                               | GUI for managing Conky widgets / themes       |
 | [curl](https://packages.ubuntu.com/search?keywords=curl)                              | Command line tool for transferring data with URL syntax |
+| [deb-get](https://github.com/wimpysworld/deb-get)                                     | apt-get functionality for .deb packages |
+| [Debian Goodies](https://packages.ubuntu.com/search?keywords=debian-goodies)          | Manage packages from the command line |
 | [Flatpak](https://flatpak.org/)                                                       | Utility for software deployment and package management |
 | [GDebi .deb Package Manager](https://pkgs.org/download/gdebi)                         | Program for installing debian executable files |
 | [Git](https://git-scm.com/download/linux)                                             | Version control system (Command-line)         |
@@ -85,15 +90,20 @@ This manager features a selection menu which allows you to choose which programs
 | [gPick (Color Picker)](https://github.com/thezbyg/gpick)                              | Color picker |
 | [Kooha](https://github.com/SeaDve/Kooha)                                              | Screen recorder |
 | [lintian](https://wiki.debian.org/Teams/Lintian)                                      | Package checker for creating Debian packages  |
+| [Makedeb](https://github.com/makedeb/makedeb)                                         | A simplicity-focused packaging tool for Debian archives |
 | [members](https://packages.ubuntu.com/search?keywords=members)                        | Tool for displaying the users of a group |
 | [mlocate](https://github.com/msekletar/mlocate)                                       | Find files on your computer  |
+| [MySQL](https://packages.ubuntu.com/search?keywords=mysql-server)                     | MySQL Database |
 | [neofetch](https://github.com/dylanaraps/neofetch)                                    | Command-line system information tool  |
 | [net-tools](https://packages.ubuntu.com/search?keywords=net-tools)                    | Network management toolkit |
+| [Nginx](https://packages.ubuntu.com/search?keywords=nginx)                            | Webserver alternative to Apache |
 | [NodeJS](https://nodejs.org/en/download/package-manager)                              | Build scalable network apps  |
 | [NPM](https://npmjs.com/)                                                             | Package installer |
 | [ocs-url](https://opendesktop.org/p/1136805/)                                         | Helper program for items served via ocs:// |
 | [Pacman Package Management](https://gitlab.com/trivoxel/utilities/deb-pacman)         | Emulates the Archlinux Pacman package manager for Debian users who may prefer Pacman over Apt. |
 | [Pihole](https://github.com/pi-hole/pi-hole/#one-step-automated-install)              | Ads and tracker blocking app which acts as a DNS sinkhole |
+| [PHP](https://launchpad.net/~ondrej/+archive/ubuntu/php)                              | General-purpose scripting language geared towards web development |
+| [PhpMyAdmin](https://packages.ubuntu.com/search?keywords=phpmyadmin)                  | Administration tool for MySQL and MariaDB |
 | [reprepro (Apt on Github)](https://github.com/ionos-cloud/reprepro)                   | Debian package repository producer  |
 | [RPM Package Manager](https://packages.ubuntu.com/focal/rpm)                          | RPM Package Manager |
 | [Seahorse + seahorse-nautilus](https://github.com/GNOME/seahorse)                     | Manage encryption keys and passwords in GNOME Keyring |
