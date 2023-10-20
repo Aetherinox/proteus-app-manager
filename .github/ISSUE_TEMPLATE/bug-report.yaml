@@ -1,18 +1,20 @@
-name: Bug Report
+name: "🐛 Bug Report"
 description: Found something you weren't expecting? Report it here!
-labels: ["bug"]
+title: "🐛 [BUG] - <title>"
+labels: [
+  "bug"
+]
 body:
   - type: markdown
     attributes:
       value: |
         1. Please speak `English`.
-        2. Make sure you are using the latest version and take a moment to check 
-           that your issue hasn't been reported before.
+        2. Make sure you are using the latest version and take a moment to check that your issue hasn't been reported before.
         3. It's really important to provide pertinent details and logs,
            incomplete details will be handled as an invalid report.
 
         <br />
-        
+
   - type: textarea
     id: description
     attributes:
