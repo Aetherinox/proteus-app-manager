@@ -15,7 +15,7 @@ custom:
       - roadmap
   - location: title
     keywords:
-      - '[road map]'
+      - '[road-map]'
     labels:
       - roadmap
   - location: title
@@ -25,17 +25,12 @@ custom:
       - bug
   - location: title
     keywords:
-      - 'issue'
+      - '[issue]'
     labels:
       - bug
   - location: title
     keywords:
       - '[feature]'
-    labels:
-      - feature-request
-  - location: title
-    keywords:
-      - 'feature'
     labels:
       - feature-request
   - location: body
@@ -45,21 +40,31 @@ custom:
       - feature-request
   - location: title
     keywords:
-      - 'request'
+      - '[request]'
     labels:
       - feature-request
   - location: title
     keywords:
-      - '[app]'
+      - '[+app]'
     labels:
       - '+app'
   - location: title
     keywords:
-      - 'app'
+      - '[mew application]'
     labels:
       - '+app'
   - location: title
     keywords:
-      - 'application'
+      - '[mew app]'
+    labels:
+      - '+app'
+  - location: title
+    keywords:
+      - '[app request]'
+    labels:
+      - '+app'
+  - location: title
+    keywords:
+      - '[application request]'
     labels:
       - '+app'
