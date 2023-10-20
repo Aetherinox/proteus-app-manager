@@ -28,7 +28,7 @@ GREEN=$(tput setaf 2)
 YELLOW=$(tput setaf 156)
 LIME_YELLOW=$(tput setaf 190)
 POWDER_BLUE=$(tput setaf 153)
-BLUE=$(tput setaf 4)
+BLUE=$(tput setaf 033)
 MAGENTA=$(tput setaf 5)
 CYAN=$(tput setaf 6)
 WHITE=$(tput setaf 7)
@@ -65,7 +65,8 @@ apt_dir_deb="/var/cache/apt/archives"
 app_file_this=$(basename "$0")
 app_file_proteus="${app_dir_home}/proteus"
 app_repo_author="Aetherinox"
-app_title="Proteus App Manager (${app_repo_author})"
+app_title_short="Proteus"
+app_title="${app_title_short} App Manager (${app_repo_author})"
 app_ver=("1" "0" "0" "7")
 app_repo="proteus-app-manager"
 app_repo_branch="main"
@@ -193,9 +194,13 @@ get_version_compare_gt()
 #
 #       -d      developer mode
 #       -h      help menu
+#       -i      install app from cli
 #       -n      developer: null run
-#       -s      silent mode | logging disabled
+#       -q      quiet mode | logging disabled
+#       -s      setup
 #       -t      theme
+#       -u      updates Proteus binary
+#       -v      display version information
 ##--------------------------------------------------------------------------
 
 opt_usage()
@@ -217,12 +222,13 @@ opt_usage()
     printf '  %-5s %-18s %-40s\n' "    " "" "    ${DEVGREY}-i \"NodeJS\" --njs-ver 18${NORMAL}" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-n, --nullrun" "dev: null run" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "simulate app installs (no changes)" 1>&2
-    printf '  %-5s %-18s %-40s\n' "    " "-s, --silent" "silent mode which disables logging" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-q, --quiet" "quiet mode which disables logging" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-t, --theme" "specify theme to use" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "    Adwaita" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "    Adwaita-dark" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "    HighContrast" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "" "    HighContrastInverse" 1>&2
+    printf '  %-5s %-18s %-40s\n' "    " "-s, --setup" "install all ${app_title_short} prerequisites / dependencies" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-u, --update" "update ${app_file_proteus} executable" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "    --branch" "branch to update from" 1>&2
     printf '  %-5s %-18s %-40s\n' "    " "-v, --version" "current version of app manager" 1>&2
@@ -299,7 +305,7 @@ while [ $# -gt 0 ]; do
             echo -e "  ${FUCHSIA}${BLINK}Devnull Enabled${NORMAL}"
             ;;
 
-    -s|--silent)
+    -q|--quiet)
             OPT_NOLOG=true
             echo -e "  ${FUCHSIA}${BLINK}Logging Disabled{NORMAL}"
             ;;
@@ -311,6 +317,10 @@ while [ $# -gt 0 ]; do
         
     -u|--update)
             OPT_UPDATE=true
+            ;;
+
+    -s|--setup)
+            OPT_SETUP=true
             ;;
 
     -v|--version)
@@ -1215,6 +1225,23 @@ app_setup()
 
 }
 app_setup
+
+##--------------------------------------------------------------------------
+#   func > app setup
+#
+#   forces the setup function to run
+##--------------------------------------------------------------------------
+
+if [ "$OPT_SETUP" = true ]; then
+    app_setup
+
+    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}Setup Successfully Ran${NORMAL}"
+    printf '%-35s %-40s\n' "  ${WHITE}To launch ${app_title_short}, run the command without the${NORMAL}"
+    printf '%-35s %-40s\n' "  ${BOLD}${BLUE}-s${NORMAL} option.${NORMAL}"
+
+    sleep 5
+    exit 2
+fi
 
 ##--------------------------------------------------------------------------
 #   func > notify-send
@@ -2649,12 +2676,12 @@ fn_app_mysql()
         echo
         echo
         echo -e "  ${BRIGHT}${FUCHSIA}ATTENTION  ${WHITE}Would you like to run the standard mysql_secure_installation${NORMAL}"
-        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}or use Proteus for configuring MySQL?${NORMAL}"
+        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}or use ${app_title_short} for configuring MySQL?${NORMAL}"
         echo
-        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}Proteus method chooses the best security options.${NORMAL}"
+        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}${app_title_short} method chooses the best security options.${NORMAL}"
         echo
         echo
-            export CHOICES=( "Use Proteus Setup" "Use MySQL mysql_secure_installation" )
+            export CHOICES=( "Use ${app_title_short} Setup" "Use MySQL mysql_secure_installation" )
             cli_options
             case $? in
                 0 )
@@ -2690,7 +2717,7 @@ fn_app_mysql()
     if [ -n "${bChoiceProteus}" ]; then
         echo
         sleep 1
-        printf '%-57s %-5s' "    |--- Starting MySQL Proteus Setup" ""
+        printf '%-57s %-5s' "    |--- Starting MySQL ${app_title_short} Setup" ""
         sleep 1
         echo -e "[ ${STATUS_OK} ]"
 
@@ -2786,7 +2813,7 @@ fn_app_mysql()
             echo
             echo
             echo -e "  ${BRIGHT}${ORANGE}Error Occured${NORMAL}"
-            echo -e "  ${BRIGHT}${WHITE}Proteus cannot locate MySQL on your system. An unexpected error may have occured${NORMAL}"
+            echo -e "  ${BRIGHT}${WHITE}${app_title_short} cannot locate MySQL on your system. An unexpected error may have occured${NORMAL}"
             echo -e "  ${BRIGHT}${WHITE}and requires manual attention from the administrator.${NORMAL}"
             echo
             echo
@@ -4885,5 +4912,7 @@ if (( ${#OPT_APPS_CLI[@]} )); then
     sleep 0.2
 
 else
-    show_menu app_functions
+    if ! [ "$OPT_SETUP" = true ]; then
+        show_menu app_functions
+    fi
 fi
