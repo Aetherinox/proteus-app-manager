@@ -88,6 +88,19 @@ body:
         Log files are usually labeled `/logs/zorin_DATE.log`
 
   - type: textarea
+    id: references
+    attributes:
+      label: Referenced Issues
+      description: |
+        List any existing issues this ticket may be associated with.
+        Structure each issue as:
+           - #NUMBER
+           - #3
+      value: |
+        - #
+        - #
+
+  - type: textarea
     id: screenshots
     attributes:
       label: Screenshots
