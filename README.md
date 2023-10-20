@@ -152,17 +152,17 @@ Instructions on how to run this script and what you shouldn't do.
 <br />
 
 ```shell
-wget "https://raw.githubusercontent.com/Aetherinox/proteus-app-manager/main/setup.sh"
+wget "https://raw.githubusercontent.com/Aetherinox/proteus-app-manager/main/proteus.sh"
 ```
 
 Once you download the script to a location on your machine, set its permissions to be `executable`
 ```shell
-sudo chmod +x setup.sh
+sudo chmod +x proteus.sh
 ```
 
 Finally, run the script
 ```shell
-./setup.sh
+./proteus.sh
 ```
 
 After the script is ran for the first time, you may need to sign out of your user account and sign back in. This is because a new file will be installed to `/home/USER/bin/proteus`. This file allows you to execute proteus from anywhere within terminal. In order for this to work, you must log out of the user and log back in after Proteus was started the first time. Then you'll be able to use it anywhere.
@@ -170,7 +170,7 @@ After the script is ran for the first time, you may need to sign out of your use
 <br />
 
 ### Configuration
-This script contains many features that may have settings that you might not want. It is HIGHLY recommended that you open the `setup.sh` file in a text editor and review the settings. One particular feature is the `Netplan Configuration` which has default settings that include what static ip address to assign to the network adapter, as well as the default gateway, and Quad9 DNS servers.
+This script contains many features that may have settings that you might not want. It is HIGHLY recommended that you open the `proteus.sh` file in a text editor and review the settings. One particular feature is the `Netplan Configuration` which has default settings that include what static ip address to assign to the network adapter, as well as the default gateway, and Quad9 DNS servers.
 
 <br />
 
@@ -193,7 +193,7 @@ When this installer is launched, a `/logs/proteus_[DATE].log` file will be gener
 <br />
 
 ## Command-line Arguments
-The following options can be appended to the end of the `./setup.sh` command
+The following options can be appended to the end of the `./proteus.sh` command
 
 <br />
 
@@ -203,7 +203,7 @@ The following options can be appended to the end of the `./setup.sh` command
 | --- | --- | --- |
 | `-d`, `--dev` | Dev Mode | <br /> Specialized list of apps will appear instead of the installable list.<br />Also displays debugging prints. <br /> <br /> |
 | `-h`, `--help` | Help | <br /> Display command help <br /> <br /> |
-| `-i`, `--install` | Install | <br /> Installs one or multiple apps via command-line instead of launching the gui.<br /><br /> e.g.: `./setup.sh -i curl -i "Github Desktop"`<br /> <br /> |
+| `-i`, `--install` | Install | <br /> Installs one or multiple apps via command-line instead of launching the gui.<br /><br /> e.g.: `./proteus.sh -i curl -i "Github Desktop"`<br /> <br /> |
 | `-n`, `--nullrun` | Dev: Null Run | <br /> Any of the installable applications selected will do a "fake" / null install. No actual install will take place. <br /> <br /> Only works without `-d` <br /> <br />  |
 | `-s`, `--silent` | Silent | <br /> All logging will be disabled <br /> <br /> |
 | `-t`, `--theme [THEME]` | Theme | <br /> Switches the theme that the interface uses. <br /><br />`Adwaita`, `Adwaita-dark`, `HighContrast`, `HighContrastInverse`, `ZorinBlue-Light` [^3], `ZorinBlue-Dark` [^3] <br /> <br /> |
@@ -223,8 +223,8 @@ The following options can be appended to the end of the `./setup.sh` command
 Proteus supports installing apps via the command-line instead of loading the GUI and selecting apps from the list. In order to install apps via command-line, the `-i` or `--install` option must be provided for each app you wish to install.
 
 ```bash
-./setup.sh -i curl -i "Github Desktop"
-./setup.sh --install tree -i Reprepro --install "ZorinOS Pro"
+./proteus.sh -i curl -i "Github Desktop"
+./proteus.sh --install tree -i Reprepro --install "ZorinOS Pro"
 ```
 
 <br />
@@ -233,9 +233,9 @@ If you provide a very short generic name, Proeteus will find the first app based
 
 <br />
 
-As an example, if you do an install using `./setup.sh -i "gi"` and Proteus doesn't have any packages specifically named `Gi`, then the app will assume you're referring to the package `Git` and ask if you wish to install that.
+As an example, if you do an install using `./proteus.sh -i "gi"` and Proteus doesn't have any packages specifically named `Gi`, then the app will assume you're referring to the package `Git` and ask if you wish to install that.
 
-if you specify `./setup.sh -i "gith"`, the system will assume `Github Desktop` _(unless there's another name that is closer to your query)_.
+if you specify `./proteus.sh -i "gith"`, the system will assume `Github Desktop` _(unless there's another name that is closer to your query)_.
 
 Upper and lower case characters do not matter.
 
