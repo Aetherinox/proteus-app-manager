@@ -41,11 +41,11 @@ body:
   - type: input
     id: ver-manager
     attributes:
-      label: ZorinOS Manager Version
+      label: Proteus App Manager Version
       description: |
-        The version of the ZorinOS Manager you are currently running.
-        The version is located in the title / at the top of the program.
-      placeholder: "Ex: v1.0.0.0"
+        The version of the Proteus App Manager you are currently running.
+        Version is located in the title / at the top of the program.
+      placeholder: "Ex: v1.0.0.6-beta"
     validations:
       required: true
 
@@ -89,7 +89,7 @@ body:
       label: Logs
       description: |
         Paste any entries in your manager log file. Logs are located in the same folder where the `setup.sh` file exists.
-        Log files are usually labeled `/logs/zorin_DATE.log`
+        Log files are usually labeled `/logs/proteus-DATE.log`
 
   - type: textarea
     id: references
