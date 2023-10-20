@@ -113,7 +113,7 @@ export YEAR=$(date +'%Y')
 export TIME=$(date '+%H:%M:%S')
 export ARGS=$1
 export LOGS_DIR="$app_dir/logs"
-export LOGS_FILE="$LOGS_DIR/proteus_${DATE}.log"
+export LOGS_FILE="$LOGS_DIR/proteus-${DATE}.log"
 export SECONDS=0
 
 ##--------------------------------------------------------------------------
