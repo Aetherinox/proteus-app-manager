@@ -226,6 +226,7 @@ The following options can be appended to the end of the `./proteus.sh` command
 | Option | Desc | Options |
 | --- | --- | --- |
 | `--njs-ver` | <br /> Specifies the version of NodeJS to install. <br /> Required when using `-i NodeJS` <br /> <br /> | `16`, `18`, `20` |
+| `--php-ver` | <br /> Specifies the version of PHP to install. <br /> Required when using `-i PHP` <br /> <br /> | `php7.3-fpm`, `php7.4-fpm`, `php8.1-fpm`, `php8.2-fpm` |
 
 <br />
 

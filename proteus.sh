@@ -77,7 +77,7 @@ app_mnfst="https://raw.githubusercontent.com/${app_repo_author}/${app_repo}/${ap
 app_script="https://raw.githubusercontent.com/${app_repo_author}/${app_repo}/BRANCH/setup.sh"
 app_dir=$PWD
 app_nodejs_ver=(16 18 20)
-app_php_ver=(php7.3-fpm php7.4-fpm php8.1-fpm php8.2-fpm)
+app_php_ver=(php7.3 php7.3-fpm php7.4 php7.4-fpm php8.1 php8.1-fpm php8.2 php8.2-fpm)
 app_pid_spin=0
 app_pid=$BASHPID
 app_queue_restart_delay=1
@@ -3324,6 +3324,7 @@ fn_app_php()
         --text "Select your desired version of PHP\n" \
         --button="!gtk-yes!yes:0" \
         --button="!gtk-close!exit:1" \
+        --fixed \
         --field="Version     :CB" $(IFS=! ; echo "${app_php_ver[*]}" ) )
         RET=$?
         php_sel_ver="${objlist//|}"
@@ -3358,7 +3359,7 @@ fn_app_php()
 
             sudo apt-get update -y -q >> $LOGS_FILE 2>&1
             sudo apt-get install ${php_ver2install} -y -qq >> $LOGS_FILE 2>&1
-            sudo apt-get install ${php_ver2install} ${php_lib}-{cli,zip,fpm,common,mysql,zip,gd,mbstring,curl,xml,bcmath,imagick,bz2,gnupg}
+            sudo apt-get install ${php_lib} ${php_lib}-{bcmath,bz2,cgi,cli,curl,common,gd,gmagick,gnupg,imagick,imap,mysql,mbstring,mcrypt,xml,yaml,zip}
         fi
         echo -e "[ ${STATUS_OK} ]"
 
