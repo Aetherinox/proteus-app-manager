@@ -57,6 +57,8 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 #   vars > app
 ##--------------------------------------------------------------------------
 
+sys_arch=$(dpkg --print-architecture)
+sys_code=$(lsb_release -cs)
 app_dir_home="$HOME/bin"
 app_dir_dl="$app_dir_home/downloads"
 app_dir_hosts="/etc/hosts"
@@ -83,13 +85,6 @@ app_pid=$BASHPID
 app_queue_restart_delay=1
 app_queue_url=()
 app_i=0
-
-##--------------------------------------------------------------------------
-#   vars > system
-##--------------------------------------------------------------------------
-
-sys_arch=$(dpkg --print-architecture)
-sys_code=$(lsb_release -cs)
 
 #   --------------------------------------------------------------
 #   vars > define passwd file
