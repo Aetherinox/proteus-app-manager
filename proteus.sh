@@ -5,7 +5,7 @@ echo
 ##--------------------------------------------------------------------------
 #   @author :           aetherinox
 #   @script :           Proteus App Manager
-#   @when   :           2023-10-09 08:37:31
+#   @when   :           2023-10-21 16:24:05
 #   @url    :           https://github.com/Aetherinox/proteus-app-manager
 #
 #   requires chmod +x setup.sh
@@ -1336,6 +1336,7 @@ bInstall_app_pacman_manager=true
 bInstall_app_php=true
 bInstall_app_phpmyadmin=true
 bInstall_app_pihole=true
+bInstall_app_python3_pip=true
 bInstall_app_reprepro=true
 bInstall_app_rpm=true
 bInstall_app_seahorse=true
@@ -1403,6 +1404,7 @@ app_pacman_game="Pacman (Game)"
 app_pacman_manager="Pacman (Package Management)"
 app_php="Php"
 app_phpmyadmin="PhpMyAdmin"
+app_python3_pip="Python: Pip"
 app_pihole="Pi-Hole"
 app_reprepro="Reprepro"
 app_rpm="RPM Package Manager"
@@ -1493,6 +1495,7 @@ app_functions=(
     ["$app_php"]='fn_app_php'
     ["$app_phpmyadmin"]='fn_app_phpmyadmin'
     ["$app_pihole"]='fn_app_pihole'
+    ["$app_python3_pip"]='fn_app_python3_pip'
     ["$app_reprepro"]='fn_app_reprepro'
     ["$app_rpm"]='fn_app_rpm'
     ["$app_seahorse"]='fn_app_seahorse'
@@ -3355,7 +3358,7 @@ fn_app_php()
             local php_lib=${php_ver2install/%$php_filter}
 
             #   full list
-            #   php8.2-{amqp,apcu,ast,bcmath,bz2,cgi,cli,common,curl,dba,decimal,dev,ds,enchant,excimer,fpm,gd,gearman,gmagick,gmp,gnupg,grpc,http,igbinary,imagick,imap,inotify,interbase,intl,ldap,libvirt-php,lz4,mailparse,maxminddb,mbstring,mcrypt,memcache,memcached,mongodb,msgpack,mysql,oauth,odbc,opcache,pcov,pgsql,phpdbg,pinba,propro,protobuf,ps,pspell,psr,raphf,rdkafka,readline,redis,rrd,smbclient,snmp,soap,solr,sqlite3,ssh2,stomp,swoole,sybase,tideways,tidy,uopz,uploadprogress,uuid,vips,xdebug,xhprof,xml,xmlrpc,xsl,yac,yaml,zip,zmq,zstd}
+            #   php8.2-{amqp,apcu,ast,bcmath,bz2,cgi,cli,common,curl,dba,decimal,dev,ds,enchant,excimer,fpm,gd,gearman,gmagick,gmp,gnupg,grpc,http,igbinary,imagick,imap,inotify,interbase,intl,ldap,libvirt-php,lz4,mailparse,maxminddb,mbstring,mcrypt,memcache,memcached,mongodb,msgpack,mysql,oauth,odbc,pcov,pgsql,phpdbg,pinba,propro,protobuf,ps,pspell,psr,raphf,rdkafka,readline,redis,rrd,smbclient,snmp,soap,solr,sqlite3,ssh2,stomp,swoole,sybase,tideways,tidy,uopz,uploadprogress,uuid,vips,xdebug,xhprof,xml,xmlrpc,xsl,yac,yaml,zip,zmq,zstd}
 
             sudo apt-get update -y -q >> $LOGS_FILE 2>&1
             sudo apt-get install ${php_ver2install} -y -qq >> $LOGS_FILE 2>&1
@@ -3662,6 +3665,25 @@ fn_app_pihole()
         echo
 
     fi
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   python3 > pip
+##--------------------------------------------------------------------------
+
+fn_app_python3_pip()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install python3-pip -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
 
     finish
 }
@@ -4317,6 +4339,11 @@ fi
 
 if [ "$bInstall_app_pihole" = true ]; then
     apps+=("${app_pihole}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_python3_pip" = true ]; then
+    apps+=("${app_python3_pip}")
     let app_i=app_i+1
 fi
 
