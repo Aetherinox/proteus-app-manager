@@ -202,7 +202,7 @@ opt_usage()
 {
     echo
     printf "  ${BLUE}${app_title}${NORMAL}\n" 1>&2
-    printf "  ${GRAY}${gui_about}${NORMAL}\n" 1>&2
+    printf "  ${GREYL}${gui_about}${NORMAL}\n" 1>&2
     echo
     printf '  %-5s %-40s\n' "Usage:" "" 1>&2
     printf '  %-5s %-40s\n' "    " "${0} [${GREYL}options${NORMAL}]" 1>&2
@@ -1299,6 +1299,7 @@ bInstall_app_app_outlet=true
 bInstall_app_blender_flatpak=true
 bInstall_app_blender_snapd=true
 bInstall_app_browser_chrome=true
+bInstall_app_browser_librewolf=true
 bInstall_app_browser_tor=true
 bInstall_app_cdialog=true
 bInstall_app_colorpicker_snapd=true
@@ -1369,6 +1370,7 @@ app_app_outlet="App Outlet Manager"
 app_blender_flatpak="Blender (using Flatpak)"
 app_blender_snapd="Blender (using Snapd)"
 app_browser_chrome="Browser: Google Chrome"
+app_browser_librewolf="Browser: Librewolf"
 app_browser_tor="Browser: Tor"
 app_cdialog="cdialog (ComeOn Dialog)"
 app_colorpicker_snapd="Color Picker (using Snapd)"
@@ -1460,6 +1462,7 @@ app_functions=(
     ["$app_blender_flatpak"]='fn_app_blender_flatpak'
     ["$app_blender_snapd"]='fn_app_blender_snapd'
     ["$app_browser_chrome"]='fn_app_browser_chrome'
+    ["$app_browser_librewolf"]='fn_app_browser_librewolf'
     ["$app_browser_tor"]='fn_app_browser_tor'
     ["$app_cdialog"]='fn_app_cdialog'
     ["$app_colorpicker_snapd"]='fn_app_colorpicker_snapd'
@@ -1700,6 +1703,42 @@ fn_app_browser_chrome()
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install ${apt_dir_deb}/google-chrome*.deb -f -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+
+##--------------------------------------------------------------------------
+#   Browser: librewolf
+##--------------------------------------------------------------------------
+
+fn_app_browser_librewolf()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install wget gnupg lsb-release apt-transport-https ca-certificates -y -qq >> $LOGS_FILE 2>&1
+
+        distro=$(if echo " una bookworm vanessa focal jammy bullseye vera uma " | grep -q " $(lsb_release -sc) "; then lsb_release -sc; else echo focal; fi)
+
+        sudo wget -O- https://deb.librewolf.net/keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/librewolf.gpg >> $LOGS_FILE 2>&1
+
+sudo tee /etc/apt/sources.list.d/librewolf.sources << EOF > /dev/null
+Types: deb
+URIs: https://deb.librewolf.net
+Suites: $distro
+Components: main
+Architectures: amd64
+Signed-By: /usr/share/keyrings/librewolf.gpg
+EOF
+
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install librewolf -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -4192,6 +4231,11 @@ fi
 
 if [ "$bInstall_app_browser_chrome" = true ]; then
     apps+=("${app_browser_chrome}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_browser_librewolf" = true ]; then
+    apps+=("${app_browser_librewolf}")
     let app_i=app_i+1
 fi
 
