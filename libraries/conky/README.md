@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/Aetherinox/zorin-app-manager/main/docs/images/readme/libraries/conky/conky_banner.png" width="860"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/Aetherinox/proteus-app-manager/main/docs/images/readme/libraries/conky/conky_banner.png" width="860"></p>
 <h1 align="center"><b>What is Conky + Manager?</b></h1>
 
 <br />
@@ -39,8 +39,8 @@ If you use to modify your desktop using config files and manual edits, then you 
 
 <br />
 
-# Zorin App Manager
-If you decide to use the Zorin App Manager, it will provide you with options to install `Conky Base` and `Conky Manager`. There will be no need to utilize any of the files in this folder.
+# Proteus App Manager
+If you decide to use the Proteus App Manager, it will provide you with options to install `Conky Base` and `Conky Manager`. There will be no need to utilize any of the files in this folder.
 
 <br />
 
@@ -63,4 +63,4 @@ When running the `appimage` for that particular version, ZorinOS 16 users will r
 
 This is due to ZorinOS 16 running Glibc `2.31`. The only safe solution is to wait until Zorin 17 releases. Glibc is a system-wide library, and attempting to build your own upgraded package can result in bricking your operating system.
 
-Use the versions of Conky provided in the Zorin App Manager for now.
+Use the versions of Conky provided in the Proteus App Manager for now.

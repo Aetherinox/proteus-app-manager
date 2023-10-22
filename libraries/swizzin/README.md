@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/Aetherinox/zorin-app-manager/main/docs/images/readme/libraries/swizzin/banner_panel.png" width="860"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/Aetherinox/proteus-app-manager/main/docs/images/readme/libraries/swizzin/banner_panel.png" width="860"></p>
 <h1 align="center"><b>What is Swizzin?</b></h1>
 
 <br />
@@ -37,7 +37,7 @@ Swizzin includes the following apps bundled with the script:
 <br />
 
 # What Is This Folder?
-This folder contains a modified `setup.sh` Swizzin installation file. This is for users who wish to install Swizzin separate from using the Zorin App Manager.
+This folder contains a modified `setup.sh` Swizzin installation file. This is for users who wish to install Swizzin separate from using the Proteus App Manager.
 
 To execute the install script
 ```bash
@@ -50,5 +50,5 @@ sudo bash libraries/swizzin/setup.sh --local
 
 <br />
 
-# Zorin App Manager
-If you decide to use the Zorin App Manager, it will automatically download the latest version of the Swizzin install script directly from their official website to ensure all the files are the latest. It will then make the required edits automatically before initializing the Swizzin installation wizard. There's no need on your part to edit anything.
+# Proteus App Manager
+If you decide to use the Proteus App Manager, it will automatically download the latest version of the Swizzin install script directly from their official website to ensure all the files are the latest. It will then make the required edits automatically before initializing the Swizzin installation wizard. There's no need on your part to edit anything.
