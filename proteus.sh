@@ -1340,6 +1340,7 @@ bInstall_app_surfshark=true
 bInstall_app_swizzin=true
 bInstall_app_sysload=true
 bInstall_app_teamviewer=true
+bInstall_app_terminology=true
 bInstall_app_tree=true
 bInstall_twk_filepath=true
 bInstall_twk_netplan=true
@@ -1409,6 +1410,7 @@ app_surfshark="Surfshark VPN"
 app_swizzin="Swizzin (Modular Seedbox)"
 app_sysload="System Monitor"
 app_teamviewer="Teamviewer"
+app_terminology="Terminology"
 app_tree="Tree"
 twk_filepath="Patch: Path in File Explorer"
 twk_netplan="Patch: Netplan Configuration"
@@ -1499,6 +1501,7 @@ app_functions=(
     ["$app_swizzin"]='fn_app_swizzin'
     ["$app_sysload"]='fn_app_sysload'
     ["$app_teamviewer"]='fn_app_teamviewer'
+    ["$app_terminology"]='fn_app_terminology'
     ["$app_tree"]='fn_app_tree'
     ["$twk_filepath"]='fn_twk_filepath'
     ["$twk_netplan"]='fn_twk_netplan'
@@ -3276,6 +3279,28 @@ fn_app_teamviewer()
 }
 
 ##--------------------------------------------------------------------------
+#   Terminology
+#
+#   DESC:       A terminal on steroids
+#               allows for backgrounds, font changes, themes, etc.
+##--------------------------------------------------------------------------
+
+fn_app_terminology()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install terminology -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
 #   tree
 ##--------------------------------------------------------------------------
 
@@ -3675,6 +3700,7 @@ fn_app_python3_pip()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install python3-pip -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install python3-venv -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -4379,6 +4405,11 @@ fi
 
 if [ "$bInstall_app_teamviewer" = true ]; then
     apps+=("${app_teamviewer}")
+    let app_i=app_i+1
+fi
+
+if [ "$bInstall_app_terminology" = true ]; then
+    apps+=("${app_terminology}")
     let app_i=app_i+1
 fi
 
