@@ -133,6 +133,8 @@ This manager features a selection menu which allows you to choose which programs
   - Default network adapter renamed to `eth0`
   - Automatically assigns static ip address
   - Configures network adapter to use Quad9 DNS servers
+- Menu: Create Text File
+  - Adds "Text File" option to right-click menu
 - Update Network /etc/hosts file
 - VBox Additions package discrepancy issue with non-Pro releases.
 
@@ -165,10 +167,14 @@ Instructions on how to run this script and what you shouldn't do.
 wget "https://raw.githubusercontent.com/Aetherinox/proteus-app-manager/main/proteus.sh"
 ```
 
+<br />
+
 Once you download the script to a location on your machine, set its permissions to be `executable`
 ```shell
 sudo chmod +x proteus.sh
 ```
+
+<br />
 
 Finally, run the script
 ```shell
