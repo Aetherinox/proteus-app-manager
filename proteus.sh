@@ -3473,7 +3473,7 @@ fn_app_phpmyadmin()
     local pma_dir_cfg="/etc/phpmyadmin"
     local pma_fil_zip="${pma_uri_zip##*/}"
 
-    if [ -x "$(command -v mysql)" ]; then
+    if ! [ -x "$(command -v mysql)" ]; then
         echo
         echo -e "  ${BRIGHT}${ORANGE}WARNING  ${WHITE}MySQL not installed..${NORMAL}"
         echo -e "  ${BRIGHT}${WHITE}Please run the MySQL installer first before installing phpMyAdmin.${NORMAL}"
