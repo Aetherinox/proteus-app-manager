@@ -3618,8 +3618,17 @@ fn_app_phpmyadmin()
         #   error: /home/${USER}/bin/phpMyAdmin*.zip missing
         #   --------------------------------------------------------------
 
-        if ! [ -f ${app_dir_dl}/phpMyAdmin*.zip ]; then
-            echo -e "[ ${STATUS_FAIL} ]"
+        local bZipExists=false
+        for file in ${app_dir_dl}/phpMyAdmin*.zip
+        do
+            if [ -e "$file" ]; then
+                bExists=true
+            fi
+        done
+
+        if [ "$bZipExists" = false ]; then
+            show_header_comment "Could not locate ${pma_fil_zip} -- aborting"
+            return
         fi
 
         #   --------------------------------------------------------------
