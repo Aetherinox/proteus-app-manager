@@ -5,12 +5,20 @@ echo
 ##--------------------------------------------------------------------------
 #   @author :           aetherinox
 #   @script :           Proteus App Manager
-#   @when   :           2023-10-21 16:24:05
+#   @when   :           2023-10-23 10:04:23
 #   @url    :           https://github.com/Aetherinox/proteus-app-manager
 #
 #   requires chmod +x setup.sh
-#
 ##--------------------------------------------------------------------------
+
+##--------------------------------------------------------------------------
+#   load secrets file to handle Github rate limiting via a PAF.
+#   managed via https://github.com/settings/tokens?type=beta
+##--------------------------------------------------------------------------
+
+if [ -f secrets.sh ]; then
+. ./secrets.sh
+fi
 
 ##--------------------------------------------------------------------------
 #   vars > colors
@@ -920,9 +928,9 @@ app_update()
 
     echo
 
-    sleep 2
+    sleep 1
     echo -e "  ${BOLD}${GREEN}Update Complete!${NORMAL}" >&2
-    sleep 2
+    sleep 1
 
     finish
 }
@@ -4206,332 +4214,332 @@ fi
 
 if [ "$bInstall_app_alien" = true ]; then
     apps+=("${app_alien}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_appimage" = true ]; then
     apps+=("${app_appimage}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_app_outlet" = true ]; then
     apps+=("${app_app_outlet}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_blender_flatpak" = true ]; then
     apps+=("${app_blender_flatpak}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_blender_snapd" = true ]; then
     apps+=("${app_blender_snapd}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_browser_chrome" = true ]; then
     apps+=("${app_browser_chrome}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_browser_librewolf" = true ]; then
     apps+=("${app_browser_librewolf}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_browser_tor" = true ]; then
     apps+=("${app_browser_tor}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_cdialog" = true ]; then
     apps+=("${app_cdialog}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_colorpicker_snapd" = true ]; then
     apps+=("${app_colorpicker_snapd}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_conky" = true ]; then
     apps+=("${app_conky}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_conky_mngr" = true ]; then
     apps+=("${app_conky_mngr}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_curl" = true ]; then
     apps+=("${app_curl}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_debian_goodies" = true ]; then
     apps+=("${app_debian_goodies}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_debget" = true ]; then
     apps+=("${app_debget}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_flatpak" = true ]; then
     apps+=("${app_flatpak}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_gdebi" = true ]; then
     apps+=("${app_gdebi}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_git" = true ]; then
     apps+=("${app_git}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_github_desktop" = true ]; then
     apps+=("${app_github_desktop}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_gnome_ext_arcmenu" = true ]; then
     apps+=("${app_gnome_ext_arcmenu}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_gnome_ext_core" = true ]; then
     apps+=("${app_gnome_ext_core}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_gnome_ext_ism" = true ]; then
     apps+=("${app_gnome_ext_ism}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_gnome_tweaks" = true ]; then
     apps+=("${app_gnome_tweaks}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_gpick" = true ]; then
     apps+=("${app_gpick}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_kooha" = true ]; then
     apps+=("${app_kooha}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_lintian" = true ]; then
     apps+=("${app_lintian}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_makedeb" = true ]; then
     apps+=("${app_makedeb}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_members" = true ]; then
     apps+=("${app_members}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_mlocate" = true ]; then
     apps+=("${app_mlocate}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_mysql" = true ]; then
     apps+=("${app_mysql}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_neofetch" = true ]; then
     apps+=("${app_neofetch}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_nodejs" = true ]; then
     apps+=("${app_nodejs}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_nginx" = true ]; then
     apps+=("${app_nginx}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_nettools" = true ]; then
     apps+=("${app_nettools}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_npm" = true ]; then
     apps+=("${app_npm}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_ocsurl" = true ]; then
     apps+=("${app_ocsurl}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_pacman_game" = true ]; then
     apps+=("${app_pacman_game}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_pacman_manager" = true ]; then
     apps+=("${app_pacman_manager}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_php" = true ]; then
     apps+=("${app_php}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_phpmyadmin" = true ]; then
     apps+=("${app_phpmyadmin}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_pihole" = true ]; then
     apps+=("${app_pihole}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_python3_pip" = true ]; then
     apps+=("${app_python3_pip}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_reprepro" = true ]; then
     apps+=("${app_reprepro}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_rpm" = true ]; then
     apps+=("${app_rpm}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_seahorse" = true ]; then
     apps+=("${app_seahorse}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_snapd" = true ]; then
     apps+=("${app_snapd}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_surfshark" = true ]; then
     apps+=("${app_surfshark}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_swizzin" = true ]; then
     apps+=("${app_swizzin}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_sysload" = true ]; then
     apps+=("${app_sysload}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_teamviewer" = true ]; then
     apps+=("${app_teamviewer}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_terminology" = true ]; then
     apps+=("${app_terminology}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_tree" = true ]; then
     apps+=("${app_tree}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_twk_filepath" = true ]; then
     apps+=("${twk_filepath}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_twk_netplan" = true ]; then
     apps+=("${twk_netplan}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_twk_menu_new_textfile" = true ]; then
     apps+=("${twk_menu_new_textfile}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_twk_network_hosts" = true ]; then
     apps+=("${twk_network_hosts}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_twk_vbox_additions_fix" = true ]; then
     apps+=("${twk_vbox_additions_fix}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_unrar" = true ]; then
     apps+=("${app_unrar}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_vsc_stable" = true ]; then
     apps+=("${app_vsc_stable}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_vsc_insiders" = true ]; then
     apps+=("${app_vsc_insiders}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_wxhexeditor" = true ]; then
     apps+=("${app_wxhexeditor}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_yad" = true ]; then
     apps+=("${app_yad}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_yarn" = true ]; then
     apps+=("${app_yarn}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_zenity" = true ]; then
     apps+=("${app_zenity}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_ziet_cron" = true ]; then
     apps+=("${app_ziet_cron}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 if [ "$bInstall_app_zorinospro_lo" = true ]; then
     apps+=("${app_zorinospro_lo}")
-    let app_i=app_i+1
+    (( app_i++ ))
 fi
 
 ##--------------------------------------------------------------------------
