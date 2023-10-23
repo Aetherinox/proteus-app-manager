@@ -1230,7 +1230,7 @@ app_setup()
     sleep 0.5
 
 }
-app_setup
+#app_setup
 
 ##--------------------------------------------------------------------------
 #   func > app setup
@@ -3528,7 +3528,49 @@ fn_app_phpmyadmin()
             cli_options
             case $? in
                 0 )
-                    sudo rm -r ${pma_dir_install}
+                    echo 
+                    sleep 1
+                    printf '%-57s %-5s' "    |--- Checking apt" ""
+                    sleep 1
+                    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                        sudo apt-get -f install -y -q >> $LOGS_FILE 2>&1
+                        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+                        sudo apt-get purge phpmyadmin -y -q >> $LOGS_FILE 2>&1
+                    fi
+                    echo -e "[ ${STATUS_OK} ]"
+
+                    printf '%-57s %-5s' "    |--- Remove ${pma_dir_install}" ""
+                    sleep 1
+                    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                        sudo rm -r ${pma_dir_install}
+                    fi
+                    echo -e "[ ${STATUS_OK} ]"
+
+                    apacheCheck=$( dpkg --get-selections | grep apache && dpkg --get-selections | grep apache2 )
+                    if [ -n "$apacheCheck" ]; then
+                        printf '%-57s %-5s' "    |--- Restarting apache" ""
+                        sleep 1
+                        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                            sudo a2disconf phpmyadmin >> $LOGS_FILE 2>&1
+                            sudo systemctl restart apache
+                            sudo systemctl restart apache2
+                        fi
+                        echo -e "[ ${STATUS_OK} ]"
+                    fi
+
+                    nginxCheck=$( dpkg --get-selections | grep nginx )
+                    if [ -n "$nginxCheck" ]; then
+                        printf '%-57s %-5s' "    |--- Restarting nginx" ""
+                        sleep 1
+                        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                            sudo systemctl restart nginx
+                        fi
+                        echo -e "[ ${STATUS_OK} ]"
+                    fi
+
+                    finish
+                    show_header_comment "Uninstalled phpMyAdmin. Re-launch phpMyAdmin installer to reinstall."
+                    return
                 ;;
                 1 )
                     finish
@@ -4735,11 +4777,60 @@ show_menu()
     IFS=$'\n' apps_sorted=($(sort <<<"${app_list[*]}"))
     unset IFS
 
+    ##--------------------------------------------------------------------------
+    #   screen positioning
+    #
+    #   on Ubuntu v20.04 and older, simply appending --center, --fixed would
+    #   center the yad dialog.
+    #
+    #   however, on Ubuntu 21.04 and newer, Ubuntu was switched from X11 to
+    #   wayland, which broke yad's --center functionality.
+    #
+    #   manually calculate the screen size and position the interface
+    #   center screen.
+    ##--------------------------------------------------------------------------
+
+    local ScrW=$( xrandr -q | grep -w Screen | sed 's/.*current //;s/,.*//' | awk '{print $1}' )
+    local ScrH=$( xrandr -q | grep -w Screen | sed 's/.*current //;s/,.*//' | awk '{print $3}' )
+
+    ##--------------------------------------------------------------------------
+    #   calc > main ui
+    ##--------------------------------------------------------------------------
+
+    local main_geo_pos_w=$(echo $((($ScrW-$gui_width)/2)))
+    local main_geo_pos_h=$(echo $((($ScrH-$gui_height)/2)))
+
+    ##--------------------------------------------------------------------------
+    #   calc > dialog > normal
+    ##--------------------------------------------------------------------------
+
+    local dialog_siz_w_nr=240
+    local dialog_siz_h_nr=125
+
+    local dialog_pos_w_nr=$(echo $((($ScrW-$dialog_siz_w_nr)/2)))
+    local dialog_pos_h_nr=$(echo $((($ScrH-$dialog_siz_h_nr)/2)))
+
+    ##--------------------------------------------------------------------------
+    #   calc > dialog > large
+    ##--------------------------------------------------------------------------
+
+    local dialog_siz_w_lg=270
+    local dialog_siz_h_lg=155
+
+    local dialog_pos_w_lg=$(echo $((($ScrW-$dialog_siz_w_lg)/2)))
+    local dialog_pos_h_lg=$(echo $((($ScrH-$dialog_siz_h_lg)/2)))
+
+    ##--------------------------------------------------------------------------
+    #   main interface
+    ##--------------------------------------------------------------------------
+
     while true; do
         objlist=$( GDK_BACKEND=x11 yad \
         --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-        --width="${gui_width}" \
-        --height="${gui_height}" \
+        --width="$gui_width" \
+        --height="$gui_height" \
+        --fixed \
+        --geometry="+$main_geo_pos_w+$main_geo_pos_h" \
         --list \
         --search-column=1 \
         --tooltip-column=1 \
@@ -4753,7 +4844,6 @@ show_menu()
         --borders=15 \
         --column="${gui_column}" ${app_all} "${apps_sorted[@]}")
         RET=$?
-        #echo $RET
         res="${objlist//|}"
 
         ##--------------------------------------------------------------------------
@@ -4770,28 +4860,29 @@ show_menu()
                 else
                     query=$( GDK_BACKEND=x11 yad \
                     --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
+                    --width="$dialog_siz_w_lg" \
+                    --height="$dialog_siz_h_lg" \
                     --center \
-                    --width=150 \
-                    --height=125 \
                     --fixed \
+                    --geometry="+$dialog_pos_w_lg+$dialog_pos_h_lg" \
                     --title "No Docs Available" \
                     --borders=10 \
                     --button="!gtk-yes!yes:0" \
                     --button="!gtk-close!exit:1" \
-                    --text "The app <span color='#3477eb'><b>${res}</b></span> does not have any provided docs\nor websites to show.\n\nReach out to the developer if you feel this entry should\nhave docs." )
+                    --text "The app <span color='#3477eb'><b>${res}</b></span> does not have any\nprovided docs or websites to show.\n\nReach out to the developer if you feel this entry\nshould have docs." )
                 fi
             else
                 query=$( GDK_BACKEND=x11 yad \
                 --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-                --center \
-                --width=150 \
-                --height=155 \
+                --width="$dialog_siz_w_lg" \
+                --height="$dialog_siz_h_lg" \
                 --fixed \
+                --geometry="+$dialog_pos_w_lg+$dialog_pos_h_lg" \
                 --title "No Selection" \
                 --borders=10 \
                 --button="!gtk-yes!yes:0" \
                 --button="!gtk-close!exit:1" \
-                --text "Select an individual app from the list and then click the <span color='#3477eb'><b>App Docs</b></span>\nbutton to view the documentation.\n\nThe option <span color='#3477eb'><b>${app_all}</b></span> is not a valid option. Do you really want ${app_i}\nbrowser windows open?" )
+                --text "Select an individual app from the list and then click the\n<span color='#3477eb'><b>App Docs</b></span> button to view the documentation.\n\nThe item <span color='#3477eb'><b>${app_all}</b></span> is not a valid option. Do you really\nwant ${app_i} browser windows open?" )
             fi
             continue
         fi
@@ -4833,10 +4924,10 @@ show_menu()
         if [ $RET -eq 0 ]; then
             answer=$( GDK_BACKEND=x11 yad \
             --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-            --center \
-            --width=240 \
-            --height=125 \
+            --width=$dialog_siz_w_nr \
+            --height=$dialog_siz_h_nr \
             --fixed \
+            --geometry="+$dialog_pos_w_nr+$dialog_pos_h_nr" \
             --title "Install ${res}?" \
             --borders=10 \
             --button="!gtk-yes!yes:0" \
@@ -4867,10 +4958,10 @@ show_menu()
                 if [ -n "$app_queue_restart_id" ]; then
                     prompt_reboot=$( GDK_BACKEND=x11 yad \
                     --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-                    --center \
-                    --width=150 \
-                    --height=125 \
+                    --width=$dialog_siz_w_nr \
+                    --height=$dialog_siz_h_nr \
                     --fixed \
+                    --geometry="+$dialog_pos_w_nr+$dialog_pos_h_nr" \
                     --margins=15 \
                     --borders=10 \
                     --title "Restart Required" \
