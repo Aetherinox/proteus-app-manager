@@ -248,7 +248,7 @@ while [ $# -gt 0 ]; do
             if [[ "$1" != *=* ]]; then shift; fi
             arg="${1#*=}"
 
-            if ! [[ $(echo ${app_php_ver[@]} | fgrep -w $arg) ]]; then
+            if ! [[ $(echo ${app_php_ver[@]} | grep -f -w $arg) ]]; then
                 php_available=$(printf " %s" "${app_php_ver[@]}")
 
                 echo -e "  ${NORMAL}Bad PHP version provided."
@@ -264,7 +264,7 @@ while [ $# -gt 0 ]; do
             if [[ "$1" != *=* ]]; then shift; fi
             arg="${1#*=}"
 
-            if ! [[ $(echo ${app_nodejs_ver[@]} | fgrep -w $arg) ]]; then
+            if ! [[ $(echo ${app_nodejs_ver[@]} | grep -f -w $arg) ]]; then
                 njs_available=$(printf " %s" "${app_nodejs_ver[@]}")
 
                 echo -e "  ${NORMAL}Bad NodeJS version provided."
