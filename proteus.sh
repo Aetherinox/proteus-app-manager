@@ -690,7 +690,7 @@ cli_options()
 {
     opts_show()
     {
-        local it=$( echo $1 )
+        local it=$1
         for i in ${!CHOICES[*]}; do
             if [[ "$i" == "$it" ]]; then
                 tput rev
