@@ -585,7 +585,7 @@ Logs_Finish()
             kill $app_pid_tee >> $LOGS_FILE 2>&1
         fi
 
-        printf "%-57s %-15s\n" "${TIME}      Destroying Pipe ${LOGS_PIPE} (${app_pid_tee})" | tee -a "${LOGS_FILE}" >/dev/null
+        printf "%-57s\n" "${TIME}      Destroying Pipe ${LOGS_PIPE} (${app_pid_tee})" | tee -a "${LOGS_FILE}" >/dev/null
 
         rm $LOGS_PIPE
         unset PIPE_OPENED
@@ -595,7 +595,7 @@ Logs_Finish()
     elapsed="$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
     printf "%-57s\n" "${TIME}      User Input: OnClick ......... Exit App" | tee -a "${LOGS_FILE}" >/dev/null
-    printf "%-57s %-15s\n\n\n\n" "${TIME}      ${elapsed}" | tee -a "${LOGS_FILE}" >/dev/null
+    printf "%-57s\n\n\n\n" "${TIME}      ${elapsed}" | tee -a "${LOGS_FILE}" >/dev/null
 }
 
 ##--------------------------------------------------------------------------
@@ -659,7 +659,7 @@ spin()
 
     while :
     do
-        for i in `seq 0 7`
+        for i in $(seq 0 7)
         do
             echo -n "${spinner:$i:1}"
             echo -en "\010"
@@ -769,7 +769,7 @@ cli_question( )
         #printf '%-60s %13s %-5s' "    $1 " "${YELLOW}[$syntax]${NORMAL}" ""
         echo -n "$1 [$syntax] "
 
-        read response </dev/tty
+        read -r response </dev/tty
 
         # NULL response uses default
         if [ -z "$response" ]; then
@@ -827,7 +827,7 @@ begin()
     printf "%-57s\n\n" "${TIME}      NEW Spinner: PID (${app_pid_spin})" | tee -a "${LOGS_FILE}" >/dev/null
 
     # kill spinner on any signal
-    trap "kill -9 $app_pid_spin 2> /dev/null" `seq 0 15`
+    trap "kill -9 $app_pid_spin 2> /dev/null" $(seq 0 15)
 
     printf '%-57s %-5s' "  ${1}" ""
 
@@ -1240,9 +1240,9 @@ app_setup
 if [ "$OPT_SETUP" = true ]; then
     app_setup
 
-    printf '%-35s %-40s\n' "  ${BOLD}${DEVGREY}Setup Successfully Ran${NORMAL}"
-    printf '%-35s %-40s\n' "  ${WHITE}To launch ${app_title_short}, run the command without the${NORMAL}"
-    printf '%-35s %-40s\n' "  ${BOLD}${BLUE}-s${NORMAL} option.${NORMAL}"
+    printf '%-35s\n' "  ${BOLD}${DEVGREY}Setup Successfully Ran${NORMAL}"
+    printf '%-35s\n' "  ${WHITE}To launch ${app_title_short}, run the command without the${NORMAL}"
+    printf '%-35s\n' "  ${BOLD}${BLUE}-s${NORMAL} option.${NORMAL}"
 
     sleep 5
     exit 2
