@@ -126,15 +126,14 @@ This manager features a selection menu which allows you to choose which programs
 
 ## Patches
 - File Manager displays full path in address bar
-- Add "`Create New Text File`" to right-click context menu
-  - Already installed in ZorinOS
-  - Missing from Ubuntu, must be done manually
 - Netplan Configuration
   - Default network adapter renamed to `eth0`
   - Automatically assigns static ip address
   - Configures network adapter to use Quad9 DNS servers
 - Menu: Create Text File
   - Adds "Text File" option to right-click menu
+  - Already installed in ZorinOS
+  - Missing from Ubuntu, must be done manually
 - Update Network /etc/hosts file
 - VBox Additions package discrepancy issue with non-Pro releases.
 
