@@ -4797,8 +4797,8 @@ show_menu()
     #   calc > main ui
     ##--------------------------------------------------------------------------
 
-    local main_geo_pos_w=$(echo $((($ScrW-$gui_width)/2)))
-    local main_geo_pos_h=$(echo $((($ScrH-$gui_height)/2)))
+    local main_geo_pos_w=$((($ScrW-$gui_width)/2))
+    local main_geo_pos_h=$((($ScrH-$gui_height)/2))
 
     ##--------------------------------------------------------------------------
     #   calc > dialog > normal
@@ -4807,8 +4807,8 @@ show_menu()
     local dialog_siz_w_nr=240
     local dialog_siz_h_nr=125
 
-    local dialog_pos_w_nr=$(echo $((($ScrW-$dialog_siz_w_nr)/2)))
-    local dialog_pos_h_nr=$(echo $((($ScrH-$dialog_siz_h_nr)/2)))
+    local dialog_pos_w_nr=$((($ScrW-$dialog_siz_w_nr)/2))
+    local dialog_pos_h_nr=$((($ScrH-$dialog_siz_h_nr)/2))
 
     ##--------------------------------------------------------------------------
     #   calc > dialog > large
@@ -4817,8 +4817,8 @@ show_menu()
     local dialog_siz_w_lg=270
     local dialog_siz_h_lg=155
 
-    local dialog_pos_w_lg=$(echo $((($ScrW-$dialog_siz_w_lg)/2)))
-    local dialog_pos_h_lg=$(echo $((($ScrH-$dialog_siz_h_lg)/2)))
+    local dialog_pos_w_lg=$((($ScrW-$dialog_siz_w_lg)/2))
+    local dialog_pos_h_lg=$((($ScrH-$dialog_siz_h_lg)/2))
 
     ##--------------------------------------------------------------------------
     #   main interface
