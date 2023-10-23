@@ -3,7 +3,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/github/v/tag/Aetherinox/proteus-app-manager?logo=GitHub&label=version&color=ba5225) ![Release Date](https://img.shields.io/github/release-date-pre/Aetherinox/proteus-app-manager?color=eb1a58) ![Downloads](https://img.shields.io/github/downloads/Aetherinox/proteus-app-manager/total) ![Repo Size](https://img.shields.io/github/repo-size/Aetherinox/proteus-app-manager?label=size&color=59702a) ![Last Commit)](https://img.shields.io/github/last-commit/Aetherinox/proteus-app-manager?color=b43bcc) [![View Apt Repo](https://img.shields.io/badge/Repo%20-%20Here%20-%20%23f00e7f?logo=Proteus&logoColor=FFFFFF&label=Download)](https://github.com/Aetherinox/proteus-app-manager/releases/)
+![Version](https://img.shields.io/github/v/tag/Aetherinox/proteus-app-manager?logo=GitHub&label=version&color=ba5225) ![Release Date](https://img.shields.io/github/release-date-pre/Aetherinox/proteus-app-manager?color=eb1a58) ![Downloads](https://img.shields.io/github/downloads/Aetherinox/proteus-app-manager/total) ![Repo Size](https://img.shields.io/github/repo-size/Aetherinox/proteus-app-manager?label=size&color=59702a) ![Last Commit)](https://img.shields.io/github/last-commit/Aetherinox/proteus-app-manager?color=b43bcc) [![View Apt Repo](https://img.shields.io/badge/Repo%20-%20Here%20-%20%23f00e7f?logo=Proteus&logoColor=FFFFFF&label=Download)](https://github.com/Aetherinox/proteus-app-manager/releases/) [![CodeFactor](https://www.codefactor.io/repository/github/aetherinox/proteus-app-manager/badge)](https://www.codefactor.io/repository/github/aetherinox/proteus-app-manager)
 
 </div>
 
