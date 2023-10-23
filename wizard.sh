@@ -432,7 +432,7 @@ app_update()
             sleep 0.$(( 100 + RANDOM % 800 ))
         done
 
-        local REPO_CONN=$(curl -s "$app_mnfst")
+        local REPO_CONN=$( curl -s "$app_mnfst" )
         local REPO_NAME=$( jq -r '.name' <<< "${REPO_CONN}" )
         local REPO_VER=$( jq -r '.version' <<< "${REPO_CONN}" )
         local REPO_URL=$( jq -r '.url' <<< "${REPO_CONN}" )
@@ -486,7 +486,7 @@ app_update()
 
         if [ "$bUpdated" == false ]; then
             sleep 2
-            progress=60
+            progress=55
             echo -e "XXX\n${progress}\nNo update found\nXXX"
             sleep 2
         fi
@@ -512,12 +512,14 @@ app_update()
 
             owner=$(stat -c '%U' ${app_file_proteus})
 
-            if [ "x${owner}" = "x${USER}" ]; then
+            if [ "$owner" == "$USER" ]; then
                 progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
-                echo -e "XXX\n${progress}\nPermissions OK. Owner is ${app_file_proteus}\nXXX"
+                echo -e "XXX\n${progress}\nPermissions OK for owner $owner\nXXX"
+                sleep 2
             else
                 progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
                 echo -e "XXX\n${progress}\nPermissions FAILED. Fixing ...\nXXX"
+                sleep 2
 
                 for i in {1..4}
                 do
@@ -550,6 +552,10 @@ app_update()
                 echo -e "XXX\n${progress}\nCleaning up\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
+        else
+            progress=95
+            echo -e "XXX\n${progress}\n${app_file_proteus} not found. Finishing.\nXXX"
+            sleep 2
         fi
 
         echo -e "XXX\n100\nUpdater Complete!\nXXX"
@@ -612,6 +618,7 @@ function app_setup
         local REPO_URL=$( jq -r '.url' <<< "${REPO_CONN}" )
 
         local bMissingWhip=false
+        local bMissingJq=false
         local bMissingCurl=false
         local bMissingWget=false
         local bMissingNotify=false
@@ -621,7 +628,7 @@ function app_setup
 
         for i in {1..4}
         do
-            progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+            progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
             echo -e "XXX\n${progress}\nInitializing Dependencies\nXXX"
             sleep 0.$(( 100 + RANDOM % 800 ))
         done
@@ -629,6 +636,11 @@ function app_setup
         # require whiptail
         if ! [ -x "$(command -v whiptail)" ]; then
             bMissingWhip=true
+        fi
+
+        # require jq (read json)
+        if ! [ -x "$(command -v jq)" ]; then
+            bMissingJq=true
         fi
 
         # require curl
@@ -672,10 +684,10 @@ function app_setup
 
         # Check if contains title
         # If so, called from another function
-        if [ "$bMissingWhip" = true ] ||  [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
+        if [ "$bMissingWhip" = true ] || [ "$bMissingJq" = true ] || [ "$bMissingCurl" = true ] || [ "$bMissingWget" = true ] || [ "$bMissingNotify" = true ] || [ "$bMissingYad" = true ] || [ "$bMissingGPG" = true ] || [ "$bMissingRepo" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
                 echo -e "XXX\n${progress}\nDependencies Missing\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -714,6 +726,24 @@ function app_setup
             if [ -z "${OPT_DEV_NULLRUN}" ]; then
                 sudo apt-get update -y -q >> /dev/null 2>&1
                 sudo apt-get install curl -y -qq >> /dev/null 2>&1
+            fi
+        fi
+
+        ##--------------------------------------------------------------------------
+        #   missing jq
+        ##--------------------------------------------------------------------------
+
+        if [ "$bMissingJq" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
+            for i in {1..4}
+            do
+                progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                echo -e "XXX\n${progress}\nInstalling Package: jq\nXXX"
+                sleep 0.$(( 100 + RANDOM % 800 ))
+            done
+
+            if [ -z "${OPT_DEV_NULLRUN}" ]; then
+                sudo apt-get update -y -q >> /dev/null 2>&1
+                sudo apt-get install jq -y -qq >> /dev/null 2>&1
             fi
         fi
 
@@ -760,7 +790,7 @@ function app_setup
         if [ "$bMissingYad" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..5}
             do
-                progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
                 echo -e "XXX\n${progress}\nInstalling Package: yad\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -778,7 +808,7 @@ function app_setup
         if [ "$bMissingGPG" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
                 echo -e "XXX\n${progress}\nAdding github.com/${app_repo_dev}.gpg\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -795,7 +825,7 @@ function app_setup
         if [ "$bMissingRepo" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
                 echo -e "XXX\n${progress}\nRegistering ${app_repo_apt}\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -806,7 +836,7 @@ function app_setup
 
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
                 echo -e "XXX\n${progress}\nUpdating repo list\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -824,7 +854,7 @@ function app_setup
 
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
                 echo -e "XXX\n${progress}\nInstalling Proteus: ${repo_url}\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -845,7 +875,7 @@ function app_setup
 
         for i in {1..4}
         do
-            progress=$(( $progress + $[ $RANDOM % 2 + 1 ] ))
+            progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
             echo -e "XXX\n${progress}\nRegistering ENV var: ${HOME}/bin\nXXX"
             sleep 0.$(( 100 + RANDOM % 800 ))
         done
