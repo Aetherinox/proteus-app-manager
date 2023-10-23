@@ -142,7 +142,7 @@ fi
 
 function get_version()
 {
-    ver_join=${app_ver[@]}
+    ver_join=${app_ver[*]}
     ver_str=${ver_join// /.}
     echo ${ver_str}
 }
@@ -305,7 +305,7 @@ cli_question( )
         #printf '%-60s %13s %-5s' "    $1 " "${YELLOW}[$syntax]${NORMAL}" ""
         echo -n "$1 [$syntax] "
 
-        read response </dev/tty
+        read -r response </dev/tty
 
         # NULL response uses default
         if [ -z "$response" ]; then
