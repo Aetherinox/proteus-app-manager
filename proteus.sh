@@ -175,7 +175,7 @@ fi
 
 get_version()
 {
-    ver_join=${app_ver[@]}
+    ver_join=${app_ver[*]}
     ver_str=${ver_join// /.}
     echo ${ver_str}
 }
@@ -578,7 +578,8 @@ Logs_Finish()
         exec 1<&3
         sleep 0.2
         ps --pid $app_pid_tee >/dev/null
-        if [ $? -eq 0 ] ; then
+        local pipe_status=$?
+        if [ $pipe_status -eq 0 ] ; then
             # using $(wait $app_pid_tee) would be better
             # however, some commands leave file descriptors open
             sleep 1
@@ -4990,8 +4991,8 @@ if (( ${#OPT_APPS_CLI[@]} )); then
         echo -e "  ${BOLD}${GREEN}Packages Found: ${NORMAL}The following will be installed:"
         echo
 
-        for key in ${!pendinstall[@]}; do
-            key="${key}"
+        for k in ${!pendinstall[@]}; do
+            key="${k}"
             val="${pendinstall[${key}]}"
             echo -e "      ‣ ${BOLD}${LIME_YELLOW}${val}${NORMAL}"
         done

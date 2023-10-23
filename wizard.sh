@@ -269,7 +269,7 @@ spin()
 
     while :
     do
-        for i in `seq 0 7`
+        for i in $(seq 0 7)
         do
             echo -n "${spinner:$i:1}"
             echo -en "\010"
@@ -356,7 +356,7 @@ function begin()
 {
     spin &
     app_pid_spin=$!
-    trap "kill -9 $app_pid_spin 2> /dev/null" `seq 0 15`
+    trap "kill -9 $app_pid_spin 2> /dev/null" $(seq 0 15)
     sleep 0.3
 }
 
@@ -427,7 +427,7 @@ app_update()
 
         for i in {1..4}
         do
-            progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+            progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
             echo -e "XXX\n${progress}\nFetching Update Server\nXXX"
             sleep 0.$(( 100 + RANDOM % 800 ))
         done
@@ -441,14 +441,14 @@ app_update()
         if get_version_compare_gt $REPO_VER $(get_version); then
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
                 echo -e "XXX\n${progress}\nUpdate Found! Updating to v${REPO_VER}\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
 
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
                 echo -e "XXX\n${progress}\nDownloading ${repo_url}\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -459,7 +459,7 @@ app_update()
 
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
                 echo -e "XXX\n${progress}\nSetting owner of ${app_file_proteus} for user ${USER}\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -471,7 +471,7 @@ app_update()
 
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
                 echo -e "XXX\n${progress}\nGranting u+w on ${app_file_proteus} for user ${USER}\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -493,19 +493,19 @@ app_update()
 
         for i in {1..4}
         do
-            progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+            progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
             echo -e "XXX\n${progress}\nConfirming ${app_file_proteus} exists\nXXX"
             sleep 0.$(( 100 + RANDOM % 800 ))
         done
 
         if [ -f ${app_file_proteus} ]; then
-            progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+            progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
             echo -e "XXX\n${progress}\nFound ${app_file_proteus}\nXXX"
             sleep 2
 
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
                 echo -e "XXX\n${progress}\nValidating permissions\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -513,17 +513,17 @@ app_update()
             owner=$(stat -c '%U' ${app_file_proteus})
 
             if [ "$owner" == "$USER" ]; then
-                progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
                 echo -e "XXX\n${progress}\nPermissions OK for owner $owner\nXXX"
                 sleep 2
             else
-                progress=$(( $progress + $[ $RANDOM % 5 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 5 + 1 )) ))
                 echo -e "XXX\n${progress}\nPermissions FAILED. Fixing ...\nXXX"
                 sleep 2
 
                 for i in {1..4}
                 do
-                    progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                    progress=$(( $progress + $(( $RANDOM % 3 + 1 )) ))
                     echo -e "XXX\n${progress}\nSetting owner of ${app_file_proteus} for user ${USER}\nXXX"
                     sleep 0.$(( 100 + RANDOM % 800 ))
                 done
@@ -535,7 +535,7 @@ app_update()
 
                 for i in {1..4}
                 do
-                    progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                    progress=$(( $progress + $(( $RANDOM % 3 + 1 )) ))
                     echo -e "XXX\n${progress}\nGranting u+w on ${app_file_proteus} for user ${USER}\nXXX"
                     sleep 0.$(( 100 + RANDOM % 800 ))
                 done
@@ -548,7 +548,7 @@ app_update()
 
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 2 + 1 )) ))
                 echo -e "XXX\n${progress}\nCleaning up\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -700,7 +700,7 @@ function app_setup
         if [ "$bMissingWhip" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 3 + 1 )) ))
                 echo -e "XXX\n${progress}\nInstalling Package: Whiptail\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -718,7 +718,7 @@ function app_setup
         if [ "$bMissingCurl" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 3 + 1 )) ))
                 echo -e "XXX\n${progress}\nInstalling Package: Curl\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -736,7 +736,7 @@ function app_setup
         if [ "$bMissingJq" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..4}
             do
-                progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 3 + 1 )) ))
                 echo -e "XXX\n${progress}\nInstalling Package: jq\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -754,7 +754,7 @@ function app_setup
         if [ "$bMissingWget" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..7}
             do
-                progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 3 + 1 )) ))
                 echo -e "XXX\n${progress}\nInstalling Package: wget\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
@@ -772,7 +772,7 @@ function app_setup
         if [ "$bMissingNotify" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
             for i in {1..6}
             do
-                progress=$(( $progress + $[ $RANDOM % 3 + 1 ] ))
+                progress=$(( $progress + $(( $RANDOM % 3 + 1 )) ))
                 echo -e "XXX\n${progress}\nInstalling Package: notify-send\nXXX"
                 sleep 0.$(( 100 + RANDOM % 800 ))
             done
