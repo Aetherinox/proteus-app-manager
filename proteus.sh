@@ -4170,7 +4170,7 @@ fn_app_yarn()
         #   -q, --quiet             Turn off wget's output. 
         #   -O, --output-document   Output-document
 
-        wget -qO - https://dl.yarnpkg.com/debian/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/yarn.gpg
+        sudo wget -qO - https://dl.yarnpkg.com/debian/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/yarn.gpg
         echo "deb [signed-by=/usr/share/keyrings/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list >/dev/null
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
