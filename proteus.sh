@@ -4165,7 +4165,7 @@ fn_app_yarn()
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install curl -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install wget -y -qq >> $LOGS_FILE 2>&1
 
         #   -q, --quiet             Turn off wget's output. 
         #   -O, --output-document   Output-document
