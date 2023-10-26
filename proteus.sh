@@ -5,7 +5,7 @@ echo
 ##--------------------------------------------------------------------------
 #   @author :           aetherinox
 #   @script :           Proteus App Manager
-#   @when   :           2023-10-23 10:04:23
+#   @when   :           2023-10-26 07:02:08
 #   @url    :           https://github.com/Aetherinox/proteus-app-manager
 #
 #   requires chmod +x setup.sh
@@ -2942,6 +2942,13 @@ fn_app_nodejs()
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo mkdir -p /etc/apt/keyrings
+
+            #   -f, --fail              (HTTP) Fail fast with no output at all on server errors.
+            #   -s, --silent            Silent or quiet mode. Do not show progress meter or error messages.
+            #   -S, --show-error        When used with -s, --silent, it makes curl show an error message if it fails.
+            #   -L, --location          (HTTP) If server reports requested page has moved to different location.
+            #                           option makes curl redo the request on the new place.
+
             curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg >> $LOGS_FILE 2>&1
         fi
         echo -e "[ ${STATUS_OK} ]"
@@ -3769,6 +3776,11 @@ fn_app_pihole()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get upgrade -q >> $LOGS_FILE 2>&1
 
+        #   -s, --silent            Silent or quiet mode. Do not show progress meter or error messages.
+        #   -S, --show-error        When used with -s, --silent, it makes curl show an error message if it fails.
+        #   -L, --location          (HTTP) If server reports requested page has moved to different location.
+        #                           option makes curl redo the request on the new place.
+
         curl -sSL https://install.pi-hole.net | sudo PIHOLE_SKIP_OS_CHECK=true bash
     fi
 
@@ -4151,21 +4163,18 @@ fn_app_yarn()
     begin "${1}"
     sleep 1
 
-    if ! [ -x "$(command -v npm)" ]; then
-        echo -e "[ ${STATUS_HALT} ]"
-        sleep 1
-        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_npm}. Installing ...${NORMAL}" >&2
-        sleep 1
-
-        fn_app_npm "${app_npm}"
-
-        begin "Retry: ${1}"
-
-        sleep 1
-    fi
-
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        npm install --silent --global yarn >> $LOGS_FILE 2>&1
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install curl -y -qq >> $LOGS_FILE 2>&1
+
+        #   -q, --quiet             Turn off wget's output. 
+        #   -O, --output-document   Output-document
+
+        wget -qO - https://dl.yarnpkg.com/debian/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/yarn.gpg
+        echo "deb [signed-by=/usr/share/keyrings/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list >/dev/null
+
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install yarn -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
