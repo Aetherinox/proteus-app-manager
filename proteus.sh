@@ -45,7 +45,7 @@ DEV=$(tput setaf 157)
 DEVGREY=$(tput setaf 243)
 FUCHSIA=$(tput setaf 198)
 PINK=$(tput setaf 200)
-BRIGHT=$(tput bold)
+BOLD=$(tput bold)
 NORMAL=$(tput sgr0)
 BLINK=$(tput blink)
 REVERSE=$(tput smso)
@@ -2147,7 +2147,7 @@ fn_app_gnome_ext_core()
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt install gnome-shell-extension-manager -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install gnome-shell-extension-manager -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -2492,8 +2492,8 @@ fn_app_mysql()
 
     if [ "$bFirstDB_OK" -eq 1 ]; then
         echo
-        echo -e "  ${BRIGHT}${FUCHSIA}MySQL  ${WHITE}has detected an existing password on your database.${NORMAL}"
-        echo -e "  ${BRIGHT}${FUCHSIA}       ${WHITE}Please provide it below.${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}MySQL  ${WHITE}has detected an existing password on your database.${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}       ${WHITE}Please provide it below.${NORMAL}"
         echo
         printf "  Enter Password: ${LGRAY}█${NORMAL}"
         IFS= read -rs pwd_mysql_root < /dev/tty
@@ -2526,9 +2526,9 @@ fn_app_mysql()
 
                     echo
                     echo
-                    echo -e "  ${BRIGHT}${ORANGE}Excessive Password Failures${NORMAL}"
-                    echo -e "  ${BRIGHT}${WHITE}You have attempted ${YELLOW}$i_pwd_try${WHITE} failed password attempts.${NORMAL}"
-                    echo -e "  ${BRIGHT}${WHITE}Would you like to perform an emergency password reset on root?${NORMAL}"
+                    echo -e "  ${BOLD}${ORANGE}Excessive Password Failures${NORMAL}"
+                    echo -e "  ${BOLD}${WHITE}You have attempted ${YELLOW}$i_pwd_try${WHITE} failed password attempts.${NORMAL}"
+                    echo -e "  ${BOLD}${WHITE}Would you like to perform an emergency password reset on root?${NORMAL}"
                     echo
                     echo
 
@@ -2566,9 +2566,9 @@ fn_app_mysql()
 
                 echo
                 echo
-                echo -e "  ${BRIGHT}${GREEN}Connection Success${NORMAL}"
-                echo -e "  ${BRIGHT}${WHITE}A connection has been established with your MySQL${NORMAL}"
-                echo -e "  ${BRIGHT}${WHITE}database. Continuing ...${NORMAL}"
+                echo -e "  ${BOLD}${GREEN}Connection Success${NORMAL}"
+                echo -e "  ${BOLD}${WHITE}A connection has been established with your MySQL${NORMAL}"
+                echo -e "  ${BOLD}${WHITE}database. Continuing ...${NORMAL}"
                 echo
                 echo
 
@@ -2626,16 +2626,16 @@ fn_app_mysql()
 
                     echo
                     echo
-                    echo -e "  ${BRIGHT}${WHITE}MySQL root password was successfully changed.${NORMAL}"
-                    echo -e "  ${BRIGHT}${WHITE}Ensure you write your MySQL root password down${NORMAL}"
-                    echo -e "  ${BRIGHT}${WHITE}and keep it safe.${NORMAL}"
+                    echo -e "  ${BOLD}${WHITE}MySQL root password was successfully changed.${NORMAL}"
+                    echo -e "  ${BOLD}${WHITE}Ensure you write your MySQL root password down${NORMAL}"
+                    echo -e "  ${BOLD}${WHITE}and keep it safe.${NORMAL}"
                     echo
-                    echo -e "  ${BRIGHT}${WHITE}DELETE the file below once you have your password stored.${NORMAL}"
+                    echo -e "  ${BOLD}${WHITE}DELETE the file below once you have your password stored.${NORMAL}"
                     echo
-                    echo -e "  ${BRIGHT}${FUCHSIA}ROOT PASSWORD     ${YELLOW}${pwd_mysql_root}${NORMAL}"
-                    echo -e "  ${BRIGHT}${FUCHSIA}ROOT PWD FILE     ${YELLOW}${app_file_bin_pwd}${NORMAL}"
+                    echo -e "  ${BOLD}${FUCHSIA}ROOT PASSWORD     ${YELLOW}${pwd_mysql_root}${NORMAL}"
+                    echo -e "  ${BOLD}${FUCHSIA}ROOT PWD FILE     ${YELLOW}${app_file_bin_pwd}${NORMAL}"
                     echo
-                    echo -e "  ${BRIGHT}${BLINK}${GREYL}WRITE IT DOWN!!${NORMAL}"
+                    echo -e "  ${BOLD}${BLINK}${GREYL}WRITE IT DOWN!!${NORMAL}"
                     echo
                     echo
 
@@ -2726,10 +2726,10 @@ fn_app_mysql()
 
         echo
         echo
-        echo -e "  ${BRIGHT}${FUCHSIA}ATTENTION  ${WHITE}Would you like to run the standard mysql_secure_installation${NORMAL}"
-        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}or use ${app_title_short} for configuring MySQL?${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}ATTENTION  ${WHITE}Would you like to run the standard mysql_secure_installation${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}           ${WHITE}or use ${app_title_short} for configuring MySQL?${NORMAL}"
         echo
-        echo -e "  ${BRIGHT}${FUCHSIA}           ${WHITE}${app_title_short} method chooses the best security options.${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}           ${WHITE}${app_title_short} method chooses the best security options.${NORMAL}"
         echo
         echo
             export CHOICES=( "Use ${app_title_short} Setup" "Use MySQL mysql_secure_installation" )
@@ -2794,7 +2794,7 @@ fn_app_mysql()
             spinner_halt
             sleep 1
             echo
-            echo -e "  ${BRIGHT}${FUCHSIA}MySQL  ${WHITE}could not find a password to use for your database${NORMAL}"
+            echo -e "  ${BOLD}${FUCHSIA}MySQL  ${WHITE}could not find a password to use for your database${NORMAL}"
         fi
 
         sleep 1
@@ -2815,9 +2815,9 @@ fn_app_mysql()
         if [ $res -ne 0 ]; then
             echo
             echo
-            echo -e "  ${BRIGHT}${ORANGE}Error Occured${NORMAL}"
-            echo -e "  ${BRIGHT}${WHITE}Could not connect to database with password supplied.${NORMAL}"
-            echo -e "  ${BRIGHT}${WHITE}This appears be an internal issue.${NORMAL}"
+            echo -e "  ${BOLD}${ORANGE}Error Occured${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}Could not connect to database with password supplied.${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}This appears be an internal issue.${NORMAL}"
             echo
             echo
         fi
@@ -2842,16 +2842,16 @@ fn_app_mysql()
 
             echo
             echo
-            echo -e "  ${BRIGHT}${WHITE}MySQL has been successfully installed on your system. A root password${NORMAL}"
-            echo -e "  ${BRIGHT}${WHITE}was also configured. Ensure you write your MySQL root password down${NORMAL}"
-            echo -e "  ${BRIGHT}${WHITE}and keep it safe.${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}MySQL has been successfully installed on your system. A root password${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}was also configured. Ensure you write your MySQL root password down${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}and keep it safe.${NORMAL}"
             echo
-            echo -e "  ${BRIGHT}${WHITE}DELETE the file below once you have your password stored.${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}DELETE the file below once you have your password stored.${NORMAL}"
             echo
-            echo -e "  ${BRIGHT}${FUCHSIA}ROOT PASSWORD     ${YELLOW}${pwd_mysql_root}${NORMAL}"
-            echo -e "  ${BRIGHT}${FUCHSIA}ROOT PWD FILE     ${YELLOW}${app_file_bin_pwd}${NORMAL}"
+            echo -e "  ${BOLD}${FUCHSIA}ROOT PASSWORD     ${YELLOW}${pwd_mysql_root}${NORMAL}"
+            echo -e "  ${BOLD}${FUCHSIA}ROOT PWD FILE     ${YELLOW}${app_file_bin_pwd}${NORMAL}"
             echo
-            echo -e "  ${BRIGHT}${BLINK}${GREYL}WRITE IT DOWN!!${NORMAL}"
+            echo -e "  ${BOLD}${BLINK}${GREYL}WRITE IT DOWN!!${NORMAL}"
             echo
             echo
 
@@ -2863,9 +2863,9 @@ fn_app_mysql()
 
             echo
             echo
-            echo -e "  ${BRIGHT}${ORANGE}Error Occured${NORMAL}"
-            echo -e "  ${BRIGHT}${WHITE}${app_title_short} cannot locate MySQL on your system. An unexpected error may have occured${NORMAL}"
-            echo -e "  ${BRIGHT}${WHITE}and requires manual attention from the administrator.${NORMAL}"
+            echo -e "  ${BOLD}${ORANGE}Error Occured${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}${app_title_short} cannot locate MySQL on your system. An unexpected error may have occured${NORMAL}"
+            echo -e "  ${BOLD}${WHITE}and requires manual attention from the administrator.${NORMAL}"
             echo
             echo
 
@@ -3482,8 +3482,8 @@ fn_app_phpmyadmin()
 
     if ! [ -x "$(command -v mysql)" ]; then
         echo
-        echo -e "  ${BRIGHT}${ORANGE}WARNING  ${WHITE}MySQL not installed..${NORMAL}"
-        echo -e "  ${BRIGHT}${WHITE}Please run the MySQL installer first before installing phpMyAdmin.${NORMAL}"
+        echo -e "  ${BOLD}${ORANGE}WARNING  ${WHITE}MySQL not installed..${NORMAL}"
+        echo -e "  ${BOLD}${WHITE}Please run the MySQL installer first before installing phpMyAdmin.${NORMAL}"
         echo
 
         finish
@@ -3528,7 +3528,7 @@ fn_app_phpmyadmin()
     if [[ -d ${pma_dir_install} ]]; then
         echo
         echo
-        echo -e "  ${BRIGHT}${FUCHSIA}ATTENTION  ${WHITE}phpMyAdmin already installed: ${pma_dir_install}${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}ATTENTION  ${WHITE}phpMyAdmin already installed: ${pma_dir_install}${NORMAL}"
         echo
         echo
             export CHOICES=( "Uninstall phpMyAdmin" "Abort" )
@@ -3600,8 +3600,8 @@ fn_app_phpmyadmin()
 
     if [ "$bFirstDB_OK" -ne 0 ]; then
         echo
-        echo -e "  ${BRIGHT}${FUCHSIA}phpMyAdmin  ${WHITE}needs you to provide your MySQL database password.${NORMAL}"
-        echo -e "  ${BRIGHT}${FUCHSIA}            ${WHITE}Please enter it below.${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}phpMyAdmin  ${WHITE}needs you to provide your MySQL database password.${NORMAL}"
+        echo -e "  ${BOLD}${FUCHSIA}            ${WHITE}Please enter it below.${NORMAL}"
         echo
         printf "  Enter Password: ${LGRAY}█${NORMAL}"
         IFS= read -rs pwd_mysql_root < /dev/tty
