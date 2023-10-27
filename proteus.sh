@@ -1305,6 +1305,7 @@ bInstall_all=true
 bInstall_app_alien=true
 bInstall_app_appimage=true
 bInstall_app_app_outlet=true
+bInstall_app_argon2=true
 bInstall_app_blender_flatpak=true
 bInstall_app_blender_snapd=true
 bInstall_app_browser_chrome=true
@@ -1376,6 +1377,7 @@ app_all="⭐ All"
 app_alien="Alien Package Converter"
 app_appimage="AppImage Launcher"
 app_app_outlet="App Outlet Manager"
+app_app_argon2="Argon 2"
 app_blender_flatpak="Blender (using Flatpak)"
 app_blender_snapd="Blender (using Snapd)"
 app_browser_chrome="Browser: Google Chrome"
@@ -1468,6 +1470,7 @@ app_functions=(
     ["$app_alien"]='fn_app_alien'
     ["$app_appimage"]='fn_app_appimage'
     ["$app_app_outlet"]='fn_app_app_outlet'
+    ["$app_app_argon2"]='fn_app_argon2'
     ["$app_blender_flatpak"]='fn_app_blender_flatpak'
     ["$app_blender_snapd"]='fn_app_blender_snapd'
     ["$app_browser_chrome"]='fn_app_browser_chrome'
@@ -1622,6 +1625,32 @@ fn_app_app_outlet()
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install app-outlet -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Argon2
+#
+#   URL:        https://packages.ubuntu.com/search?keywords=argon2
+#   DESC:       argon2: memory-hard hashing function - utility
+#               useful for hashing tokens with Bitwarden / Vaultwarden.
+#   
+##--------------------------------------------------------------------------
+
+fn_app_app_outlet()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        app_setup "${1}"
+
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install argon2 -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -4314,6 +4343,11 @@ fi
 
 if [ "$bInstall_app_app_outlet" = true ]; then
     apps+=("${app_app_outlet}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_app_argon2" = true ]; then
+    apps+=("${app_argon2}")
     (( app_i++ ))
 fi
 
