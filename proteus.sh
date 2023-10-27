@@ -1017,6 +1017,12 @@ app_setup()
     fi
 
     ##--------------------------------------------------------------------------
+    #   add universe repo
+    ##--------------------------------------------------------------------------
+
+    sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
+
+    ##--------------------------------------------------------------------------
     #   Missing proteus-apt-repo gpg key
     #
     #   NOTE:   apt-key has been deprecated
@@ -1230,7 +1236,7 @@ app_setup()
     sleep 0.5
 
 }
-#app_setup
+app_setup
 
 ##--------------------------------------------------------------------------
 #   func > app setup
@@ -1850,7 +1856,6 @@ fn_app_cdialog()
     begin "${1}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install dialog -y -qq >> $LOGS_FILE 2>&1
     fi
@@ -2096,7 +2101,6 @@ fn_app_gdebi()
     begin "${1}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install gdebi -y -qq >> $LOGS_FILE 2>&1
     fi
@@ -4259,7 +4263,6 @@ fn_app_zenity()
     fi
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install zenity -y -qq >> $LOGS_FILE 2>&1
     fi
