@@ -4953,7 +4953,6 @@ show_menu()
         #   confirmation dialog to make sure we really want to install
         ##--------------------------------------------------------------------------
 
-        dialog_pos_w_nr=$dialog_pos_w_nr
         if [ $RET -eq 0 ]; then
             answer=$( GDK_BACKEND=x11 yad \
             --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
