@@ -3473,6 +3473,7 @@ fn_app_phpmyadmin()
 
     local pma_uri_zip="https://phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip"
     local pma_uri_tar="https://phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz"
+    local pma_dir_home="/usr/share/"
     local pma_dir_install="/usr/share/phpmyadmin"
     local pma_dir_themes="${pma_dir_install}/themes"
     local pma_dir_var="/var/lib/phpmyadmin"
@@ -3525,7 +3526,7 @@ fn_app_phpmyadmin()
     #   phpMyAdmin already installed
     #   --------------------------------------------------------------
 
-    if [[ -d ${pma_dir_install} ]]; then
+    if [[ -d ${pma_dir_install} ]] && [ ! -z "$(ls -A ${pma_dir_install})" ]; then
         echo
         echo
         echo -e "  ${BOLD}${FUCHSIA}ATTENTION  ${WHITE}phpMyAdmin already installed: ${pma_dir_install}${NORMAL}"
@@ -3632,7 +3633,10 @@ fn_app_phpmyadmin()
     printf '%-57s %-5s' "    |--- Downloading ${pma_fil_zip}" ""
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo rm -rf ${app_dir_dl}/phpmyadmin*
         sudo wget -P "${app_dir_dl}" -q "${pma_uri_zip}" >> $LOGS_FILE 2>&1
+        sudo chown -R ${USER}:${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
+        sudo chmod -R 0741 ${app_dir_dl} >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
 
@@ -3671,7 +3675,7 @@ fn_app_phpmyadmin()
         for file in ${app_dir_dl}/phpMyAdmin*.zip
         do
             if [ -e "$file" ]; then
-                bExists=true
+                bZipExists=true
             fi
         done
 
@@ -3687,15 +3691,18 @@ fn_app_phpmyadmin()
         #   --------------------------------------------------------------
 
         sudo unzip -o -u -qq ${app_dir_dl}/phpMyAdmin*.zip -d "${app_dir_dl}"
-        sudo chown -R root:${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
+        sudo chown -R ${USER}:${USER} ${app_dir_dl} >> $LOGS_FILE 2>&1
         sudo chmod -R 0741 ${app_dir_dl} >> $LOGS_FILE 2>&1
 
         #   --------------------------------------------------------------
         #   error: /usr/share/phpmyadmin missing after trying to create earlier
         #   --------------------------------------------------------------
 
-        if ! [ -f ${pma_dir_install} ]; then
+        if [ ! -d ${pma_dir_install} ]; then
             echo -e "[ ${STATUS_FAIL} ]"
+        
+            show_header_comment "Could not locate ${pma_dir_install} -- aborting"
+            return
         fi
 
         #   --------------------------------------------------------------
@@ -3705,7 +3712,7 @@ fn_app_phpmyadmin()
 
         sudo rm ${app_dir_dl}/phpMyAdmin*.zip
         sudo mv ${app_dir_dl}/phpMyAdmin-* ${app_dir_dl}/phpmyadmin
-        sudo mv ${app_dir_dl}/phpmyadmin ${pma_dir_install}
+        sudo mv ${app_dir_dl}/phpmyadmin ${pma_dir_home}
     fi
     echo -e "[ ${STATUS_OK} ]"
 
@@ -3761,7 +3768,29 @@ fn_app_phpmyadmin()
     fi
     echo -e "[ ${STATUS_OK} ]"
 
+    #   --------------------------------------------------------------
+    #   permissions
+    #   --------------------------------------------------------------
+
+    printf '%-57s %-5s' "    |--- Setting 0644 config.inc.php" ""
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo chmod 0644 ${pma_dir_cfg}/config.inc.php
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
     finish
+
+    apacheCheck=$( dpkg --get-selections | grep apache && dpkg --get-selections | grep apache2 )
+    nginxCheck=$( dpkg --get-selections | grep nginx )
+
+    if [ -z $apacheCheck ] && [ -z $nginxCheck ]; then
+        show_header_comment "phpMyAdmin Installed\n\n  ${ORANGE}It appears you are missing Nginx or Apache\n  You must install one of the two in order to access phpMyAdmin.${WHITE}"
+    else
+        show_header_comment "phpMyAdmin Installed\n\n  ${WHITE}phpMyAdmin can usually be accessed via\n    ${BOLD}${FUCHSIA}http://127.0.0.1/phpmyadmin${WHITE}"
+    fi
+
+    return
 }
 
 ##--------------------------------------------------------------------------
@@ -4869,11 +4898,8 @@ show_menu()
                 else
                     query=$( GDK_BACKEND=x11 yad \
                     --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-                    --width="$dialog_siz_w_lg" \
-                    --height="$dialog_siz_h_lg" \
-                    --center \
                     --fixed \
-                    --geometry="+$dialog_pos_w_lg+$dialog_pos_h_lg" \
+                    --geometry="+${dialog_pos_w_nr}+${dialog_pos_h_nr}" \
                     --title "No Docs Available" \
                     --borders=10 \
                     --button="!gtk-yes!OK:0" \
@@ -4882,10 +4908,8 @@ show_menu()
             else
                 query=$( GDK_BACKEND=x11 yad \
                 --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-                --width="$dialog_siz_w_lg" \
-                --height="$dialog_siz_h_lg" \
                 --fixed \
-                --geometry="+$dialog_pos_w_lg+$dialog_pos_h_lg" \
+                --geometry="+${dialog_pos_w_nr}+${dialog_pos_h_nr}" \
                 --title "No Selection" \
                 --borders=10 \
                 --button="!gtk-yes!yes:0" \
