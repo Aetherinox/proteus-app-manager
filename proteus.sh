@@ -478,7 +478,7 @@ netplan_ip_static=192.168.0.10/24
 netplan_ip_gateway=192.168.0.1
 netplan_dns_1=9.9.9.9
 netplan_dns_2=149.112.112.112
-netplan_macaddr=$(cat /sys/class/net/$netplan_adapt_old/address 2> /dev/null )
+netplan_macaddr=$( cat /sys/class/net/$netplan_adapt_old/address 2> /dev/null )
 
 ##--------------------------------------------------------------------------
 #   arrays
@@ -4813,10 +4813,10 @@ show_menu()
     #   calc > dialog > normal
     ##--------------------------------------------------------------------------
 
-    local dialog_siz_w_nr=240
+    local dialog_siz_w_nr=280
     local dialog_siz_h_nr=125
 
-    local dialog_pos_w_nr=$((($ScrW-$dialog_siz_w_nr)/2))
+    local dialog_pos_w_nr=$((($ScrW-$dialog_siz_w_nr-125)/2))
     local dialog_pos_h_nr=$((($ScrH-$dialog_siz_h_nr)/2))
 
     ##--------------------------------------------------------------------------
@@ -4876,8 +4876,7 @@ show_menu()
                     --geometry="+$dialog_pos_w_lg+$dialog_pos_h_lg" \
                     --title "No Docs Available" \
                     --borders=10 \
-                    --button="!gtk-yes!yes:0" \
-                    --button="!gtk-close!exit:1" \
+                    --button="!gtk-yes!OK:0" \
                     --text "The app <span color='#3477eb'><b>${res}</b></span> does not have any\nprovided docs or websites to show.\n\nReach out to the developer if you feel this entry\nshould have docs." )
                 fi
             else
@@ -4930,18 +4929,16 @@ show_menu()
         #   confirmation dialog to make sure we really want to install
         ##--------------------------------------------------------------------------
 
+        dialog_pos_w_nr=$dialog_pos_w_nr
         if [ $RET -eq 0 ]; then
             answer=$( GDK_BACKEND=x11 yad \
             --window-icon="/usr/share/grub/themes/zorin/icons/zorin.png" \
-            --width=$dialog_siz_w_nr \
-            --height=$dialog_siz_h_nr \
-            --fixed \
-            --geometry="+$dialog_pos_w_nr+$dialog_pos_h_nr" \
+            --geometry="+${dialog_pos_w_nr}+${dialog_pos_h_nr}" \
             --title "Install ${res}?" \
             --borders=10 \
-            --button="!gtk-yes!yes:0" \
-            --button="!gtk-close!exit:1" \
-            --text "Are you sure you want to install the app\n\n<span color='#3477eb'><b>${res}</b></span>" )
+            --button="!gtk-yes!Install:0" \
+            --button="!gtk-close!Cancel:1" \
+            --text "Are you sure you want to install the application           \n\n<span color='#3477eb'><b>${res}</b></span>" )
             ANSWER=$?
 
             if [ $ANSWER -eq 1 ] || [ $ANSWER -eq 252 ]; then
