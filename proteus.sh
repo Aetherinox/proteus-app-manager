@@ -1034,9 +1034,9 @@ app_setup()
     #   Multiverse      : Software that is not free.
     ##--------------------------------------------------------------------------
 
-    checkUniverse=$( sudo add-apt-repository --list | grep -v "ports" | grep -E "lunar main.*universe|universe.*main" )
+    checkUniverse=$( sudo add-apt-repository --list | grep -v "ports" | grep -E "$sys_code main.*universe|universe.*main" )
 
-    if ! [ "$checkUniverse" ]; then
+    if [ -z "$checkUniverse" ]; then
         sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
         sudo add-apt-repository --yes multiverse >> $LOGS_FILE 2>&1
     fi
@@ -1854,7 +1854,18 @@ fn_app_browser_tor()
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get remove tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get purge tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install apt-transport-https -y -qq >> $LOGS_FILE 2>&1
+
+        distrib=$( lsb_release -c )
+        arch=$( dpkg --print-architecture )
+
+        sudo wget -qO - https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | sudo gpg --dearmor -o /usr/share/keyrings/tor-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/tor-archive-keyring.gpg] https://deb.torproject.org/torproject.org $distrib main" | sudo tee /etc/apt/sources.list.d/tor.list >/dev/null
+
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install tor deb.torproject.org-keyring -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -4958,7 +4969,8 @@ show_menu()
         --width="$gui_width" \
         --height="$gui_height" \
         --fixed \
-        --geometry="+$main_geo_pos_w+$main_geo_pos_h" \
+        --center \
+        --on-top \
         --list \
         --search-column=1 \
         --tooltip-column=1 \
