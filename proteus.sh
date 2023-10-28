@@ -942,7 +942,6 @@ app_update()
     sleep 1
     echo -e "  ${BOLD}${GREEN}Update Complete!${NORMAL}" >&2
     sleep 1
-
     finish
 }
 
@@ -1610,8 +1609,8 @@ fn_app_apache2()
         else
             sleep 1
             echo -e "[ ${STATUS_FAIL} ]"
-
             finish
+
             show_header_comment "${ORANGE}Could not locate any packages available to download named${WHITE}\n\n      apache / apache2"
             return
         fi
@@ -1620,7 +1619,6 @@ fn_app_apache2()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1645,7 +1643,6 @@ fn_app_alien()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1665,7 +1662,6 @@ fn_app_appimage()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1693,7 +1689,6 @@ fn_app_app_outlet()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1719,7 +1714,6 @@ fn_app_app_outlet()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1752,7 +1746,6 @@ fn_app_blender_flatpak()
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1785,7 +1778,6 @@ fn_app_blender_snapd()
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1809,7 +1801,6 @@ fn_app_browser_chrome()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1845,7 +1836,6 @@ EOF
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1869,7 +1859,6 @@ fn_app_browser_tor()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1901,7 +1890,6 @@ fn_app_colorpicker_snapd()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -1920,7 +1908,6 @@ fn_app_cdialog()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2010,7 +1997,6 @@ fn_app_conky()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2037,7 +2023,6 @@ fn_app_conky_mngr()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2056,7 +2041,6 @@ fn_app_curl()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2087,7 +2071,6 @@ fn_app_debian_goodies()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2121,7 +2104,6 @@ fn_app_debget()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2140,7 +2122,6 @@ fn_app_flatpak()
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2165,7 +2146,6 @@ fn_app_gdebi()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2184,7 +2164,6 @@ fn_app_git()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2205,7 +2184,6 @@ fn_app_github_desktop()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2265,7 +2243,6 @@ fn_app_gnome_ext_core()
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2315,7 +2292,6 @@ fn_app_gnome_ext_arcmenu()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2368,7 +2344,6 @@ fn_app_gnome_ext_ism()
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2387,7 +2362,6 @@ fn_app_gnome_tweaks()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2406,7 +2380,6 @@ fn_app_gpick()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2451,7 +2424,6 @@ fn_app_kooha()
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2476,7 +2448,6 @@ fn_app_lintian()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2521,7 +2492,6 @@ fn_app_members()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2540,7 +2510,6 @@ fn_app_mlocate()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -2982,7 +2951,6 @@ fn_app_neofetch()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3063,7 +3031,6 @@ fn_app_nodejs()
     fi
 
     sleep 1
-
     finish
 }
 
@@ -3088,7 +3055,6 @@ fn_app_nginx()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 
     sleep 1
@@ -3111,7 +3077,6 @@ fn_app_nettools()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3130,7 +3095,6 @@ fn_app_npm()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3153,7 +3117,6 @@ fn_app_ocsurl()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3179,10 +3142,10 @@ fn_app_opengist()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 
     sleep 1
+    echo
 
     OGIST_USER="opengist"
     OGIST_HOME="/var/lib/opengist"
@@ -3221,7 +3184,6 @@ fn_app_pacman_game()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3255,7 +3217,6 @@ fn_app_pacman_manager()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3274,7 +3235,6 @@ fn_app_reprepro()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3293,7 +3253,6 @@ fn_app_rpm()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3327,7 +3286,6 @@ fn_app_seahorse()
         sudo apt-get install seahorse seahorse-nautilus -y -qq >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3346,7 +3304,6 @@ fn_app_snapd()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3369,7 +3326,6 @@ fn_app_surfshark()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3443,7 +3399,6 @@ fn_app_sysload()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3467,7 +3422,6 @@ fn_app_teamviewer()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3489,7 +3443,6 @@ fn_app_terminology()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3508,7 +3461,6 @@ fn_app_tree()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -3584,7 +3536,6 @@ fn_app_php()
     fi
 
     sleep 1
-
     finish
 }
 
@@ -3984,7 +3935,6 @@ fn_app_python3_pip()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4008,7 +3958,6 @@ fn_twk_filepath()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4056,7 +4005,6 @@ EOF
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4083,7 +4031,6 @@ fn_twk_menu_new_textfile()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4193,10 +4140,9 @@ fn_twk_vbox_additions_fix()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
+    finish
 
     app_queue_restart_id="${1}"
-
-    finish
 }
 
 ##--------------------------------------------------------------------------
@@ -4214,7 +4160,6 @@ fn_app_unrar()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4246,7 +4191,6 @@ fn_app_vsc_stable()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4278,7 +4222,6 @@ fn_app_vsc_insiders()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4297,7 +4240,6 @@ fn_app_wxhexeditor()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4316,7 +4258,6 @@ fn_app_yad()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4345,7 +4286,6 @@ fn_app_yarn()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
@@ -4397,7 +4337,6 @@ fn_app_ziet_cron()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-
     finish
 }
 
