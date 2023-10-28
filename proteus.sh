@@ -3168,8 +3168,6 @@ fn_app_opengist()
     begin "${1}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        app_setup "${1}"
-
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install opengist -y -qq >> $LOGS_FILE 2>&1
         sleep 1
@@ -3183,6 +3181,22 @@ fn_app_opengist()
     echo -e "[ ${STATUS_OK} ]"
 
     finish
+
+    sleep 1
+
+    OGIST_USER="opengist"
+    OGIST_HOME="/var/lib/opengist"
+    OGIST_SERV="/etc/systemd/system/opengist.service"
+    OGIST_CONF="/etc/opengist/config.yml"
+
+    printf '\n%-35s\n\n' "  ${BOLD}${DEVGREY}OpenGist Installer${NORMAL}"
+    printf '%-35s\n' "  ${BOLD}${WHITE}Opengist has been installed. View the paths below to see where you can${NORMAL}"
+    printf '%-35s\n\n' "  ${BOLD}${WHITE}find certain files for configuring Opengist.${NORMAL}"
+    printf '%-38s %-40s\n' "  ${WHITE}Database Location${NORMAL}" "${BOLD}${YELLOW}${OGIST_HOME}${NORMAL}"
+    printf '%-38s %-40s\n' "  ${WHITE}Config Location${NORMAL}" "${BOLD}${YELLOW}${OGIST_CONF}${NORMAL}"
+    printf '%-38s %-40s\n\n' "  ${WHITE}Service Location${NORMAL}" "${BOLD}${YELLOW}${OGIST_SERV}${NORMAL}"
+    printf '%-35s\n' "  ${WHITE}The ${BOLD}${YELLOW}opengist.service${NORMAL} will be ran as user ${BOLD}${YELLOW}${OGIST_USER}${NORMAL}."
+    printf '%-35s\n\n\n' "  ${WHITE}To change the user, edit the service file and modify ${BOLD}${MAGENTA}USER=$OGIST_USER${NORMAL}"
 }
 
 ##--------------------------------------------------------------------------
