@@ -181,6 +181,18 @@ get_version()
 }
 
 ##--------------------------------------------------------------------------
+#   package exists
+#
+#   returns if package exists at all to download or not
+##--------------------------------------------------------------------------
+
+function package_exists()
+{
+    dpkg -l "$1" &> /dev/null
+    return $?
+}
+
+##--------------------------------------------------------------------------
 #   func > version > compare greater than
 #
 #   this function compares two versions and determines if an update may
@@ -528,7 +540,7 @@ Logs_Begin()
     if [ $OPT_NOLOG ] ; then
         echo
         echo
-        printf '%-57s %-5s' "    Logging for this manager has been disabled." ""
+        printf '%-57s' "    Logging for this manager has been disabled."
         echo
         echo
         sleep 3
@@ -639,8 +651,6 @@ show_header_comment()
 
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
     echo -e "  ${YELLOW}${reason}"${NORMAL}
-    echo -e "  "
-    echo -e "  ${WHITE}Please select another option.${NORMAL}"
     echo -e " ${BLUE}-------------------------------------------------------------------------${NORMAL}"
     echo
 
@@ -809,7 +819,7 @@ open_url()
 
 title()
 {
-    printf '%-57s %-5s' "  ${1}" ""
+    printf '%-57s' "  ${1}"
     sleep 0.3
 }
 
@@ -830,7 +840,7 @@ begin()
     # kill spinner on any signal
     trap "kill -9 $app_pid_spin 2> /dev/null" $(seq 0 15)
 
-    printf '%-57s %-5s' "  ${1}" ""
+    printf '%-57s' "  ${1}"
 
     sleep 0.3
 }
@@ -905,14 +915,14 @@ app_update()
     sleep 1
     echo
 
-    printf '%-57s %-5s' "    |--- Downloading update" ""
+    printf '%-57s' "    |--- Downloading update"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo wget -O "${app_file_proteus}" -q "$branch_uri" >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
 
-    printf '%-57s %-5s' "    |--- Set ownership to ${USER}" ""
+    printf '%-57s' "    |--- Set ownership to ${USER}"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo chgrp ${USER} ${app_file_proteus} >> $LOGS_FILE 2>&1
@@ -920,7 +930,7 @@ app_update()
     fi
     echo -e "[ ${STATUS_OK} ]"
 
-    printf '%-57s %-5s' "    |--- Set perms to u+x" ""
+    printf '%-57s' "    |--- Set perms to u+x"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo chmod u+x ${app_file_proteus} >> $LOGS_FILE 2>&1
@@ -1018,9 +1028,19 @@ app_setup()
 
     ##--------------------------------------------------------------------------
     #   add universe repo
+    #
+    #   Main            : Officially supported software.
+    #   Restricted      : Supported software that is not available under a completely free license.
+    #   Universe        : Community maintained software, i.e. not officially supported software.
+    #   Multiverse      : Software that is not free.
     ##--------------------------------------------------------------------------
 
-    sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
+    checkUniverse=$( sudo add-apt-repository --list | grep -v "ports" | grep -E "lunar main.*universe|universe.*main" )
+
+    if ! [ "$checkUniverse" ]; then
+        sudo add-apt-repository --yes universe >> $LOGS_FILE 2>&1
+        sudo add-apt-repository --yes multiverse >> $LOGS_FILE 2>&1
+    fi
 
     ##--------------------------------------------------------------------------
     #   Missing proteus-apt-repo gpg key
@@ -1063,7 +1083,7 @@ app_setup()
     if [ "$bMissingWhip" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Installing whiptail package" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Adding whiptail package" ""
+        printf '%-57s' "    |--- Adding whiptail package"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1082,7 +1102,7 @@ app_setup()
     if [ "$bMissingCurl" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Installing curl package" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Adding curl package" ""
+        printf '%-57s' "    |--- Adding curl package"
         sleep 0.5
     
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1101,7 +1121,7 @@ app_setup()
     if [ "$bMissingWget" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Installing wget package" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Adding wget package" ""
+        printf '%-57s' "    |--- Adding wget package"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1120,7 +1140,7 @@ app_setup()
     if [ "$bMissingNotify" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Installing notify-send package" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Adding notify-send package" ""
+        printf '%-57s' "    |--- Adding notify-send package"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1139,7 +1159,7 @@ app_setup()
     if [ "$bMissingYad" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Installing yad package" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Adding yad package" ""
+        printf '%-57s' "    |--- Adding yad package"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1158,7 +1178,7 @@ app_setup()
     if [ "$bMissingGPG" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Adding ${app_repo_author} GPG key: [https://github.com/${app_repo_author}.gpg]" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Adding github.com/${app_repo_author}.gpg" ""
+        printf '%-57s' "    |--- Adding github.com/${app_repo_author}.gpg"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1176,7 +1196,7 @@ app_setup()
     if [ "$bMissingRepo" = true ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Registering ${app_repo_apt}: https://raw.githubusercontent.com/${app_repo_author}/${app_repo_apt}/master" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Registering ${app_repo_apt}" ""
+        printf '%-57s' "    |--- Registering ${app_repo_apt}"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1188,7 +1208,7 @@ app_setup()
 
         printf "%-57s\n" "${TIME}      Updating user repo list with apt-get update" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Updating repo list" ""
+        printf '%-57s' "    |--- Updating repo list"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1206,7 +1226,7 @@ app_setup()
     if ! [ -f "$app_file_proteus" ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
         printf "%-57s\n" "${TIME}      Installing App Manager" | tee -a "${LOGS_FILE}" >/dev/null
 
-        printf '%-57s %-5s' "    |--- Installing App Manager" ""
+        printf '%-57s' "    |--- Installing App Manager"
         sleep 0.5
 
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1309,6 +1329,7 @@ app_ext_id_sysload=4585
 
 bInstall_all=true
 bInstall_app_alien=true
+bInstall_app_apache2=true
 bInstall_app_appimage=true
 bInstall_app_app_outlet=true
 bInstall_app_argon2=true
@@ -1345,6 +1366,7 @@ bInstall_app_nettools=true
 bInstall_app_nodejs=true
 bInstall_app_npm=true
 bInstall_app_ocsurl=true
+bInstall_app_opengist=true
 bInstall_app_pacman_game=true
 bInstall_app_pacman_manager=true
 bInstall_app_php=true
@@ -1380,6 +1402,7 @@ bInstall_app_zorinospro_lo=true
 ##--------------------------------------------------------------------------
 
 app_all="⭐ All"
+app_apache2="Apache 2"
 app_alien="Alien Package Converter"
 app_appimage="AppImage Launcher"
 app_app_outlet="App Outlet Manager"
@@ -1417,6 +1440,7 @@ app_nettools="net-tools"
 app_nodejs="NodeJS"
 app_npm="NPM"
 app_ocsurl="ocs-url"
+app_opengist="Opengist"
 app_pacman_game="Pacman (Game)"
 app_pacman_manager="Pacman (Package Management)"
 app_php="Php"
@@ -1473,6 +1497,7 @@ app_functions=(
     ["$app_dev_f"]='fn_dev_f'
 
     ["$app_all"]='fn_app_all'
+    ["$app_apache2"]='fn_app_apache2'
     ["$app_alien"]='fn_app_alien'
     ["$app_appimage"]='fn_app_appimage'
     ["$app_app_outlet"]='fn_app_app_outlet'
@@ -1510,6 +1535,7 @@ app_functions=(
     ["$app_nettools"]='fn_app_nettools'
     ["$app_npm"]='fn_app_npm'
     ["$app_ocsurl"]='fn_app_ocsurl'
+    ["$app_opengist"]='fn_app_opengist'
     ["$app_pacman_game"]='fn_app_pacman_game'
     ["$app_pacman_manager"]='fn_app_pacman_manager'
     ["$app_php"]='fn_app_php'
@@ -1565,6 +1591,38 @@ get_docs_uri=(
     ["$app_zenity"]="https://help.gnome.org/users/zenity/stable/"
     ["$app_zorinospro_lo"]="${app_repo_url}/wiki/Packages#zorinos-pro-layouts"
 )
+
+##--------------------------------------------------------------------------
+#   apache 2
+##--------------------------------------------------------------------------
+
+fn_app_apache2()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+
+        if package_exists apache2; then
+            sudo apt-get install apache2 -y -qq >> $LOGS_FILE 2>&1
+        elif package_exists apache; then
+            sudo apt-get install apache -y -qq >> $LOGS_FILE 2>&1
+        else
+            sleep 1
+            echo -e "[ ${STATUS_FAIL} ]"
+
+            finish
+            show_header_comment "${ORANGE}Could not locate any packages available to download named${WHITE}\n\n      apache / apache2"
+            return
+        fi
+
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
 
 ##--------------------------------------------------------------------------
 #   Alien package converter
@@ -1898,7 +1956,7 @@ fn_app_conky()
     local get_cpus=$(nproc --all)
 
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Creating config.conf" ""
+    printf '%-57s' "    |--- Creating config.conf"
     sleep 1
 
     local path_conky="/home/${USER}/.config/conky"
@@ -1932,7 +1990,7 @@ fn_app_conky()
     fi
 
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Setting perms" ""
+    printf '%-57s' "    |--- Setting perms"
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -1943,7 +2001,7 @@ fn_app_conky()
     fi
 
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Starting conky" ""
+    printf '%-57s' "    |--- Starting conky"
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -2185,7 +2243,7 @@ fn_app_gnome_ext_core()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Plugins" ""
+    printf '%-57s' "    |--- Plugins"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -2197,7 +2255,7 @@ fn_app_gnome_ext_core()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Installer" ""
+    printf '%-57s' "    |--- Installer"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo wget -O gnome-shell-extension-installer -q "https://github.com/brunelli/gnome-shell-extension-installer/raw/master/gnome-shell-extension-installer" >> $LOGS_FILE 2>&1
@@ -2240,7 +2298,7 @@ fn_app_gnome_ext_arcmenu()
     fi
     
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Restarting Shell" ""
+    printf '%-57s' "    |--- Restarting Shell"
     sleep 3
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -2248,7 +2306,7 @@ fn_app_gnome_ext_arcmenu()
     fi
 
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Enable ArcMenu" ""
+    printf '%-57s' "    |--- Enable ArcMenu"
     sleep 3
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -2292,7 +2350,7 @@ fn_app_gnome_ext_ism()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Restarting Shell" ""
+    printf '%-57s' "    |--- Restarting Shell" ""
     sleep 3
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -2301,7 +2359,7 @@ fn_app_gnome_ext_ism()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Enabling" ""
+    printf '%-57s' "    |--- Enabling"
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -2382,7 +2440,7 @@ fn_app_kooha()
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Install pipewire" ""
+    printf '%-57s' "    |--- Install pipewire"
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -2619,7 +2677,7 @@ fn_app_mysql()
                     export pwd_mysql_root
 
                     echo
-                    printf '%-57s %-5s' "    |--- Updating Root Password" ""
+                    printf '%-57s' "    |--- Updating Root Password"
                     if [ -z "${OPT_DEV_NULLRUN}" ]; then
                         sudo mysql -u root -p$pwd_mysql_old -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$pwd_mysql_root'; FLUSH PRIVILEGES;" 2>/dev/null
                         dbPasswdUpdated=$?
@@ -2676,7 +2734,6 @@ fn_app_mysql()
                 else
                     show_header_comment "MySQL existing password was not changed."
                     return
-                    echo "run"
                 fi
 
             fi
@@ -2700,7 +2757,7 @@ fn_app_mysql()
     #   --------------------------------------------------------------
 
     if ! [ -x "$(command -v pwgen)" ] || [ -n "${OPT_DEV_NULLRUN}" ]; then
-        printf '%-57s %-5s' "    |--- Installing Pwgen" ""
+        printf '%-57s' "    |--- Installing Pwgen"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo apt-get update -y -q >> /dev/null 2>&1
@@ -2714,7 +2771,7 @@ fn_app_mysql()
     #   install mysql
     #   --------------------------------------------------------------
 
-    printf '%-57s %-5s' "    |--- Installing MySQL-Server" ""
+    printf '%-57s' "    |--- Installing MySQL-Server"
     sleep 1
     if ! [ -x "$(command -v mysql)" ] && [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -2730,7 +2787,7 @@ fn_app_mysql()
     #   --------------------------------------------------------------
 
     if [ -x "$(command -v pwgen)" ] && [ -z "${pwd_mysql_root}" ]; then
-        printf '%-57s %-5s' "    |--- Generating Root Password" ""
+        printf '%-57s' "    |--- Generating Root Password"
         sleep 1
         pwd_mysql_root=$( pwgen 20 1 );
         echo -e "[ ${STATUS_OK} ]"
@@ -2784,7 +2841,7 @@ fn_app_mysql()
     if [ -n "${bChoiceSqlSecure}" ]; then
         echo
         sleep 1
-        printf '%-57s %-5s' "    |--- Starting mysql_secure_installation" ""
+        printf '%-57s' "    |--- Starting mysql_secure_installation"
         sleep 1
         echo -e "[ ${STATUS_OK} ]"
 
@@ -2801,7 +2858,7 @@ fn_app_mysql()
     if [ -n "${bChoiceProteus}" ]; then
         echo
         sleep 1
-        printf '%-57s %-5s' "    |--- Starting MySQL ${app_title_short} Setup" ""
+        printf '%-57s' "    |--- Starting MySQL ${app_title_short} Setup"
         sleep 1
         echo -e "[ ${STATUS_OK} ]"
 
@@ -2811,7 +2868,7 @@ fn_app_mysql()
 
         if [ -n "${pwd_mysql_root}" ]; then
             sleep 1
-            printf '%-57s %-5s' "    |--- Adding Root Password" ""
+            printf '%-57s' "    |--- Adding Root Password"
             sleep 1
             if [ -z "${OPT_DEV_NULLRUN}" ]; then
                 sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$pwd_mysql_root'; FLUSH PRIVILEGES;" 2>/dev/null
@@ -2971,7 +3028,7 @@ fn_app_nodejs()
 
         echo
 
-        printf '%-57s %-5s' "    |--- Downloading GPG Key" ""
+        printf '%-57s' "    |--- Downloading GPG Key"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo mkdir -p /etc/apt/keyrings
@@ -2986,14 +3043,14 @@ fn_app_nodejs()
         fi
         echo -e "[ ${STATUS_OK} ]"
 
-        printf '%-57s %-5s' "    |--- Adding Repo Source" ""
+        printf '%-57s' "    |--- Adding Repo Source"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >> $LOGS_FILE 2>&1
         fi
         echo -e "[ ${STATUS_OK} ]"
 
-        printf '%-57s %-5s' "    |--- Installing ${1} v${NODE_MAJOR}.0" ""
+        printf '%-57s' "    |--- Installing ${1} v${NODE_MAJOR}.0"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -3022,17 +3079,21 @@ fn_app_nginx()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install nginx -y -qq >> $LOGS_FILE 2>&1
+
         sleep 1
+
         sudo systemctl start nginx >> $LOGS_FILE 2>&1
         sudo systemctl enable nginx >> $LOGS_FILE 2>&1
-        sleep 1
-        open_url "http://127.0.0.1"
     fi
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
 
     finish
+
+    sleep 1
+
+    open_url "http://127.0.0.1"
 }
 
 ##--------------------------------------------------------------------------
@@ -3088,6 +3149,34 @@ fn_app_ocsurl()
         sudo apt-get install libqt5svg5 qml-module-qtquick-controls -y -qq >> $LOGS_FILE 2>&1
         sleep 1
         sudo apt-get install ocs-url -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   opengist
+#
+#   self-hosted gist server
+##--------------------------------------------------------------------------
+
+fn_app_opengist()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        app_setup "${1}"
+
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install opengist -y -qq >> $LOGS_FILE 2>&1
+        sleep 1
+
+        if [ -d "/etc/opengist" ]; then
+            xdg-open "/etc/opengist"
+        fi
     fi
 
     sleep 1
@@ -3204,21 +3293,21 @@ fn_app_seahorse()
 
     echo
 
-    printf '%-57s %-5s' "    |--- Remove Base" ""
+    printf '%-57s' "    |--- Remove Base"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo dpkg -r --force seahorse >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
 
-    printf '%-57s %-5s' "    |--- Apt Update" ""
+    printf '%-57s' "    |--- Apt Update"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
 
-    printf '%-57s %-5s' "    |--- Install seahorse" ""
+    printf '%-57s' "    |--- Install seahorse"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get install seahorse seahorse-nautilus -y -qq >> $LOGS_FILE 2>&1
@@ -3284,7 +3373,7 @@ fn_app_swizzin()
     local swizzin_file=swizzin.sh
 
     sleep 1
-    printf '%-57s %-5s' "    |--- Download ${swizzin_url}" ""
+    printf '%-57s' "    |--- Download ${swizzin_url}"
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo wget -O "${swizzin_file}" -q "${swizzin_url}"
@@ -3293,7 +3382,7 @@ fn_app_swizzin()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Adding Zorin Compatibility" ""
+    printf '%-57s' "    |--- Adding Zorin Compatibility"
 
     # Add Zorin compatibility to install script
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -3306,7 +3395,7 @@ fn_app_swizzin()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Killing apt-get" ""
+    printf '%-57s' "    |--- Killing apt-get"
 
     # instances where an issue will cause apt-get to hang and keeps the installation
     # wizard from running again. ensure
@@ -3451,7 +3540,7 @@ fn_app_php()
     if [ -n "$php_ver2install" ]; then
         echo
 
-        printf '%-57s %-5s' "    |--- Adding ppa:ondrej/php" ""
+        printf '%-57s' "    |--- Adding ppa:ondrej/php"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo add-apt-repository --yes ppa:ondrej/php >> $LOGS_FILE 2>&1
@@ -3460,7 +3549,7 @@ fn_app_php()
         fi
         echo -e "[ ${STATUS_OK} ]"
 
-        printf '%-57s %-5s' "    |--- Installing ${php_ver2install}" ""
+        printf '%-57s' "    |--- Installing ${php_ver2install}"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             #   remove -fpm from the end if exists
@@ -3530,7 +3619,7 @@ fn_app_phpmyadmin()
     #   --------------------------------------------------------------
 
     if ! [ -x "$(command -v pwgen)" ]; then
-        printf '%-57s %-5s' "    |--- Installing Pwgen" ""
+        printf '%-57s' "    |--- Installing Pwgen"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo apt-get update -y -q >> /dev/null 2>&1
@@ -3546,7 +3635,7 @@ fn_app_phpmyadmin()
     #   --------------------------------------------------------------
 
     if ! [ -x "$(command -v unzip)" ]; then
-        printf '%-57s %-5s' "    |--- Installing Unzip" ""
+        printf '%-57s' "    |--- Installing Unzip"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
             sudo apt-get update -y -q >> /dev/null 2>&1
@@ -3571,7 +3660,7 @@ fn_app_phpmyadmin()
                 0 )
                     echo 
                     sleep 1
-                    printf '%-57s %-5s' "    |--- Checking apt" ""
+                    printf '%-57s' "    |--- Checking apt"
                     sleep 1
                     if [ -z "${OPT_DEV_NULLRUN}" ]; then
                         sudo apt-get -f install -y -q >> $LOGS_FILE 2>&1
@@ -3580,7 +3669,7 @@ fn_app_phpmyadmin()
                     fi
                     echo -e "[ ${STATUS_OK} ]"
 
-                    printf '%-57s %-5s' "    |--- Remove ${pma_dir_install}" ""
+                    printf '%-57s' "    |--- Remove ${pma_dir_install}"
                     sleep 1
                     if [ -z "${OPT_DEV_NULLRUN}" ]; then
                         sudo rm -r ${pma_dir_install}
@@ -3589,7 +3678,7 @@ fn_app_phpmyadmin()
 
                     apacheCheck=$( dpkg --get-selections | grep apache && dpkg --get-selections | grep apache2 )
                     if [ -n "$apacheCheck" ]; then
-                        printf '%-57s %-5s' "    |--- Restarting apache" ""
+                        printf '%-57s' "    |--- Restarting apache"
                         sleep 1
                         if [ -z "${OPT_DEV_NULLRUN}" ]; then
                             sudo a2disconf phpmyadmin >> $LOGS_FILE 2>&1
@@ -3601,7 +3690,7 @@ fn_app_phpmyadmin()
 
                     nginxCheck=$( dpkg --get-selections | grep nginx )
                     if [ -n "$nginxCheck" ]; then
-                        printf '%-57s %-5s' "    |--- Restarting nginx" ""
+                        printf '%-57s' "    |--- Restarting nginx"
                         sleep 1
                         if [ -z "${OPT_DEV_NULLRUN}" ]; then
                             sudo systemctl restart nginx
@@ -3663,7 +3752,7 @@ fn_app_phpmyadmin()
     #   download pma zip file
     #   --------------------------------------------------------------
 
-    printf '%-57s %-5s' "    |--- Downloading ${pma_fil_zip}" ""
+    printf '%-57s' "    |--- Downloading ${pma_fil_zip}"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo rm -rf ${app_dir_dl}/phpmyadmin*
@@ -3686,7 +3775,7 @@ fn_app_phpmyadmin()
     #       pma_fil_zip         phpMyAdmin-latest-all-languages.zip
     #   --------------------------------------------------------------
 
-    printf '%-57s %-5s' "    |--- Creating pma structure" ""
+    printf '%-57s' "    |--- Creating pma structure"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo mkdir -p "${pma_dir_install}" >> $LOGS_FILE 2>&1
@@ -3696,7 +3785,7 @@ fn_app_phpmyadmin()
     fi
     echo -e "[ ${STATUS_OK} ]"
 
-    printf '%-57s %-5s' "    |--- Extracting pma" ""
+    printf '%-57s' "    |--- Extracting pma"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
 
@@ -3761,7 +3850,7 @@ fn_app_phpmyadmin()
     #       chmod       www-data:www-data "/var/lib/phpmyadmin"
     #   --------------------------------------------------------------
 
-    printf '%-57s %-5s' "    |--- Creating config.inc.php" ""
+    printf '%-57s' "    |--- Creating config.inc.php"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo cp ${pma_dir_install}/config.sample.inc.php  ${pma_dir_cfg}/config.inc.php
@@ -3805,7 +3894,7 @@ fn_app_phpmyadmin()
     #   permissions
     #   --------------------------------------------------------------
 
-    printf '%-57s %-5s' "    |--- Setting 0644 config.inc.php" ""
+    printf '%-57s' "    |--- Setting 0644 config.inc.php"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo chmod 0644 ${pma_dir_cfg}/config.inc.php
@@ -3821,6 +3910,7 @@ fn_app_phpmyadmin()
         show_header_comment "phpMyAdmin Installed\n\n  ${ORANGE}It appears you are missing Nginx or Apache\n  You must install one of the two in order to access phpMyAdmin.${WHITE}"
     else
         show_header_comment "phpMyAdmin Installed\n\n  ${WHITE}phpMyAdmin can usually be accessed via\n    ${BOLD}${FUCHSIA}http://127.0.0.1/phpmyadmin${WHITE}"
+        open_url "http://127.0.0.1/phpmyadmin"
     fi
 
     return
@@ -4001,7 +4091,7 @@ fn_twk_network_hosts()
     do
         id=$(echo "$item"  | sed 's/ *\\t.*//')
 
-        printf '%-57s %-5s' "    |--- + $id" ""
+        printf '%-57s' "    |--- + $id"
         sleep 1
 
         if grep -Fxq "$id" $app_dir_hosts
@@ -4048,7 +4138,7 @@ fn_twk_vbox_additions_fix()
     begin "${1}"
 
     echo
-    printf '%-57s %-5s' "    |--- Updating packages" ""
+    printf '%-57s' "    |--- Updating packages"
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -4057,7 +4147,7 @@ fn_twk_vbox_additions_fix()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Installing dependencies" ""
+    printf '%-57s' "    |--- Installing dependencies"
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -4066,7 +4156,7 @@ fn_twk_vbox_additions_fix()
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s %-5s' "    |--- Remove open-vm-tools*" ""
+    printf '%-57s' "    |--- Remove open-vm-tools*"
     sleep 1
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
@@ -4334,6 +4424,11 @@ if [ "$bInstall_all" = true ]; then
     apps+=("${app_all}")
 fi
 
+if [ "$bInstall_app_apache2" = true ]; then
+    apps+=("${app_apache2}")
+    (( app_i++ ))
+fi
+
 if [ "$bInstall_app_alien" = true ]; then
     apps+=("${app_alien}")
     (( app_i++ ))
@@ -4516,6 +4611,11 @@ fi
 
 if [ "$bInstall_app_ocsurl" = true ]; then
     apps+=("${app_ocsurl}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_app_opengist" = true ]; then
+    apps+=("${app_opengist}")
     (( app_i++ ))
 fi
 
