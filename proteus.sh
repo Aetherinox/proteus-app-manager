@@ -5,7 +5,7 @@ echo
 ##--------------------------------------------------------------------------
 #   @author :           aetherinox
 #   @script :           Proteus App Manager
-#   @when   :           2023-10-26 07:02:08
+#   @when   :           2023-10-27 23:27:07
 #   @url    :           https://github.com/Aetherinox/proteus-app-manager
 #
 #   requires chmod +x setup.sh
