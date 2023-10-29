@@ -3493,12 +3493,15 @@ fn_app_terminology()
 fn_app_tor()
 {
     begin "${1}"
-
     echo
+
+    printf '%-57s' "    |--- Installing Tor"
+    sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install wget tor -y -qq >> $LOGS_FILE 2>&1
     fi
+    echo -e "[ ${STATUS_OK} ]"
 
     printf '%-57s' "    |--- Adding Firewall Rules"
     sleep 1
@@ -3515,14 +3518,14 @@ fn_app_tor()
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo cp "/etc/tor/torrc"  "/etc/tor/torrc.bk"
-        sudo sed -i 's/#HiddenServiceDir\s\/var\/lib\/tor\/other_hidden_service\/.*/\n#\ Added By Proteus App Manager\nHiddenServiceDir \/var\/lib\/tor\/nginx-tor-service\/\nHiddenServicePort 80 127.0.0.1:80\nHiddenServicePort 443 127.0.0.1:443\n\n   /' "/etc/tor/torrc"
+        sudo sed -i 's/#HiddenServiceDir\s\/var\/lib\/tor\/other_hidden_service\/.*/\n#\ Added By Proteus App Manager\nHiddenServiceDir \/var\/lib\/tor\/tor-service\/\nHiddenServicePort 80 127.0.0.1:80\nHiddenServicePort 443 127.0.0.1:443\nHiddenServicePort 22 127.0.0.1:22\n\n   /' "/etc/tor/torrc"
     fi
     echo -e "[ ${STATUS_OK} ]"
 
     nginxCheck=$( dpkg --get-selections | grep nginx )
     if [ -n "$nginxCheck" ]; then
 
-        site_nginx="/etc/nginx/sites-available/nginx-tor-service"
+        site_nginx="/etc/nginx/sites-available/tor-service"
         if [ ! -f $site_nginx ]; then
 
 sudo tee $site_nginx >/dev/null <<EOF
@@ -3544,7 +3547,7 @@ EOF
 
         fi
 
-        sudo ln -s /etc/nginx/sites-available/nginx-tor-service /etc/nginx/sites-enabled/ >> $LOGS_FILE 2>&1
+        sudo ln -s /etc/nginx/sites-available/tor-service /etc/nginx/sites-enabled/ >> $LOGS_FILE 2>&1
     fi # nginx
 
     sleep 1
