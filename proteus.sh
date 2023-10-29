@@ -1401,6 +1401,8 @@ bInstall_app_ziet_cron=true
 bInstall_app_zenity=true
 bInstall_app_zorinospro_lo=true
 bInstall_env_kde_full=true
+bInstall_env_kde_standard=true
+bInstall_env_kde_desktop=true
 bInstall_twk_filepath=true
 bInstall_twk_netplan=true
 bInstall_twk_menu_new_textfile=true
@@ -1478,6 +1480,8 @@ app_zenity="Zenity Dialogs"
 app_ziet_cron="Ziet Cron Manager"
 app_zorinospro_lo="ZorinOS Pro: Layouts"
 env_kde_full="Env: KDE Full"
+env_kde_standard="Env: KDE Standard"
+env_kde_desktop="Env: KDE Plasma Desktop"
 twk_filepath="Patch: Path in File Explorer"
 twk_netplan="Patch: Netplan Configuration"
 twk_menu_new_textfile="Patch: Add Menu New Text File"
@@ -1580,6 +1584,8 @@ app_functions=(
     ["$twk_network_hosts"]='fn_twk_network_hosts'
     ["$twk_vbox_additions_fix"]='fn_twk_vbox_additions_fix'
     ["$env_kde_full"]='fn_env_kde_full'
+    ["$env_kde_standard"]='fn_env_kde_standard'
+    ["$env_kde_desktop"]='fn_env_kde_desktop'
 )
 
 ##--------------------------------------------------------------------------
@@ -4493,6 +4499,12 @@ fn_app_zorinospro_lo()
 
 ##--------------------------------------------------------------------------
 #   Desktop Env: KDE Full
+#
+#   complete KDE pack. It comes with the complete package and core 
+#   KDE plasma desktop. If you want all of KDE goodness (and dependencies),
+#   this is what you would install.
+#
+#   The whole package is around 1 GB.
 ##--------------------------------------------------------------------------
 
 fn_env_kde_full()
@@ -4502,6 +4514,55 @@ fn_env_kde_full()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install kde-full -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Desktop Env: KDE Standard
+#
+#   standard KDE includes Plasma desktop with standard set of KDE
+#   apps such as Kate (default text editor), Konqueror (default browser),
+#   Kget (Download Manager), KMail (email client), Dolphin (File Manager)
+#   etc.
+#
+#   The whole package is around 273 MB.
+##--------------------------------------------------------------------------
+
+fn_env_kde_standard()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install kde-standard -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Desktop Env: KDE Plasma Desktop
+#
+#   minimal package of KDE with just the Plasma desktop and a minimal
+#   set of KDE applications such as browse, file manager, text editor
+#   etc. No apps are installed by default.
+#
+#   The whole package is around 175 MB.
+##--------------------------------------------------------------------------
+
+fn_env_kde_desktop()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install kde-plasma-desktop -y -qq >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -4848,6 +4909,16 @@ fi
 
 if [ "$bInstall_env_kde_full" = true ]; then
     apps+=("${env_kde_full}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_env_kde_standard" = true ]; then
+    apps+=("${env_kde_standard}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_env_kde_desktop" = true ]; then
+    apps+=("${env_kde_desktop}")
     (( app_i++ ))
 fi
 
