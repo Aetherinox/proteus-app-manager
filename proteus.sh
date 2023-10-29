@@ -1381,6 +1381,7 @@ bInstall_app_swizzin=true
 bInstall_app_sysload=true
 bInstall_app_teamviewer=true
 bInstall_app_terminology=true
+bInstall_app_tor=true
 bInstall_app_tree=true
 bInstall_twk_filepath=true
 bInstall_twk_netplan=true
@@ -1455,6 +1456,7 @@ app_swizzin="Swizzin (Modular Seedbox)"
 app_sysload="System Monitor"
 app_teamviewer="Teamviewer"
 app_terminology="Terminology"
+app_tor="Tor Web Service"
 app_tree="Tree"
 twk_filepath="Patch: Path in File Explorer"
 twk_netplan="Patch: Netplan Configuration"
@@ -1550,6 +1552,7 @@ app_functions=(
     ["$app_sysload"]='fn_app_sysload'
     ["$app_teamviewer"]='fn_app_teamviewer'
     ["$app_terminology"]='fn_app_terminology'
+    ["$app_tor"]='fn_app_tor'
     ["$app_tree"]='fn_app_tree'
     ["$twk_filepath"]='fn_twk_filepath'
     ["$twk_netplan"]='fn_twk_netplan'
@@ -1870,18 +1873,18 @@ fn_app_browser_tor()
         flatpak install flathub com.github.micahflee.torbrowser-launcher -y --noninteractive >> $LOGS_FILE 2>&1
     fi
 
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get remove tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
-        sudo apt-get purge tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
-        sudo apt-get install apt-transport-https -y -qq >> $LOGS_FILE 2>&1
-
-        sudo wget -qO - https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/tor-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/tor-archive-keyring.gpg] https://deb.torproject.org/torproject.org $sys_code main" | sudo tee /etc/apt/sources.list.d/tor.list >/dev/null
-
-        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install tor deb.torproject.org-keyring -y -qq >> $LOGS_FILE 2>&1
-    fi
+    #if [ -z "${OPT_DEV_NULLRUN}" ]; then
+    #    sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+    #    sudo apt-get remove tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
+    #    sudo apt-get purge tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
+    #    sudo apt-get install apt-transport-https -y -qq >> $LOGS_FILE 2>&1
+    #
+    #    sudo wget -qO - https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/tor-archive-keyring.gpg
+    #    echo "deb [signed-by=/usr/share/keyrings/tor-archive-keyring.gpg] https://deb.torproject.org/torproject.org $sys_code main" | sudo tee /etc/apt/sources.list.d/tor.list >/dev/null
+    #
+    #    sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+    #    sudo apt-get install tor deb.torproject.org-keyring -y -qq >> $LOGS_FILE 2>&1
+    #fi
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
@@ -3467,6 +3470,54 @@ fn_app_terminology()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install terminology -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   tor web service
+##--------------------------------------------------------------------------
+
+fn_app_tor()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install wget tor -y -qq >> $LOGS_FILE 2>&1
+
+        printf '%-57s' "    |--- Adding Firewall Rules"
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+            sudo iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+            sudo iptables -I INPUT -m state --state NEW -p tcp --dport 9050 -j ACCEPT
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+        sleep 1
+
+        printf '%-57s' "    |--- Updating /etc/tor/torrc"
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo cp "/etc/tor/torrc"  "/etc/tor/torrc.bk"
+            sudo sed -i 's/#HiddenServiceDir\s\/var\/lib\/tor\/other_hidden_service\/.*/\n#\ Added By Proteus App Manager\nHiddenServiceDir \/var\/lib\/tor\/nginx-tor-service\/\nHiddenServicePort 80 127.0.0.1:80\nHiddenServicePort 443 127.0.0.1:443\n\n   /'
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+        sleep 1
+
+        printf '%-57s' "    |--- Enabling Tor Service"
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo systemctl enable tor
+            sudo systemctl restart tor
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
     fi
 
     sleep 1
