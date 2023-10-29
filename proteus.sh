@@ -1772,8 +1772,7 @@ fn_app_blender_snapd()
     fi
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo flatpak repair --system >> $LOGS_FILE 2>&1
-        flatpak install flathub org.blender.Blender -y --noninteractive >> $LOGS_FILE 2>&1
+        sudo snap install blender --classic >> $LOGS_FILE 2>&1
     fi
 
     sleep 1
@@ -1819,7 +1818,7 @@ fn_app_browser_librewolf()
 
         distro=$(if echo " una bookworm vanessa focal jammy bullseye vera uma " | grep -q " $(lsb_release -sc) "; then lsb_release -sc; else echo focal; fi)
 
-        sudo wget -O- https://deb.librewolf.net/keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/librewolf.gpg >> $LOGS_FILE 2>&1
+        sudo wget -O- https://deb.librewolf.net/keyring.gpg | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/librewolf.gpg >> $LOGS_FILE 2>&1
 
 sudo tee /etc/apt/sources.list.d/librewolf.sources << EOF > /dev/null
 Types: deb
@@ -1851,6 +1850,25 @@ EOF
 fn_app_browser_tor()
 {
     begin "${1}"
+    sleep 1
+
+    if ! [ -x "$(command -v flatpak)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_flatpak}. Installing ...${NORMAL}" >&2
+        sleep 1
+
+        fn_app_flatpak "${app_flatpak}"
+
+        begin "Retry: ${1}"
+
+        sleep 1
+    fi
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo flatpak repair --system >> $LOGS_FILE 2>&1
+        flatpak install flathub com.github.micahflee.torbrowser-launcher -y --noninteractive >> $LOGS_FILE 2>&1
+    fi
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
@@ -1858,11 +1876,8 @@ fn_app_browser_tor()
         sudo apt-get purge tor torbrowser-launcher -y -qq >> $LOGS_FILE 2>&1
         sudo apt-get install apt-transport-https -y -qq >> $LOGS_FILE 2>&1
 
-        distrib=$( lsb_release -c )
-        arch=$( dpkg --print-architecture )
-
-        sudo wget -qO - https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | sudo gpg --dearmor -o /usr/share/keyrings/tor-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/tor-archive-keyring.gpg] https://deb.torproject.org/torproject.org $distrib main" | sudo tee /etc/apt/sources.list.d/tor.list >/dev/null
+        sudo wget -qO - https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/tor-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/tor-archive-keyring.gpg] https://deb.torproject.org/torproject.org $sys_code main" | sudo tee /etc/apt/sources.list.d/tor.list >/dev/null
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install tor deb.torproject.org-keyring -y -qq >> $LOGS_FILE 2>&1
@@ -2129,6 +2144,8 @@ fn_app_flatpak()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get install flatpak -y -qq >> $LOGS_FILE 2>&1
+
+        sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     fi
 
     sleep 1
@@ -4288,7 +4305,7 @@ fn_app_yarn()
         #   -q, --quiet             Turn off wget's output. 
         #   -O, --output-document   Output-document
 
-        sudo wget -qO - https://dl.yarnpkg.com/debian/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/yarn.gpg
+        sudo wget -qO - https://dl.yarnpkg.com/debian/pubkey.gpg | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/yarn.gpg
         echo "deb [signed-by=/usr/share/keyrings/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list >/dev/null
 
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
