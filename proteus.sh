@@ -1392,11 +1392,6 @@ bInstall_app_teamviewer=true
 bInstall_app_terminology=true
 bInstall_app_tor=true
 bInstall_app_tree=true
-bInstall_twk_filepath=true
-bInstall_twk_netplan=true
-bInstall_twk_menu_new_textfile=true
-bInstall_twk_network_hosts=true
-bInstall_twk_vbox_additions_fix=true
 bInstall_app_vsc_stable=true
 bInstall_app_vsc_insiders=true
 bInstall_app_wxhexeditor=true
@@ -1405,6 +1400,12 @@ bInstall_app_yarn=true
 bInstall_app_ziet_cron=true
 bInstall_app_zenity=true
 bInstall_app_zorinospro_lo=true
+bInstall_env_kde_full=true
+bInstall_twk_filepath=true
+bInstall_twk_netplan=true
+bInstall_twk_menu_new_textfile=true
+bInstall_twk_network_hosts=true
+bInstall_twk_vbox_additions_fix=true
 
 ##--------------------------------------------------------------------------
 #   vars > app names > live
@@ -1467,11 +1468,6 @@ app_teamviewer="Teamviewer"
 app_terminology="Terminology"
 app_tor="Tor Web Service"
 app_tree="Tree"
-twk_filepath="Patch: Path in File Explorer"
-twk_netplan="Patch: Netplan Configuration"
-twk_menu_new_textfile="Patch: Add Menu New Text File"
-twk_network_hosts="Patch: Update Net Hosts"
-twk_vbox_additions_fix="Patch: VBox Additions"
 app_unrar="Unrar"
 app_vsc_stable="VS Code (Stable)"
 app_vsc_insiders="VS Code (Insiders)"
@@ -1481,6 +1477,12 @@ app_yarn="Yarn"
 app_zenity="Zenity Dialogs"
 app_ziet_cron="Ziet Cron Manager"
 app_zorinospro_lo="ZorinOS Pro: Layouts"
+env_kde_full="Env: KDE Full"
+twk_filepath="Patch: Path in File Explorer"
+twk_netplan="Patch: Netplan Configuration"
+twk_menu_new_textfile="Patch: Add Menu New Text File"
+twk_network_hosts="Patch: Update Net Hosts"
+twk_vbox_additions_fix="Patch: VBox Additions"
 
 ##--------------------------------------------------------------------------
 #   vars > app names > dev
@@ -1563,11 +1565,6 @@ app_functions=(
     ["$app_terminology"]='fn_app_terminology'
     ["$app_tor"]='fn_app_tor'
     ["$app_tree"]='fn_app_tree'
-    ["$twk_filepath"]='fn_twk_filepath'
-    ["$twk_netplan"]='fn_twk_netplan'
-    ["$twk_menu_new_textfile"]='fn_twk_menu_new_textfile'
-    ["$twk_network_hosts"]='fn_twk_network_hosts'
-    ["$twk_vbox_additions_fix"]='fn_twk_vbox_additions_fix'
     ["$app_unrar"]='fn_app_unrar'
     ["$app_vsc_stable"]='fn_app_vsc_stable'
     ["$app_vsc_insiders"]='fn_app_vsc_insiders'
@@ -1577,6 +1574,12 @@ app_functions=(
     ["$app_zenity"]='fn_app_zenity'
     ["$app_ziet_cron"]='fn_app_ziet_cron'
     ["$app_zorinospro_lo"]='fn_app_zorinospro_lo'
+    ["$twk_filepath"]='fn_twk_filepath'
+    ["$twk_netplan"]='fn_twk_netplan'
+    ["$twk_menu_new_textfile"]='fn_twk_menu_new_textfile'
+    ["$twk_network_hosts"]='fn_twk_network_hosts'
+    ["$twk_vbox_additions_fix"]='fn_twk_vbox_additions_fix'
+    ["$env_kde_full"]='fn_env_kde_full'
 )
 
 ##--------------------------------------------------------------------------
@@ -4489,6 +4492,24 @@ fn_app_zorinospro_lo()
 }
 
 ##--------------------------------------------------------------------------
+#   Desktop Env: KDE Full
+##--------------------------------------------------------------------------
+
+fn_env_kde_full()
+{
+    begin "${1}"
+
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        sudo apt-get update -y -q >> $LOGS_FILE 2>&1
+        sudo apt-get install kde-full -y -qq >> $LOGS_FILE 2>&1
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    finish
+}
+
+##--------------------------------------------------------------------------
 #   register apps to show in list
 ##--------------------------------------------------------------------------
 
@@ -4776,31 +4797,6 @@ if [ "$bInstall_app_tree" = true ]; then
     (( app_i++ ))
 fi
 
-if [ "$bInstall_twk_filepath" = true ]; then
-    apps+=("${twk_filepath}")
-    (( app_i++ ))
-fi
-
-if [ "$bInstall_twk_netplan" = true ]; then
-    apps+=("${twk_netplan}")
-    (( app_i++ ))
-fi
-
-if [ "$bInstall_twk_menu_new_textfile" = true ]; then
-    apps+=("${twk_menu_new_textfile}")
-    (( app_i++ ))
-fi
-
-if [ "$bInstall_twk_network_hosts" = true ]; then
-    apps+=("${twk_network_hosts}")
-    (( app_i++ ))
-fi
-
-if [ "$bInstall_twk_vbox_additions_fix" = true ]; then
-    apps+=("${twk_vbox_additions_fix}")
-    (( app_i++ ))
-fi
-
 if [ "$bInstall_app_unrar" = true ]; then
     apps+=("${app_unrar}")
     (( app_i++ ))
@@ -4843,6 +4839,44 @@ fi
 
 if [ "$bInstall_app_zorinospro_lo" = true ]; then
     apps+=("${app_zorinospro_lo}")
+    (( app_i++ ))
+fi
+
+##--------------------------------------------------------------------------
+#   desktop environments
+##--------------------------------------------------------------------------
+
+if [ "$bInstall_env_kde_full" = true ]; then
+    apps+=("${env_kde_full}")
+    (( app_i++ ))
+fi
+
+##--------------------------------------------------------------------------
+#   tweaks
+##--------------------------------------------------------------------------
+
+if [ "$bInstall_twk_filepath" = true ]; then
+    apps+=("${twk_filepath}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_twk_netplan" = true ]; then
+    apps+=("${twk_netplan}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_twk_menu_new_textfile" = true ]; then
+    apps+=("${twk_menu_new_textfile}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_twk_network_hosts" = true ]; then
+    apps+=("${twk_network_hosts}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_twk_vbox_additions_fix" = true ]; then
+    apps+=("${twk_vbox_additions_fix}")
     (( app_i++ ))
 fi
 
