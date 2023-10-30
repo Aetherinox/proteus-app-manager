@@ -3063,7 +3063,19 @@ fn_app_nodejs()
         printf '%-57s' "    |--- Adding Repo Source"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
-            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >> $LOGS_FILE 2>&1
+            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >> $LOGS_FILE 2>&1
+        fi
+        echo -e "[ ${STATUS_OK} ]"
+
+        printf '%-57s' "    |--- Remove Existing NodeJS"
+        sleep 1
+        if [ -z "${OPT_DEV_NULLRUN}" ]; then
+            sudo apt update -y -q >> $LOGS_FILE 2>&1
+            sudo apt remove nodejs -y -q >> $LOGS_FILE 2>&1
+            sudo apt remove nodejs-doc -y -q >> $LOGS_FILE 2>&1
+
+            sudo dpkg --remove --force-remove-reinstreq libnode-dev >> $LOGS_FILE 2>&1
+            sudo dpkg --remove --force-remove-reinstreq libnode72:amd64 >> $LOGS_FILE 2>&1
         fi
         echo -e "[ ${STATUS_OK} ]"
 
