@@ -65,9 +65,11 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 #   vars > app
 ##--------------------------------------------------------------------------
 
-sys_arch=$(dpkg --print-architecture)
-sys_code=$(lsb_release -cs)
-sys_shell=$( gnome-shell --version | sed 's/[^0-9]*//' )
+sys_arch=$( dpkg --print-architecture )
+sys_code=$( lsb_release -cs )
+sys_shell_type=$( echo "$XDG_DATA_DIRS" | grep -Eo 'xfce|kde|gnome' )
+sys_shell_gnome=$( gnome-shell --version | sed 's/[^0-9]*//' )
+sys_shell_plasma=$( plasmashell --version | sed 's/[^0-9]*//' )
 app_dir_home="$HOME/bin"
 app_dir_dl="$app_dir_home/downloads"
 app_dir_hosts="/etc/hosts"
