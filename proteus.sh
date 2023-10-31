@@ -1328,6 +1328,7 @@ notify-send()
 #   vars > gnome extension ids
 ##--------------------------------------------------------------------------
 
+app_ext_id_dashpnl=1160
 app_ext_id_arcmenu=3628
 app_ext_id_sysload=4585
 
@@ -1359,6 +1360,7 @@ bInstall_app_git=true
 bInstall_app_github_desktop=true
 bInstall_app_gnome_ext_arcmenu=true
 bInstall_app_gnome_ext_core=true
+bInstall_app_gnome_ext_dashtopanel=true
 bInstall_app_gnome_ext_ism=true
 bInstall_app_gnome_tweaks=true
 bInstall_app_gpick=true
@@ -1437,6 +1439,7 @@ app_git="Git"
 app_github_desktop="Github Desktop"
 app_gnome_ext_arcmenu="Gnome Ext (ArcMenu)"
 app_gnome_ext_core="Gnome Manager (Core)"
+app_gnome_ext_dashtopanel="Gnome Ext (Dash-To-Panel)"
 app_gnome_ext_ism="Gnome Ext (Speed Monitor)"
 app_gnome_tweaks="Gnome Tweaks Tool"
 app_gpick="gPick (Color Picker)"
@@ -1536,6 +1539,7 @@ app_functions=(
     ["$app_github_desktop"]='fn_app_github_desktop'
     ["$app_gnome_ext_arcmenu"]='fn_app_gnome_ext_arcmenu'
     ["$app_gnome_ext_core"]='fn_app_gnome_ext_core'
+    ["$app_gnome_ext_dashtopanel"]='fn_app_gnome_ext_dashtopanel'
     ["$app_gnome_ext_ism"]='fn_app_gnome_ext_ism'
     ["$app_gnome_tweaks"]='fn_app_gnome_tweaks'
     ["$app_gpick"]='fn_app_gpick'
@@ -2296,7 +2300,10 @@ fn_app_gnome_ext_core()
 }
 
 ##--------------------------------------------------------------------------
-#   ArcMenu
+#   Extension:      ArcMenu
+#   Ext ID:         3628
+#   Ext UUID:       arcmenu@arcmenu.com
+#
 #   can be uninstalled with
 #       - gnome-extensions uninstall "arcmenu@arcmenu.com"
 ##--------------------------------------------------------------------------
@@ -2322,22 +2329,78 @@ fn_app_gnome_ext_arcmenu()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-shell-extension-installer $app_ext_id_arcmenu --yes >> $LOGS_FILE 2>&1
     fi
-    
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s' "    |--- Restarting Shell"
-    sleep 3
 
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
-    fi
-
-    echo -e "[ ${STATUS_OK} ]"
     printf '%-57s' "    |--- Enable ArcMenu"
     sleep 3
-
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-extensions enable "arcmenu@arcmenu.com"
     fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s' "    |--- Restarting Shell"
+    sleep 3
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        #   this method is debatable between x11 and wayland
+        #   wayland doesnt have a way to gracefully restart
+        #   instead we force the user back to the sign-in screen.
+        #   sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
+        sudo pkill -KILL -u $USER
+    fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Extension:      Dash To Panel
+#   Ext ID:         1160
+#   Ext UUID:       dash-to-panel@jderose9.github.com
+#   
+#   can be uninstalled with
+#       - gnome-extensions uninstall "dash-to-panel@jderose9.github.com"
+##--------------------------------------------------------------------------
+
+fn_app_gnome_ext_dashtopanel()
+{
+    begin "${1}"
+    sleep 1
+
+    if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        sleep 1
+
+        fn_app_gnome_ext_core "${app_gnome_ext_core}"
+
+        begin "Retry: ${1}"
+
+        sleep 1
+    fi
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        gnome-shell-extension-installer $app_ext_id_dashpnl --yes >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s' "    |--- Enable Dash-To-Panel"
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        gnome-extensions enable "dash-to-panel@jderose9.github.com"
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s' "    |--- Restarting Shell"
+    sleep 3
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        #   this method is debatable between x11 and wayland
+        #   wayland doesnt have a way to gracefully restart
+        #   instead we force the user back to the sign-in screen.
+        #   sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
+        sudo pkill -KILL -u $USER
+    fi
+    echo -e "[ ${STATUS_OK} ]"
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
@@ -2372,24 +2435,26 @@ fn_app_gnome_ext_ism()
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-shell-extension-installer $app_ext_id_sysload --yes >> $LOGS_FILE 2>&1
     fi
-
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s' "    |--- Restarting Shell" ""
-    sleep 3
 
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
-    fi
-
+    printf '%-57s' "    |--- Enabling Speed Monitor"
     sleep 1
-    echo -e "[ ${STATUS_OK} ]"
-    printf '%-57s' "    |--- Enabling"
-    sleep 1
-
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         gnome-extensions enable "InternetSpeedMonitor@Rishu"
     fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s' "    |--- Restarting Shell" ""
+    sleep 3
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        #   this method is debatable between x11 and wayland
+        #   wayland doesnt have a way to gracefully restart
+        #   instead we force the user back to the sign-in screen.
+        #   sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
+        sudo pkill -KILL -u $USER
+    fi
+    sleep 1
 
     sleep 1
 	echo -e "[ ${STATUS_OK} ]"
@@ -4707,6 +4772,11 @@ fi
 
 if [ "$bInstall_app_gnome_ext_core" = true ]; then
     apps+=("${app_gnome_ext_core}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_app_gnome_ext_dashtopanel" = true ]; then
+    apps+=("${app_gnome_ext_dashtopanel}")
     (( app_i++ ))
 fi
 
