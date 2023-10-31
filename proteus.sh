@@ -1362,6 +1362,7 @@ bInstall_app_github_desktop=true
 bInstall_app_gnome_ext_arcmenu=true
 bInstall_app_gnome_ext_core=true
 bInstall_app_gnome_ext_dashtopanel=true
+bInstall_app_gnome_ext_blurmyshell=true
 bInstall_app_gnome_ext_dateformat=true
 bInstall_app_gnome_ext_ism=true
 bInstall_app_gnome_ext_vitals=true
@@ -1441,6 +1442,7 @@ app_gdebi="GDebi"
 app_git="Git"
 app_github_desktop="Github Desktop"
 app_gnome_ext_arcmenu="Gnome Ext (ArcMenu)"
+app_gnome_ext_blurmyshell="Gnome Ext (Blur My Shell)"
 app_gnome_ext_core="Gnome Manager (Core)"
 app_gnome_ext_dashtopanel="Gnome Ext (Dash-To-Panel)"
 app_gnome_ext_dateformat="Gnome Ext (Date Formatter)"
@@ -1543,6 +1545,7 @@ app_functions=(
     ["$app_git"]='fn_app_git'
     ["$app_github_desktop"]='fn_app_github_desktop'
     ["$app_gnome_ext_arcmenu"]='fn_app_gnome_ext_arcmenu'
+    ["$app_gnome_ext_blurmyshell"]='fn_app_gnome_ext_blurmyshell'
     ["$app_gnome_ext_core"]='fn_app_gnome_ext_core'
     ["$app_gnome_ext_dashtopanel"]='fn_app_gnome_ext_dashtopanel'
     ["$app_gnome_ext_dateformat"]='fn_app_gnome_ext_dateformat'
@@ -2287,6 +2290,7 @@ fn_app_gnome_ext_core()
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
         sudo apt-get upgrade -q >> $LOGS_FILE 2>&1
         sudo apt-get install gnome-shell-extensions -y -qq >> $LOGS_FILE 2>&1
+        sudo apt-get install gnome-shell-extension-gsconnect -y -qq >> $LOGS_FILE 2>&1
         sudo apt-get install gnome-tweaks -y -qq >> $LOGS_FILE 2>&1
         sudo apt-get install chrome-gnome-shell -y -qq >> $LOGS_FILE 2>&1
     fi
@@ -2362,6 +2366,70 @@ fn_app_gnome_ext_arcmenu()
         #   sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
         sudo pkill -KILL -u $USER
     fi
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Extension:      Blur My Shell
+#   Ext ID:         3193
+#   Ext UUID:       blur-my-shell@aunetx
+#
+#   Adds a blur look to different parts of the GNOME Shell, including
+#   the top panel, dash and overview.
+#   
+#   @URL1:          https://extensions.gnome.org/extension/3193/blur-my-shell/
+#   @URL2:          https://github.com/aunetx/gnome-shell-extension-blur-my-shell
+#
+#   can be uninstalled with
+#       - gnome-extensions uninstall "blur-my-shell@aunetx"
+##--------------------------------------------------------------------------
+
+fn_app_gnome_ext_blurmyshell()
+{
+
+    local gnome_app_uuid="blur-my-shell@aunetx"
+    local gnome_app_id=3193
+
+    begin "${1}"
+    sleep 1
+
+    if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        sleep 1
+
+        fn_app_gnome_ext_core "${app_gnome_ext_core}"
+
+        begin "Retry: ${1}"
+
+        sleep 1
+    fi
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        gnome-shell-extension-installer $gnome_app_id --yes >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s' "    |--- Enable Dash-To-Panel"
+    sleep 1
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        gnome-extensions enable $gnome_app_uuid
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s' "    |--- Restarting Shell"
+    sleep 3
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        #   this method is debatable between x11 and wayland
+        #   wayland doesnt have a way to gracefully restart
+        #   instead we force the user back to the sign-in screen.
+        #   sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
+        sudo pkill -KILL -u $USER
+    fi
+    echo -e "[ ${STATUS_OK} ]"
 
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
@@ -4897,6 +4965,11 @@ fi
 
 if [ "$bInstall_app_gnome_ext_arcmenu" = true ]; then
     apps+=("${app_gnome_ext_arcmenu}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_app_gnome_ext_blurmyshell" = true ]; then
+    apps+=("${app_gnome_ext_blurmyshell}")
     (( app_i++ ))
 fi
 
