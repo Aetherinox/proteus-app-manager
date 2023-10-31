@@ -67,6 +67,7 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 
 sys_arch=$(dpkg --print-architecture)
 sys_code=$(lsb_release -cs)
+sys_shell=$( gnome-shell --version | sed 's/[^0-9]*//' )
 app_dir_home="$HOME/bin"
 app_dir_dl="$app_dir_home/downloads"
 app_dir_hosts="/etc/hosts"
@@ -1325,14 +1326,6 @@ notify-send()
 [ -z "${OPT_DEV_NULLRUN}" ] && printf "%-57s\n\n" "${TIME}      Notice: Dev Option: 'No Actions' Disabled" | tee -a "${LOGS_FILE}" >/dev/null
 
 ##--------------------------------------------------------------------------
-#   vars > gnome extension ids
-##--------------------------------------------------------------------------
-
-app_ext_id_dashpnl=1160
-app_ext_id_arcmenu=3628
-app_ext_id_sysload=4585
-
-##--------------------------------------------------------------------------
 #   vars > packages
 ##--------------------------------------------------------------------------
 
@@ -1362,6 +1355,7 @@ bInstall_app_gnome_ext_arcmenu=true
 bInstall_app_gnome_ext_core=true
 bInstall_app_gnome_ext_dashtopanel=true
 bInstall_app_gnome_ext_ism=true
+bInstall_app_gnome_ext_vitals=true
 bInstall_app_gnome_tweaks=true
 bInstall_app_gpick=true
 bInstall_app_kooha=true
@@ -1441,6 +1435,7 @@ app_gnome_ext_arcmenu="Gnome Ext (ArcMenu)"
 app_gnome_ext_core="Gnome Manager (Core)"
 app_gnome_ext_dashtopanel="Gnome Ext (Dash-To-Panel)"
 app_gnome_ext_ism="Gnome Ext (Speed Monitor)"
+app_gnome_ext_vitals="Gnome Ext (Vitals)"
 app_gnome_tweaks="Gnome Tweaks Tool"
 app_gpick="gPick (Color Picker)"
 app_kooha="Kooha (Screen Recorder)"
@@ -1541,6 +1536,7 @@ app_functions=(
     ["$app_gnome_ext_core"]='fn_app_gnome_ext_core'
     ["$app_gnome_ext_dashtopanel"]='fn_app_gnome_ext_dashtopanel'
     ["$app_gnome_ext_ism"]='fn_app_gnome_ext_ism'
+    ["$app_gnome_ext_vitals"]='fn_app_gnome_ext_vitals'
     ["$app_gnome_tweaks"]='fn_app_gnome_tweaks'
     ["$app_gpick"]='fn_app_gpick'
     ["$app_kooha"]='fn_app_kooha'
@@ -2304,12 +2300,20 @@ fn_app_gnome_ext_core()
 #   Ext ID:         3628
 #   Ext UUID:       arcmenu@arcmenu.com
 #
+#   Application menu for GNOME Shell.
+#   Features include: various menu layouts, built in GNOME search,
+#   quick access to system shortcuts, and much more!
+#
 #   can be uninstalled with
 #       - gnome-extensions uninstall "arcmenu@arcmenu.com"
 ##--------------------------------------------------------------------------
 
 fn_app_gnome_ext_arcmenu()
 {
+
+    local gnome_app_uuid="arcmenu@arcmenu.com"
+    local gnome_app_id=3628
+
     begin "${1}"
     sleep 1
 
@@ -2327,14 +2331,14 @@ fn_app_gnome_ext_arcmenu()
     fi
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        gnome-shell-extension-installer $app_ext_id_arcmenu --yes >> $LOGS_FILE 2>&1
+        gnome-shell-extension-installer $gnome_app_id --yes >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
 
     printf '%-57s' "    |--- Enable ArcMenu"
     sleep 3
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        gnome-extensions enable "arcmenu@arcmenu.com"
+        gnome-extensions enable $gnome_app_uuid
     fi
     echo -e "[ ${STATUS_OK} ]"
 
@@ -2357,13 +2361,26 @@ fn_app_gnome_ext_arcmenu()
 #   Extension:      Dash To Panel
 #   Ext ID:         1160
 #   Ext UUID:       dash-to-panel@jderose9.github.com
+#
+#   An icon taskbar for the Gnome Shell. This extension moves the dash
+#   into the gnome main panel so that the application launchers and system
+#   tray are combined into a single panel, similar to that found in KDE
+#   Plasma and Windows 7+. A separate dock is no longer needed for easy
+#   access to running and favorited applications.
 #   
+#   @URL1:          https://extensions.gnome.org/extension/1160/dash-to-panel/
+#   @URL2:          https://github.com/home-sweet-gnome/dash-to-panel
+#
 #   can be uninstalled with
 #       - gnome-extensions uninstall "dash-to-panel@jderose9.github.com"
 ##--------------------------------------------------------------------------
 
 fn_app_gnome_ext_dashtopanel()
 {
+
+    local gnome_app_uuid="dash-to-panel@jderose9.github.com"
+    local gnome_app_id=1160
+
     begin "${1}"
     sleep 1
 
@@ -2380,14 +2397,14 @@ fn_app_gnome_ext_dashtopanel()
         sleep 1
     fi
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        gnome-shell-extension-installer $app_ext_id_dashpnl --yes >> $LOGS_FILE 2>&1
+        gnome-shell-extension-installer $gnome_app_id --yes >> $LOGS_FILE 2>&1
     fi
     echo -e "[ ${STATUS_OK} ]"
 
     printf '%-57s' "    |--- Enable Dash-To-Panel"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        gnome-extensions enable "dash-to-panel@jderose9.github.com"
+        gnome-extensions enable $gnome_app_uuid
     fi
     echo -e "[ ${STATUS_OK} ]"
 
@@ -2408,11 +2425,28 @@ fn_app_gnome_ext_dashtopanel()
 }
 
 ##--------------------------------------------------------------------------
-#   Internet Speed Monitor
+#   Extension:      Internet Speed Monitor
+#   Ext ID:         4585
+#   Ext UUID:       InternetSpeedMonitor@Rishu
+#   
+#   Extension to Monitor Internet Speed and Daily Data Usage minimally.
+#   It is a fork of InternetSpeedMeter
+#
+#   @NOTE:          this ext requires shell restart to enable
+#   
+#   @URL1:          https://extensions.gnome.org/extension/4585/internet-speed-monitor/
+#   @URL2:          https://github.com/rishuinfinity/InternetSpeedMonitor
+#
+#   can be uninstalled with
+#       - gnome-extensions uninstall "InternetSpeedMonitor@Rishu"
 ##--------------------------------------------------------------------------
 
 fn_app_gnome_ext_ism()
 {
+
+    local gnome_app_uuid="InternetSpeedMonitor@Rishu"
+    local gnome_app_id=4585
+
     begin "${1}"
     sleep 1
 
@@ -2433,7 +2467,7 @@ fn_app_gnome_ext_ism()
     # this is the one with the bar at the bottom with up/down/total text
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        gnome-shell-extension-installer $app_ext_id_sysload --yes >> $LOGS_FILE 2>&1
+        gnome-shell-extension-installer $gnome_app_id --yes >> $LOGS_FILE 2>&1
     fi
     sleep 1
     echo -e "[ ${STATUS_OK} ]"
@@ -2441,23 +2475,64 @@ fn_app_gnome_ext_ism()
     printf '%-57s' "    |--- Enabling Speed Monitor"
     sleep 1
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        gnome-extensions enable "InternetSpeedMonitor@Rishu"
+        gnome-extensions enable $gnome_app_uuid
     fi
     echo -e "[ ${STATUS_OK} ]"
 
-    printf '%-57s' "    |--- Restarting Shell" ""
-    sleep 3
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        #   this method is debatable between x11 and wayland
-        #   wayland doesnt have a way to gracefully restart
-        #   instead we force the user back to the sign-in screen.
-        #   sudo pkill -TERM gnome-shell >> $LOGS_FILE 2>&1
-        sudo pkill -KILL -u $USER
-    fi
+    notify-send -u critical "Shell Restart Needed" "Internet Speed Monitor requires a shell restart. Save your work and give your system a reboot. Then open the Extensions Manager and enable Internet Speed Monitor" >> $LOGS_FILE 2>&1
+
+    finish
+}
+
+##--------------------------------------------------------------------------
+#   Extension:      Vitals
+#   Ext ID:         1460
+#   Ext UUID:       Vitals@CoreCoding.com
+#   
+#   A glimpse into your computer's temperature, voltage, fan speed, 
+#   memory usage, processor load, system resources, network speed and
+#   storage stats. This is a one stop shop to monitor all of your vital
+#   sensors. Uses asynchronous polling to provide a smooth user experience.
+#   
+#   @URL1:          https://extensions.gnome.org/extension/1460/vitals/
+#   @URL2:          https://github.com/corecoding/Vitals
+#
+#   can be uninstalled with
+#       - gnome-extensions uninstall "Vitals@CoreCoding.com"
+##--------------------------------------------------------------------------
+
+fn_app_gnome_ext_vitals()
+{
+
+    local gnome_app_uuid="Vitals@CoreCoding.com"
+    local gnome_app_id=1460
+
+    begin "${1}"
     sleep 1
 
+    if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        sleep 1
+
+        fn_app_gnome_ext_core "${app_gnome_ext_core}"
+
+        begin "Retry: ${1}"
+
+        sleep 1
+    fi
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        gnome-shell-extension-installer $gnome_app_id --yes >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    printf '%-57s' "    |--- Enable Vitals"
     sleep 1
-	echo -e "[ ${STATUS_OK} ]"
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        gnome-extensions enable $gnome_app_uuid
+    fi
+    echo -e "[ ${STATUS_OK} ]"
     finish
 }
 
@@ -4782,6 +4857,11 @@ fi
 
 if [ "$bInstall_app_gnome_ext_ism" = true ]; then
     apps+=("${app_gnome_ext_ism}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_app_gnome_ext_vitals" = true ]; then
+    apps+=("${app_gnome_ext_vitals}")
     (( app_i++ ))
 fi
 
