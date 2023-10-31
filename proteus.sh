@@ -5,7 +5,7 @@ echo
 ##--------------------------------------------------------------------------
 #   @author :           aetherinox
 #   @script :           Proteus App Manager
-#   @when   :           2023-10-27 23:27:07
+#   @when   :           2023-10-30 17:03:02
 #   @url    :           https://github.com/Aetherinox/proteus-app-manager
 #
 #   requires chmod +x setup.sh
@@ -2406,7 +2406,12 @@ fn_app_gnome_tweaks()
 
     if [ -z "${OPT_DEV_NULLRUN}" ]; then
         sudo apt-get update -y -q >> $LOGS_FILE 2>&1
-        sudo apt-get install gnome-tweak-tool -y -qq >> $LOGS_FILE 2>&1
+
+        if get_version_compare_gt $OS_VER 22.04; then
+            sudo apt-get install gnome-tweaks -y -qq >> $LOGS_FILE 2>&1
+        else
+            sudo apt-get install gnome-tweak-tool -y -qq >> $LOGS_FILE 2>&1
+        fi
     fi
 
     sleep 1
@@ -3063,7 +3068,7 @@ fn_app_nodejs()
         printf '%-57s' "    |--- Adding Repo Source"
         sleep 1
         if [ -z "${OPT_DEV_NULLRUN}" ]; then
-            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >> $LOGS_FILE 2>&1
+            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >> $LOGS_FILE 2>&1
         fi
         echo -e "[ ${STATUS_OK} ]"
 
