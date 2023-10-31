@@ -65,11 +65,17 @@ STATUS_HALT="${BOLD}${YELLOW} HALT ${NORMAL}"
 #   vars > app
 ##--------------------------------------------------------------------------
 
+if [ -x "$(command -v gnome-shell)" ]; then
+    sys_shell_gnome=$( gnome-shell --version | sed 's/[^0-9]*//' )
+fi
+
+if [ -x "$(command -v plasmashell)" ]; then
+    sys_shell_plasma=$( plasmashell --version | sed 's/[^0-9]*//' )
+fi
+
 sys_arch=$( dpkg --print-architecture )
 sys_code=$( lsb_release -cs )
 sys_shell_type=$( echo "$XDG_DATA_DIRS" | grep -Eo 'xfce|kde|gnome' )
-sys_shell_gnome=$( gnome-shell --version | sed 's/[^0-9]*//' )
-sys_shell_plasma=$( plasmashell --version | sed 's/[^0-9]*//' )
 app_dir_home="$HOME/bin"
 app_dir_dl="$app_dir_home/downloads"
 app_dir_hosts="/etc/hosts"
@@ -1356,6 +1362,7 @@ bInstall_app_github_desktop=true
 bInstall_app_gnome_ext_arcmenu=true
 bInstall_app_gnome_ext_core=true
 bInstall_app_gnome_ext_dashtopanel=true
+bInstall_app_gnome_ext_dateformat=true
 bInstall_app_gnome_ext_ism=true
 bInstall_app_gnome_ext_vitals=true
 bInstall_app_gnome_tweaks=true
@@ -1436,6 +1443,7 @@ app_github_desktop="Github Desktop"
 app_gnome_ext_arcmenu="Gnome Ext (ArcMenu)"
 app_gnome_ext_core="Gnome Manager (Core)"
 app_gnome_ext_dashtopanel="Gnome Ext (Dash-To-Panel)"
+app_gnome_ext_dateformat="Gnome Ext (Date Formatter)"
 app_gnome_ext_ism="Gnome Ext (Speed Monitor)"
 app_gnome_ext_vitals="Gnome Ext (Vitals)"
 app_gnome_tweaks="Gnome Tweaks Tool"
@@ -1537,6 +1545,7 @@ app_functions=(
     ["$app_gnome_ext_arcmenu"]='fn_app_gnome_ext_arcmenu'
     ["$app_gnome_ext_core"]='fn_app_gnome_ext_core'
     ["$app_gnome_ext_dashtopanel"]='fn_app_gnome_ext_dashtopanel'
+    ["$app_gnome_ext_dateformat"]='fn_app_gnome_ext_dateformat'
     ["$app_gnome_ext_ism"]='fn_app_gnome_ext_ism'
     ["$app_gnome_ext_vitals"]='fn_app_gnome_ext_vitals'
     ["$app_gnome_tweaks"]='fn_app_gnome_tweaks'
@@ -2427,6 +2436,57 @@ fn_app_gnome_ext_dashtopanel()
 }
 
 ##--------------------------------------------------------------------------
+#   Extension:      Date Menu Formatter
+#   Ext ID:         4655
+#   Ext UUID:       date-menu-formatter@marcinjakubowski.github.com
+#
+#   An icon taskbar for the Gnome Shell. This extension moves the dash
+#   into the gnome main panel so that the application launchers and system
+#   tray are combined into a single panel, similar to that found in KDE
+#   Plasma and Windows 7+. A separate dock is no longer needed for easy
+#   access to running and favorited applications.
+#   
+#   @URL1:          https://extensions.gnome.org/extension/1160/dash-to-panel/
+#   @URL2:          https://github.com/home-sweet-gnome/dash-to-panel
+#
+#   can be uninstalled with
+#       - gnome-extensions uninstall "date-menu-formatter@marcinjakubowski.github.com"
+##--------------------------------------------------------------------------
+
+fn_app_gnome_ext_dateformat()
+{
+
+    local gnome_app_uuid="date-menu-formatter@marcinjakubowski.github.com"
+    local gnome_app_id=4655
+
+    begin "${1}"
+    sleep 1
+
+    if ! [ -x "$(command -v gnome-shell-extension-installer)" ]; then
+        echo -e "[ ${STATUS_HALT} ]"
+        sleep 1
+        echo -e "  ${BOLD}${ORANGE}Error:${NORMAL}${GREYL} Missing ${app_gnome_ext_core}. Installing ...${NORMAL}" >&2
+        sleep 1
+
+        fn_app_gnome_ext_core "${app_gnome_ext_core}"
+
+        begin "Retry: ${1}"
+
+        sleep 1
+    fi
+    if [ -z "${OPT_DEV_NULLRUN}" ]; then
+        gnome-shell-extension-installer $gnome_app_id --yes >> $LOGS_FILE 2>&1
+    fi
+    echo -e "[ ${STATUS_OK} ]"
+
+    notify-send -u critical "Shell Restart Needed" "Internet Speed Monitor requires a shell restart. Save your work and give your system a reboot. Then open the Extensions Manager and enable Internet Speed Monitor" >> $LOGS_FILE 2>&1
+
+    sleep 1
+    echo -e "[ ${STATUS_OK} ]"
+    finish
+}
+
+##--------------------------------------------------------------------------
 #   Extension:      Internet Speed Monitor
 #   Ext ID:         4585
 #   Ext UUID:       InternetSpeedMonitor@Rishu
@@ -2472,13 +2532,6 @@ fn_app_gnome_ext_ism()
         gnome-shell-extension-installer $gnome_app_id --yes >> $LOGS_FILE 2>&1
     fi
     sleep 1
-    echo -e "[ ${STATUS_OK} ]"
-
-    printf '%-57s' "    |--- Enabling Speed Monitor"
-    sleep 1
-    if [ -z "${OPT_DEV_NULLRUN}" ]; then
-        gnome-extensions enable $gnome_app_uuid
-    fi
     echo -e "[ ${STATUS_OK} ]"
 
     notify-send -u critical "Shell Restart Needed" "Internet Speed Monitor requires a shell restart. Save your work and give your system a reboot. Then open the Extensions Manager and enable Internet Speed Monitor" >> $LOGS_FILE 2>&1
@@ -4854,6 +4907,11 @@ fi
 
 if [ "$bInstall_app_gnome_ext_dashtopanel" = true ]; then
     apps+=("${app_gnome_ext_dashtopanel}")
+    (( app_i++ ))
+fi
+
+if [ "$bInstall_app_gnome_ext_dateformat" = true ]; then
+    apps+=("${app_gnome_ext_dateformat}")
     (( app_i++ ))
 fi
 
